@@ -1,0 +1,63 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { useGameStore } from '@/lib/store';
+import type { PhaseEvent, RoomState } from '@/lib/types';
+
+const baseRoom = {
+  id: 'r1', code: 'ABCDE', status: 'playing' as const, phase: 'read' as const,
+  round: 1, total_rounds: 3, timer_seconds: 10, ends_at: null, server_now: new Date().toISOString(),
+};
+
+beforeEach(() => {
+  useGameStore.setState({ room: null, players: [], question: null, reveal: null, standings: null, myAnswer: null });
+});
+
+describe('applyPhaseEvent', () => {
+  it('read event sets question and clears previous reveal + myAnswer', () => {
+    useGameStore.setState({ room: { ...baseRoom }, myAnswer: 2, reveal: {} as never });
+    const evt: PhaseEvent = {
+      phase: 'read', round: 2, ends_at: null, server_now: new Date().toISOString(),
+      payload: { category: 'fuel', tier: 1, prompt: 'Q?', options: ['a','b','c','d'] },
+    };
+    useGameStore.getState().applyPhaseEvent(evt);
+    const s = useGameStore.getState();
+    expect(s.room?.phase).toBe('read');
+    expect(s.room?.round).toBe(2);
+    expect(s.question?.prompt).toBe('Q?');
+    expect(s.reveal).toBeNull();
+    expect(s.myAnswer).toBeNull();
+  });
+
+  it('reveal event stores payload and standings', () => {
+    useGameStore.setState({ room: { ...baseRoom, phase: 'answer' } });
+    const evt: PhaseEvent = {
+      phase: 'reveal', round: 1, ends_at: null, server_now: new Date().toISOString(),
+      payload: { correct_index: 0, fun_fact: null, counts: [1,0,0,0], fastest: null, standings: [] },
+    };
+    useGameStore.getState().applyPhaseEvent(evt);
+    expect(useGameStore.getState().reveal?.correct_index).toBe(0);
+    expect(useGameStore.getState().standings).toEqual([]);
+  });
+
+  it('results event marks room finished', () => {
+    useGameStore.setState({ room: { ...baseRoom, phase: 'track' } });
+    const evt: PhaseEvent = {
+      phase: 'results', round: 3, ends_at: null, server_now: new Date().toISOString(), payload: [],
+    };
+    useGameStore.getState().applyPhaseEvent(evt);
+    expect(useGameStore.getState().room?.status).toBe('finished');
+  });
+});
+
+describe('applyState / addPlayer', () => {
+  it('snapshot replaces everything; addPlayer dedupes by id', () => {
+    const snap: RoomState = {
+      room: { ...baseRoom, status: 'lobby', phase: 'lobby' },
+      players: [{ id: 'p1', nickname: 'A', avatar: 'duck', color: '#fff', is_host: true, is_playing: true }],
+      question: null, reveal: null, standings: null,
+    };
+    useGameStore.getState().applyState(snap);
+    useGameStore.getState().addPlayer({ id: 'p1', nickname: 'A', avatar: 'duck', color: '#fff', is_host: true, is_playing: true });
+    useGameStore.getState().addPlayer({ id: 'p2', nickname: 'B', avatar: 'cat', color: '#000', is_host: false, is_playing: true });
+    expect(useGameStore.getState().players.map(p => p.id)).toEqual(['p1', 'p2']);
+  });
+});
