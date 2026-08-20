@@ -1,0 +1,135 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
+import { saveSession } from '@/lib/session';
+import { CATEGORIES, TIER_NAMES, estimateDurationSeconds } from '@/lib/rank';
+import { AVATARS, COLORS } from '@/lib/avatars';
+import type { Tier } from '@/lib/types';
+
+export default function HostSetup() {
+  const router = useRouter();
+  const [cats, setCats] = useState<string[]>(CATEGORIES.map(c => c.key));
+  const [counts, setCounts] = useState<[number, number, number, number]>([4, 4, 3, 1]);
+  const [timer, setTimer] = useState(10);
+  const [nickname, setNickname] = useState('');
+  const [avatar, setAvatar] = useState(AVATARS[0].key);
+  const [color, setColor] = useState(COLORS[0]);
+  const [playing, setPlaying] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const total = counts.reduce((a, b) => a + b, 0);
+  const mins = Math.round(estimateDurationSeconds(total, timer) / 60);
+
+  const toggleCat = (key: string) =>
+    setCats(c => (c.includes(key) ? c.filter(k => k !== key) : [...c, key]));
+
+  const bump = (i: number, d: number) =>
+    setCounts(c => {
+      const n = [...c] as typeof c;
+      n[i] = Math.max(0, Math.min(10, n[i] + d));
+      return n;
+    });
+
+  async function create() {
+    setBusy(true); setError(null);
+    const { data: room, error: e1 } = await supabase.rpc('create_room', {
+      p_timer_seconds: timer, p_categories: cats, p_tier_counts: counts,
+    });
+    if (e1) { setError(e1.message); setBusy(false); return; }
+    const { data: joined, error: e2 } = await supabase.rpc('join_room', {
+      p_code: room.code, p_nickname: nickname, p_avatar: avatar, p_color: color,
+      p_host_key: room.host_key, p_is_playing: playing,
+    });
+    if (e2) { setError(e2.message); setBusy(false); return; }
+    saveSession(room.code, {
+      roomId: room.room_id, playerId: joined.player_id,
+      playerKey: joined.player_key, hostKey: room.host_key,
+    });
+    router.push(`/room/${room.code}`);
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl space-y-8 p-6">
+      <h1 className="text-3xl font-black">New game</h1>
+
+      <section className="space-y-3">
+        <h2 className="font-bold text-slate-300">Categories</h2>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map(c => (
+            <button
+              key={c.key}
+              onClick={() => toggleCat(c.key)}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${
+                cats.includes(c.key)
+                  ? 'border-amber-400 bg-amber-400/10 text-amber-300'
+                  : 'border-slate-700 text-slate-400'
+              }`}
+            >
+              {c.emoji} {c.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-bold text-slate-300">Question mix</h2>
+        {([1, 2, 3, 4] as Tier[]).map((tier, i) => (
+          <div key={tier} className="flex items-center justify-between rounded-xl bg-slate-900 px-4 py-3">
+            <span className="font-semibold">{TIER_NAMES[tier]}</span>
+            <div className="flex items-center gap-3">
+              <button onClick={() => bump(i, -1)} className="h-8 w-8 rounded-lg border border-slate-700 font-bold">−</button>
+              <span className="w-6 text-center font-bold tabular-nums">{counts[i]}</span>
+              <button onClick={() => bump(i, +1)} className="h-8 w-8 rounded-lg border border-slate-700 font-bold">+</button>
+            </div>
+          </div>
+        ))}
+        <div className="flex items-center justify-between rounded-xl bg-slate-900 px-4 py-3">
+          <span className="font-semibold">Answer timer: {timer}s</span>
+          <input type="range" min={5} max={20} value={timer} onChange={e => setTimer(+e.target.value)} />
+        </div>
+        <p className="text-sm text-slate-400">
+          {total} questions · about {mins} min
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-bold text-slate-300">You</h2>
+        <input
+          value={nickname} onChange={e => setNickname(e.target.value)} maxLength={20}
+          placeholder="Your nickname"
+          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
+        />
+        <div className="flex flex-wrap gap-2">
+          {AVATARS.map(a => (
+            <button key={a.key} onClick={() => setAvatar(a.key)} title={a.label}
+              className={`h-12 w-12 rounded-xl text-2xl ${avatar === a.key ? 'bg-amber-400/20 ring-2 ring-amber-400' : 'bg-slate-900'}`}>
+              {a.emoji}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          {COLORS.map(c => (
+            <button key={c} onClick={() => setColor(c)}
+              className={`h-8 w-8 rounded-full ${color === c ? 'ring-2 ring-white' : ''}`}
+              style={{ backgroundColor: c }} />
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          <input type="checkbox" checked={playing} onChange={e => setPlaying(e.target.checked)} />
+          I&apos;m playing too (uncheck to MC only)
+        </label>
+      </section>
+
+      {error && <p className="text-rose-400">{error}</p>}
+      <button
+        onClick={create}
+        disabled={busy || total < 1 || cats.length < 1 || nickname.trim().length < 1}
+        className="w-full rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 disabled:opacity-40"
+      >
+        {busy ? 'Creating…' : 'Create room'}
+      </button>
+    </main>
+  );
+}
