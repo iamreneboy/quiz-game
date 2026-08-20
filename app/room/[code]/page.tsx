@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabaseClient';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
+import GameView from '@/components/GameView';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -40,5 +41,5 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     return <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
   if (room.status === 'finished')
     return <main className="grid min-h-screen place-items-center text-slate-400">Results (Task 12)…</main>;
-  return <main className="grid min-h-screen place-items-center text-slate-400">Game running (Task 10)…</main>;
+  return <GameView code={code} />;
 }
