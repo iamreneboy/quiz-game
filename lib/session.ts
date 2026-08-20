@@ -5,5 +5,10 @@ export function saveSession(code: string, s: RoomSession): void {
 }
 export function loadSession(code: string): RoomSession | null {
   const raw = localStorage.getItem(`cb:${code.toUpperCase()}`);
-  return raw ? (JSON.parse(raw) as RoomSession) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as RoomSession;
+  } catch {
+    return null;
+  }
 }

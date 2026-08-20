@@ -64,5 +64,6 @@ alter table room_questions enable row level security;
 alter table answers enable row level security;
 
 create index idx_questions_cat_tier on questions (category, tier);
+create unique index uq_questions_category_prompt on questions (category, prompt);
 create index idx_players_room on players (room_id);
 create index idx_answers_room_round on answers (room_id, round);

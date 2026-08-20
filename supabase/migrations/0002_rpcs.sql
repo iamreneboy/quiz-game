@@ -9,7 +9,7 @@ language sql stable set search_path = public as $$
 $$;
 
 -- ============ longest_streak ============
-create or replace function longest_streak(p_room_id uuid, p_player_id uuid) returns int
+create or replace function longest_streak(p_room_id uuid, p_player_id uuid, p_max_round int) returns int
 language plpgsql stable set search_path = public as $$
 declare
   r record;
@@ -21,7 +21,7 @@ begin
     from room_questions rq
     left join answers a on a.room_id = rq.room_id and a.round = rq.round
       and a.player_id = p_player_id
-    where rq.room_id = p_room_id
+    where rq.room_id = p_room_id and rq.round <= p_max_round
     order by rq.round
   loop
     if r.ok then cur := cur + 1; best := greatest(best, cur);
@@ -32,19 +32,21 @@ begin
 end $$;
 
 -- ============ standings ============
--- Sorted by the Fairness Law: correct desc → speed_points desc → longest_streak desc
-create or replace function standings(p_room_id uuid) returns jsonb
+-- Sorted by the Fairness Law: correct desc → speed_points desc → longest_streak desc → player_id asc (deterministic tiebreak)
+-- p_max_round bounds which rounds' answers are visible, so standings polled mid-round never leak
+-- the outcome of the round currently in its ANSWER phase before reveal.
+create or replace function standings(p_room_id uuid, p_max_round int) returns jsonb
 language sql stable set search_path = public as $$
-  select coalesce(jsonb_agg(row order by row->'correct' desc, row->'speed_points' desc, row->'longest_streak' desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(row order by row->'correct' desc, row->'speed_points' desc, row->'longest_streak' desc, row->>'player_id' asc), '[]'::jsonb)
   from (
     select jsonb_build_object(
       'player_id', p.id, 'nickname', p.nickname, 'avatar', p.avatar, 'color', p.color,
       'correct', count(a.*) filter (where a.is_correct),
       'speed_points', coalesce(sum(a.speed_points) filter (where a.is_correct), 0),
-      'longest_streak', longest_streak(p_room_id, p.id)
+      'longest_streak', longest_streak(p_room_id, p.id, p_max_round)
     ) as row
     from players p
-    left join answers a on a.player_id = p.id and a.room_id = p_room_id
+    left join answers a on a.player_id = p.id and a.room_id = p_room_id and a.round <= p_max_round
     where p.room_id = p_room_id and p.is_playing
     group by p.id
   ) s;
@@ -70,7 +72,7 @@ language sql stable set search_path = public as $$
       from answers a join players p on p.id = a.player_id
       where a.room_id = p_room_id and a.round = p_round and a.is_correct
       order by a.time_remaining_ms desc limit 1),
-    'standings', standings(p_room_id))
+    'standings', standings(p_room_id, p_round))
   from room_questions rq join questions q on q.id = rq.question_id
   where rq.room_id = p_room_id and rq.round = p_round;
 $$;
@@ -87,8 +89,8 @@ language sql stable set search_path = public as $$
       when 'read'    then question_public(v_room.id, v_room.current_round)
       when 'answer'  then question_public(v_room.id, v_room.current_round)
       when 'reveal'  then build_reveal(v_room.id, v_room.current_round)
-      when 'track'   then standings(v_room.id)
-      when 'results' then standings(v_room.id)
+      when 'track'   then standings(v_room.id, v_room.current_round)
+      when 'results' then standings(v_room.id, v_room.current_round)
       else null
     end);
 $$;
@@ -227,7 +229,9 @@ begin
     'reveal', case when v_room.phase in ('reveal','track')
       then build_reveal(v_room.id, v_room.current_round) else null end,
     'standings', case when v_room.status <> 'lobby'
-      then standings(v_room.id) else null end);
+      then standings(v_room.id, case when v_room.phase in ('read','answer')
+        then v_room.current_round - 1 else v_room.current_round end)
+      else null end);
 end $$;
 
 -- ============ start_game ============

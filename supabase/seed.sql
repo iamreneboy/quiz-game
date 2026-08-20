@@ -52,4 +52,5 @@ insert into questions (category, tier, prompt, options, correct_index, fun_fact)
 ('fuel',3,'After water, the most-consumed drink in the world is…','["Tea","Coffee","Beer","Orange juice"]',0,'Roughly 2 billion cups of tea are drunk every day.'),
 ('fuel',3,'Nutella''s main nut is the…','["Almond","Hazelnut","Peanut","Cashew"]',1,'Nutella uses about a quarter of the world''s hazelnut supply.'),
 ('fuel',4,'Which country drinks the most coffee per capita?','["USA","Italy","Brazil","Finland"]',3,'Finns average 8–12 kg of coffee per person per year; coffee breaks are protected in many union contracts.'),
-('fuel',4,'Carrots were originally mostly what color?','["Purple","Orange","White","Red"]',0,'Dutch growers bred orange carrots in the 1600s, allegedly honoring William of Orange.');
+('fuel',4,'Carrots were originally mostly what color?','["Purple","Orange","White","Red"]',0,'Dutch growers bred orange carrots in the 1600s, allegedly honoring William of Orange.')
+on conflict (category, prompt) do nothing;
