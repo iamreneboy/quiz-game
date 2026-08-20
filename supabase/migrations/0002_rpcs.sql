@@ -309,7 +309,7 @@ declare
   v_correct boolean;
   v_points int;
 begin
-  select * into v_room from rooms where id = p_room_id;
+  select * into v_room from rooms where id = p_room_id for share;
   if not found then raise exception 'room not found'; end if;
   if v_room.phase <> 'answer' or v_room.current_round <> p_round then
     raise exception 'not accepting answers';
@@ -321,6 +321,7 @@ begin
   select * into v_player from players
     where room_id = p_room_id and player_key = p_player_key;
   if not found then raise exception 'player not found'; end if;
+  if not v_player.is_playing then raise exception 'spectators cannot answer'; end if;
   if p_choice_index < 0 or p_choice_index > 3 then raise exception 'invalid choice'; end if;
 
   select q.* into v_q from room_questions rq
