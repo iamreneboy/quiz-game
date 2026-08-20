@@ -9,6 +9,7 @@ import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
 import GameView from '@/components/GameView';
+import ResultsView from '@/components/ResultsView';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -40,6 +41,6 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   if (room.status === 'lobby')
     return <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
   if (room.status === 'finished')
-    return <main className="grid min-h-screen place-items-center text-slate-400">Results (Task 12)…</main>;
+    return <ResultsView code={code} />;
   return <GameView code={code} />;
 }
