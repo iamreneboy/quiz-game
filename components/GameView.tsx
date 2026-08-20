@@ -33,7 +33,7 @@ export default function GameView({ code }: { code: string }) {
   }
 
   if (room.phase === 'countdown') return <Countdown endsAt={room.ends_at} />;
-  if (room.phase === 'track') return <Track />;
+  if (room.phase === 'track') return <Track code={code} />;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-6">
