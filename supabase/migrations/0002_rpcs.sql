@@ -1,10 +1,97 @@
--- ============ temporary stubs (Task 5 replaces these with real implementations) ============
+-- ============ question_public ============
 create or replace function question_public(p_room_id uuid, p_round int) returns jsonb
-language sql as $$ select null::jsonb $$;
-create or replace function build_reveal(p_room_id uuid, p_round int) returns jsonb
-language sql as $$ select null::jsonb $$;
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'category', q.category, 'tier', q.tier,
+    'prompt', q.prompt, 'options', q.options)
+  from room_questions rq join questions q on q.id = rq.question_id
+  where rq.room_id = p_room_id and rq.round = p_round;
+$$;
+
+-- ============ longest_streak ============
+create or replace function longest_streak(p_room_id uuid, p_player_id uuid) returns int
+language plpgsql stable set search_path = public as $$
+declare
+  r record;
+  cur int := 0;
+  best int := 0;
+begin
+  for r in
+    select coalesce(a.is_correct, false) as ok
+    from room_questions rq
+    left join answers a on a.room_id = rq.room_id and a.round = rq.round
+      and a.player_id = p_player_id
+    where rq.room_id = p_room_id
+    order by rq.round
+  loop
+    if r.ok then cur := cur + 1; best := greatest(best, cur);
+    else cur := 0;
+    end if;
+  end loop;
+  return best;
+end $$;
+
+-- ============ standings ============
+-- Sorted by the Fairness Law: correct desc → speed_points desc → longest_streak desc
 create or replace function standings(p_room_id uuid) returns jsonb
-language sql as $$ select '[]'::jsonb $$;
+language sql stable set search_path = public as $$
+  select coalesce(jsonb_agg(row order by row->'correct' desc, row->'speed_points' desc, row->'longest_streak' desc), '[]'::jsonb)
+  from (
+    select jsonb_build_object(
+      'player_id', p.id, 'nickname', p.nickname, 'avatar', p.avatar, 'color', p.color,
+      'correct', count(a.*) filter (where a.is_correct),
+      'speed_points', coalesce(sum(a.speed_points) filter (where a.is_correct), 0),
+      'longest_streak', longest_streak(p_room_id, p.id)
+    ) as row
+    from players p
+    left join answers a on a.player_id = p.id and a.room_id = p_room_id
+    where p.room_id = p_room_id and p.is_playing
+    group by p.id
+  ) s;
+$$;
+
+-- ============ build_reveal ============
+create or replace function build_reveal(p_room_id uuid, p_round int) returns jsonb
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'correct_index', q.correct_index,
+    'fun_fact', q.fun_fact,
+    'counts', (
+      select jsonb_agg(c.cnt order by c.idx) from (
+        select gs.idx, count(a.*) as cnt
+        from generate_series(0, 3) gs(idx)
+        left join answers a on a.room_id = p_room_id and a.round = p_round
+          and a.choice_index = gs.idx
+        group by gs.idx
+      ) c),
+    'fastest', (
+      select jsonb_build_object('player_id', a.player_id, 'nickname', p.nickname,
+                                'time_remaining_ms', a.time_remaining_ms)
+      from answers a join players p on p.id = a.player_id
+      where a.room_id = p_room_id and a.round = p_round and a.is_correct
+      order by a.time_remaining_ms desc limit 1),
+    'standings', standings(p_room_id))
+  from room_questions rq join questions q on q.id = rq.question_id
+  where rq.room_id = p_room_id and rq.round = p_round;
+$$;
+
+-- ============ phase_event helper ============
+create or replace function phase_event(v_room rooms) returns jsonb
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'phase', v_room.phase,
+    'round', v_room.current_round,
+    'ends_at', v_room.phase_ends_at,
+    'server_now', now(),
+    'payload', case v_room.phase
+      when 'read'    then question_public(v_room.id, v_room.current_round)
+      when 'answer'  then question_public(v_room.id, v_room.current_round)
+      when 'reveal'  then build_reveal(v_room.id, v_room.current_round)
+      when 'track'   then standings(v_room.id)
+      when 'results' then standings(v_room.id)
+      else null
+    end);
+$$;
 
 -- ============ helpers ============
 create or replace function gen_room_code() returns text
@@ -141,6 +228,121 @@ begin
       then build_reveal(v_room.id, v_room.current_round) else null end,
     'standings', case when v_room.status <> 'lobby'
       then standings(v_room.id) else null end);
+end $$;
+
+-- ============ start_game ============
+create or replace function start_game(p_room_id uuid, p_host_key uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_players int;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'game already started'; end if;
+  select count(*) into v_players from players where room_id = p_room_id and is_playing;
+  if v_players < 2 then raise exception 'need at least 2 players'; end if;
+
+  update rooms set status = 'playing', phase = 'countdown', current_round = 1,
+    phase_ends_at = now() + interval '3 seconds'
+  where id = p_room_id returning * into v_room;
+
+  return phase_event(v_room);
+end $$;
+
+-- ============ advance_phase ============
+create or replace function advance_phase(p_room_id uuid, p_host_key uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_phase text;
+  v_round int;
+  v_status text := 'playing';
+  v_ends timestamptz;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status = 'finished' then raise exception 'game finished'; end if;
+  if v_room.status <> 'playing' then raise exception 'game not started'; end if;
+
+  v_round := v_room.current_round;
+  case v_room.phase
+    when 'countdown' then v_phase := 'read';
+    when 'read'      then v_phase := 'answer';
+    when 'answer'    then v_phase := 'reveal';
+    when 'reveal'    then v_phase := 'track';
+    when 'track' then
+      if v_room.current_round >= v_room.total_rounds then
+        v_phase := 'results'; v_status := 'finished';
+      else
+        v_phase := 'read'; v_round := v_room.current_round + 1;
+      end if;
+    else raise exception 'cannot advance from phase %', v_room.phase;
+  end case;
+
+  v_ends := case v_phase
+    when 'read'   then now() + interval '3 seconds'
+    when 'answer' then now() + make_interval(secs => v_room.timer_seconds)
+    when 'reveal' then now() + interval '5 seconds'
+    when 'track'  then now() + interval '4 seconds'
+    else null
+  end;
+
+  update rooms set phase = v_phase, current_round = v_round,
+    status = v_status, phase_ends_at = v_ends
+  where id = p_room_id returning * into v_room;
+
+  return phase_event(v_room);
+end $$;
+
+-- ============ submit_answer ============
+create or replace function submit_answer(
+  p_room_id uuid, p_player_key uuid, p_round int, p_choice_index int
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_player players;
+  v_q questions;
+  v_remaining_ms int;
+  v_total_ms int;
+  v_correct boolean;
+  v_points int;
+begin
+  select * into v_room from rooms where id = p_room_id;
+  if not found then raise exception 'room not found'; end if;
+  if v_room.phase <> 'answer' or v_room.current_round <> p_round then
+    raise exception 'not accepting answers';
+  end if;
+  v_remaining_ms := ceil(extract(epoch from (v_room.phase_ends_at - now())) * 1000);
+  if v_remaining_ms < -300 then raise exception 'too late'; end if;  -- 300ms grace
+  v_remaining_ms := greatest(v_remaining_ms, 0);
+
+  select * into v_player from players
+    where room_id = p_room_id and player_key = p_player_key;
+  if not found then raise exception 'player not found'; end if;
+  if p_choice_index < 0 or p_choice_index > 3 then raise exception 'invalid choice'; end if;
+
+  select q.* into v_q from room_questions rq
+    join questions q on q.id = rq.question_id
+    where rq.room_id = p_room_id and rq.round = p_round;
+
+  v_correct := (v_q.correct_index = p_choice_index);
+  v_total_ms := v_room.timer_seconds * 1000;
+  v_points := case when v_correct
+    then floor(v_remaining_ms::numeric / v_total_ms * 100)::int * v_q.tier
+    else 0 end;
+
+  begin
+    insert into answers (room_id, round, player_id, choice_index, is_correct,
+                         time_remaining_ms, speed_points)
+    values (p_room_id, p_round, v_player.id, p_choice_index, v_correct,
+            v_remaining_ms, v_points);
+  exception when unique_violation then
+    raise exception 'already answered';
+  end;
+
+  return jsonb_build_object('locked', true);
 end $$;
 
 grant execute on all functions in schema public to anon, authenticated;
