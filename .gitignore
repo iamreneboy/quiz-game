@@ -42,3 +42,9 @@ next-env.d.ts
 
 # sdd scratch dir
 .superpowers/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
