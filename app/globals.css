@@ -1,1 +1,114 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Circuit Break — night-race design system (PRD §8).
+   THIS BLOCK IS THE SOURCE OF TRUTH for design tokens.
+   lib/presentation/tokens.ts hand-mirrors the canvas-relevant subset;
+   tests/tokens.test.ts fails if the two drift.
+--------------------------------------------------------------------------- */
+@theme {
+  /* Type faces — the CSS variables come from next/font in app/layout.tsx */
+  --font-display: var(--font-display-face), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+
+  /* Display type scale (Tailwind's default text-* scale is kept as-is) */
+  --text-display: 4rem;
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.03em;
+  --text-hero: 2.25rem;
+  --text-hero--line-height: 1.05;
+  --text-hero--letter-spacing: -0.02em;
+
+  /* Surfaces — dark indigo scale, deepest first */
+  --color-void: #05060f;
+  --color-abyss: #0a0c1c;
+  --color-night: #121734;
+  --color-dusk: #1c2350;
+  --color-haze: #2b3370;
+
+  /* Ink */
+  --color-ink: #eaeeff;
+  --color-ink-dim: #a6adde;
+  --color-ink-mute: #6d75ab;
+
+  /* Neon accents */
+  --color-neon-cyan: #35f2ff;
+  --color-neon-magenta: #ff4fd8;
+  --color-neon-lime: #c6ff4a;
+
+  /* Semantics */
+  --color-correct: #3ce69b;
+  --color-wrong: #ff5d73;
+  --color-warning: #ffb43d;
+
+  /* Medals */
+  --color-gold: #ffd166;
+  --color-silver: #d5dcee;
+  --color-bronze: #e08a4c;
+
+  /* Warm racer palette — mirrors COLORS in lib/avatars.ts. These values are
+     persisted per player in Postgres; never renumber or recolor them here
+     without a data migration. */
+  --color-racer-1: #f59e0b;
+  --color-racer-2: #38bdf8;
+  --color-racer-3: #a78bfa;
+  --color-racer-4: #34d399;
+  --color-racer-5: #fb7185;
+  --color-racer-6: #facc15;
+  --color-racer-7: #f97316;
+  --color-racer-8: #22d3ee;
+
+  /* Glassmorphic geometry */
+  --radius-panel: 1.25rem;
+  --radius-control: 0.875rem;
+
+  /* Motion vocabulary — shared by CSS, `motion`, and Pixi tweens */
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --ease-settle: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-drift: cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* Durations. Tailwind v4 has no --duration-* theme namespace, so these are
+   plain custom properties: use them as duration-[var(--dur-beat)] in classes
+   or via DURATION in lib/presentation/tokens.ts. */
+:root {
+  --dur-cut: 120ms;
+  --dur-beat: 260ms;
+  --dur-settle: 460ms;
+  --dur-drift: 1400ms;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-void);
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--color-dusk) 75%, transparent), transparent 62%),
+      radial-gradient(90% 55% at 100% 105%, color-mix(in oklab, var(--color-neon-magenta) 14%, transparent), transparent 70%);
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+
+  ::selection {
+    background: var(--color-neon-cyan);
+    color: var(--color-void);
+  }
+}
+
+/* Reduced performance profile — set on <html> by components/MotionProvider.tsx.
+   Covers CSS transitions/animations; `motion` is handled by MotionConfig and
+   Pixi by the profile branch in each renderer. */
+[data-profile='reduced'] *,
+[data-profile='reduced'] *::before,
+[data-profile='reduced'] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
