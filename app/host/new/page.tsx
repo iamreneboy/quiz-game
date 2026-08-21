@@ -1,11 +1,38 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabaseClient';
 import { saveSession } from '@/lib/session';
 import { CATEGORIES, TIER_NAMES, estimateDurationSeconds } from '@/lib/rank';
 import { AVATARS, COLORS } from '@/lib/avatars';
+import { DURATION, EASE } from '@/lib/presentation/tokens';
 import type { Tier } from '@/lib/types';
+import Panel from '@/components/ui/Panel';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+
+const sectionMotion = (index: number) => ({
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: DURATION.settle / 1000, ease: EASE.settle, delay: index * 0.06 },
+});
+
+const sectionHeading =
+  'font-display text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-neon-cyan';
+
+/** HUD viewfinder corners — echoes the landing page's signature on the hero panel. */
+function HudCorners() {
+  const arm = 'pointer-events-none absolute h-4 w-4 border-neon-cyan/70';
+  return (
+    <>
+      <span aria-hidden className={`${arm} -left-1.5 -top-1.5 border-l-2 border-t-2`} />
+      <span aria-hidden className={`${arm} -right-1.5 -top-1.5 border-r-2 border-t-2`} />
+      <span aria-hidden className={`${arm} -bottom-1.5 -left-1.5 border-b-2 border-l-2`} />
+      <span aria-hidden className={`${arm} -bottom-1.5 -right-1.5 border-b-2 border-r-2`} />
+    </>
+  );
+}
 
 export default function HostSetup() {
   const router = useRouter();
@@ -51,85 +78,158 @@ export default function HostSetup() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-8 p-6">
-      <h1 className="text-3xl font-black">New game</h1>
+    <main className="mx-auto max-w-2xl space-y-6 px-6 py-10">
+      <motion.header {...sectionMotion(0)} className="relative">
+        <p className={sectionHeading}>Race control</p>
+        <h1 className="mt-2 font-display text-hero font-bold uppercase text-ink">New game</h1>
+      </motion.header>
 
-      <section className="space-y-3">
-        <h2 className="font-bold text-slate-300">Categories</h2>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(c => (
-            <button
-              key={c.key}
-              onClick={() => toggleCat(c.key)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold ${
-                cats.includes(c.key)
-                  ? 'border-amber-400 bg-amber-400/10 text-amber-300'
-                  : 'border-slate-700 text-slate-400'
-              }`}
-            >
-              {c.emoji} {c.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-bold text-slate-300">Question mix</h2>
-        {([1, 2, 3, 4] as Tier[]).map((tier, i) => (
-          <div key={tier} className="flex items-center justify-between rounded-xl bg-slate-900 px-4 py-3">
-            <span className="font-semibold">{TIER_NAMES[tier]}</span>
-            <div className="flex items-center gap-3">
-              <button onClick={() => bump(i, -1)} className="h-8 w-8 rounded-lg border border-slate-700 font-bold">−</button>
-              <span className="w-6 text-center font-bold tabular-nums">{counts[i]}</span>
-              <button onClick={() => bump(i, +1)} className="h-8 w-8 rounded-lg border border-slate-700 font-bold">+</button>
-            </div>
+      <motion.section {...sectionMotion(1)} className="relative">
+        <Panel className="relative space-y-4 p-6">
+          <HudCorners />
+          <h2 className={sectionHeading}>Categories</h2>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(c => {
+              const on = cats.includes(c.key);
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleCat(c.key)}
+                  className={
+                    'rounded-full border px-4 py-2 text-sm font-semibold ease-snap duration-[var(--dur-cut)] ' +
+                    'transition-[background-color,border-color,color] ' +
+                    (on
+                      ? 'border-neon-cyan bg-neon-cyan/10 text-neon-cyan'
+                      : 'border-haze/70 text-ink-mute hover:border-haze hover:text-ink-dim')
+                  }
+                >
+                  {c.emoji} {c.label}
+                </button>
+              );
+            })}
           </div>
-        ))}
-        <div className="flex items-center justify-between rounded-xl bg-slate-900 px-4 py-3">
-          <span className="font-semibold">Answer timer: {timer}s</span>
-          <input type="range" min={5} max={20} value={timer} onChange={e => setTimer(+e.target.value)} />
-        </div>
-        <p className="text-sm text-slate-400">
-          {total} questions · about {mins} min
-        </p>
-      </section>
+        </Panel>
+      </motion.section>
 
-      <section className="space-y-3">
-        <h2 className="font-bold text-slate-300">You</h2>
-        <input
-          value={nickname} onChange={e => setNickname(e.target.value)} maxLength={20}
-          placeholder="Your nickname"
-          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
-        />
-        <div className="flex flex-wrap gap-2">
-          {AVATARS.map(a => (
-            <button key={a.key} onClick={() => setAvatar(a.key)} title={a.label}
-              className={`h-12 w-12 rounded-xl text-2xl ${avatar === a.key ? 'bg-amber-400/20 ring-2 ring-amber-400' : 'bg-slate-900'}`}>
-              {a.emoji}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          {COLORS.map(c => (
-            <button key={c} onClick={() => setColor(c)}
-              className={`h-8 w-8 rounded-full ${color === c ? 'ring-2 ring-white' : ''}`}
-              style={{ backgroundColor: c }} />
-          ))}
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input type="checkbox" checked={playing} onChange={e => setPlaying(e.target.checked)} />
-          I&apos;m playing too (uncheck to MC only)
-        </label>
-      </section>
+      <motion.section {...sectionMotion(2)}>
+        <Panel className="space-y-3 p-6">
+          <h2 className={sectionHeading}>Question mix</h2>
 
-      {error && <p className="text-rose-400">{error}</p>}
-      <button
+          {([1, 2, 3, 4] as Tier[]).map((tier, i) => (
+            <div
+              key={tier}
+              className="flex items-center justify-between rounded-control border border-haze/40 bg-abyss/60 px-4 py-3"
+            >
+              <span className="font-semibold text-ink">{TIER_NAMES[tier]}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => bump(i, -1)}
+                  className="h-8 w-8 rounded-lg border border-haze/70 font-bold text-ink-dim hover:border-neon-cyan hover:text-neon-cyan"
+                >
+                  −
+                </button>
+                <span className="w-6 text-center font-display font-bold tabular-nums text-ink">{counts[i]}</span>
+                <button
+                  type="button"
+                  onClick={() => bump(i, +1)}
+                  className="h-8 w-8 rounded-lg border border-haze/70 font-bold text-ink-dim hover:border-neon-cyan hover:text-neon-cyan"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center justify-between rounded-control border border-haze/40 bg-abyss/60 px-4 py-3">
+            <span className="font-semibold text-ink">Answer timer: {timer}s</span>
+            <input
+              type="range"
+              min={5}
+              max={20}
+              value={timer}
+              aria-label="Answer timer seconds"
+              onChange={e => setTimer(+e.target.value)}
+              className="accent-neon-cyan"
+            />
+          </div>
+
+          <p className="text-sm text-ink-dim">
+            {total} questions · about {mins} min
+          </p>
+        </Panel>
+      </motion.section>
+
+      <motion.section {...sectionMotion(3)}>
+        <Panel className="space-y-4 p-6">
+          <h2 className={sectionHeading}>You</h2>
+
+          <Input
+            value={nickname}
+            onChange={e => setNickname(e.target.value)}
+            maxLength={20}
+            placeholder="Your nickname"
+            aria-label="Your nickname"
+          />
+
+          <div className="flex flex-wrap gap-2">
+            {AVATARS.map(a => (
+              <button
+                key={a.key}
+                type="button"
+                onClick={() => setAvatar(a.key)}
+                title={a.label}
+                aria-pressed={avatar === a.key}
+                className={
+                  'h-12 w-12 rounded-control text-2xl ease-snap duration-[var(--dur-cut)] transition-[background-color,box-shadow] ' +
+                  (avatar === a.key
+                    ? 'bg-neon-cyan/15 ring-2 ring-neon-cyan'
+                    : 'bg-abyss/70 hover:bg-night')
+                }
+              >
+                {a.emoji}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            {COLORS.map((c, i) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={`Racer colour ${i + 1}`}
+                aria-pressed={color === c}
+                className={`h-8 w-8 rounded-full ${color === c ? 'ring-2 ring-ink' : ''}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-ink-dim">
+            <input
+              type="checkbox"
+              checked={playing}
+              onChange={e => setPlaying(e.target.checked)}
+              className="accent-neon-cyan"
+            />
+            I&apos;m playing too (uncheck to MC only)
+          </label>
+        </Panel>
+      </motion.section>
+
+      {error && <p className="text-wrong">{error}</p>}
+
+      <Button
+        size="lg"
+        className="w-full"
         onClick={create}
         disabled={busy || total < 1 || cats.length < 1 || nickname.trim().length < 1}
-        className="w-full rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 disabled:opacity-40"
       >
         {busy ? 'Creating…' : 'Create room'}
-      </button>
+      </Button>
     </main>
   );
 }

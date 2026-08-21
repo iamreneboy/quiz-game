@@ -5,11 +5,14 @@ import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useHostDriver } from '@/lib/useHostDriver';
 import { loadSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
+import { startCueBridge } from '@/lib/presentation/cueBus';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
 import GameView from '@/components/GameView';
 import ResultsView from '@/components/ResultsView';
+import SettingsControl from '@/components/SettingsControl';
+import PixiStage from '@/components/PixiStage';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -20,6 +23,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const channel = useRoomChannel(code);
   const { start, error: hostError } = useHostDriver(code, channel);
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
+
+  useEffect(() => startCueBridge(), []);
 
   useEffect(() => { setHasSession(!!loadSession(code)); }, [code]);
 
@@ -34,13 +39,26 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     }
   }
 
-  if (hasSession === null) return null;
-  if (!hasSession) return <JoinGate code={code} onJoined={handleJoined} />;
-  if (!room) return <main className="grid min-h-screen place-items-center text-slate-400">Connecting…</main>;
+  let content: React.ReactNode = null;
+  if (hasSession === null) {
+    content = null;
+  } else if (!hasSession) {
+    content = <JoinGate code={code} onJoined={handleJoined} />;
+  } else if (!room) {
+    content = <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>;
+  } else if (room.status === 'lobby') {
+    content = <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
+  } else if (room.status === 'finished') {
+    content = <ResultsView code={code} />;
+  } else {
+    content = <GameView code={code} />;
+  }
 
-  if (room.status === 'lobby')
-    return <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
-  if (room.status === 'finished')
-    return <ResultsView code={code} />;
-  return <GameView code={code} />;
+  return (
+    <div className="relative min-h-screen">
+      {room && <PixiStage />}
+      <SettingsControl />
+      <div className="relative z-10">{content}</div>
+    </div>
+  );
 }
