@@ -31,3 +31,7 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0002](0002-hand-mirrored-design-tokens.md) | Design tokens are hand-mirrored into TS, not code-generated | P0 |
 | [0003](0003-standings-drama-only-on-reveal.md) | Standings drama derives only on the transition into `reveal` | P0 |
 | [0004](0004-performance-profile-static-heuristic.md) | Performance profile is a static startup heuristic, not a runtime watchdog | P0 |
+| [0005](0005-auto-framed-pack-camera.md) | Auto-framed pack camera with a MAX_SPAN legibility cap | P1 |
+| [0006](0006-spatial-zones-plus-mood-grade.md) | Spatial zones plus a separate global mood grade | P1 |
+| [0007](0007-quality-as-world-definition-data.md) | Quality is world-definition data, not construction flags | P1 |
+| [0008](0008-local-player-outranks-leader-in-overflow.md) | The local player outranks the leader when the field can't all fit | P1 |
