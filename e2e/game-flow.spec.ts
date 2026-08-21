@@ -30,6 +30,8 @@ test('two players play a full round from lobby to results', async ({ page, brows
   const code = host.url().split('/').pop()!;
 
   await expect(host.getByText('Starting grid')).toBeVisible();
+  // P0 exit criterion: the (empty) Pixi canvas mounts in the room view.
+  await expect(host.locator('[data-testid="pixi-stage"] canvas')).toBeAttached();
   const startButton = host.getByRole('button', { name: /start the race|need at least 2 players/i });
   await expect(startButton).toBeDisabled();
 

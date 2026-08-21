@@ -12,6 +12,7 @@ import LobbyView from '@/components/LobbyView';
 import GameView from '@/components/GameView';
 import ResultsView from '@/components/ResultsView';
 import SettingsControl from '@/components/SettingsControl';
+import PixiStage from '@/components/PixiStage';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -55,6 +56,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   return (
     <div className="relative min-h-screen">
+      {room && <PixiStage />}
       <SettingsControl />
       <div className="relative z-10">{content}</div>
     </div>
