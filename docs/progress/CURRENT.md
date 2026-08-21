@@ -13,6 +13,13 @@ None in progress.
 
 None.
 
+## Notes
+
+- **2026-08-21 — P1 Task 8 perf measurement (spec §12 exit criterion 1).** Measured via the `?perf=1` overlay on the development laptop, landscape, full screen, 1400×900, through a 3-question round including multiple TRACK moments:
+  - **High profile:** p50 6.9ms, p95 7.0–7.1ms, dropped 0/120 samples, sustained ~145fps throughout countdown/read/answer/reveal/track/results.
+  - **Reduced profile (forced via Settings):** p50 6.9–7.0ms, p95 7.1–7.2ms, dropped 0/120 samples, ~143–145fps. Visually confirmed the ladder applies: fewer/flatter background layers (no visible ambient gradient shimmer between zone bands), and the office-park/neon-city zones render with less depth gradation than the high-profile pass.
+  - Exit criterion 1 (p50 ≤ ~16.7ms, dropped frames low single digits) is comfortably met on this dev laptop in both profiles — no layer-count reduction in `content/nightRace.ts` was needed.
+
 ## Tech debt / known issues
 
 - **`app/room/[code]/page.tsx:29`** — pre-existing `react-hooks/set-state-in-effect` ESLint error (`setHasSession` set synchronously inside a `useEffect`). Predates M2; not fixed during P0 because that file's session-check logic was outside P0's scope. Likely fix: derive `hasSession` from `loadSession(code)` directly (e.g. lazy `useState` initializer) instead of effect + state.

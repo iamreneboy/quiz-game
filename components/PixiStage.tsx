@@ -1,9 +1,13 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
 import { loadSession } from '@/lib/session';
 import { CANVAS } from '@/lib/presentation/tokens';
 import { NIGHT_RACE } from '@/lib/world/content/nightRace';
+
+/** Phases where the question fills most of the screen: the world shrinks to a strip (spec §7). */
+const STRIP_PHASES = new Set(['read', 'answer', 'reveal']);
 
 /**
  * Canvas lifecycle and layout. Pixi owns the world; HTML owns everything
@@ -16,6 +20,8 @@ export default function PixiStage({ code }: { code: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const hydrated = useSettings(s => s.hydrated);
   const profile = useSettings(s => s.profile);
+  const phase = useGameStore(s => s.room?.phase ?? 'lobby');
+  const band = STRIP_PHASES.has(phase) ? 'strip' : 'full';
 
   useEffect(() => {
     const host = hostRef.current;
@@ -25,6 +31,7 @@ export default function PixiStage({ code }: { code: string }) {
     let app: import('pixi.js').Application | null = null;
     let scene: import('@/lib/world/render/WorldScene').WorldScene | null = null;
     let runtime: { destroy(): void } | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     void (async () => {
       try {
@@ -50,6 +57,10 @@ export default function PixiStage({ code }: { code: string }) {
         scene = new WorldScene(instance, NIGHT_RACE, profile);
         host.appendChild(instance.canvas);
 
+        const observer = new ResizeObserver(() => instance.resize());
+        observer.observe(host);
+        resizeObserver = observer;
+
         const { createWorldRuntime } = await import('@/lib/world/runtime');
         runtime = createWorldRuntime({
           app: instance,
@@ -65,6 +76,8 @@ export default function PixiStage({ code }: { code: string }) {
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
       runtime?.destroy();
       runtime = null;
       scene?.destroy();
@@ -80,8 +93,11 @@ export default function PixiStage({ code }: { code: string }) {
     <div
       ref={hostRef}
       data-testid="pixi-stage"
+      data-band={band}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0"
+      className={`pointer-events-none fixed inset-x-0 top-0 z-0 transition-[height] duration-(--dur-settle) ease-settle ${
+        band === 'strip' ? 'h-[28vh] portrait:h-[28vh] landscape:h-screen' : 'h-screen'
+      }`}
     />
   );
 }

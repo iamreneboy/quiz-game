@@ -28,6 +28,7 @@ import {
 } from './director';
 import { frameTarget, offscreenPlayerIds } from './framing';
 import { markerAnchors, trackMetrics, type CameraState } from './geometry';
+import { createFrameSampler } from './perf';
 import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
 import { gradeState, quantizeZoneWeights, zoneWeights } from './zones';
@@ -53,6 +54,9 @@ export interface WorldRuntimeOptions {
 export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): void } {
   const { app, scene, profile, localPlayerId } = options;
   const startedAt = performance.now();
+  const sampler = createFrameSampler();
+  let lastFrameAt = startedAt;
+  let lastPublishAt = startedAt;
 
   // Seed from the store: the cue bridge emitted the current beat before this
   // subscriber existed, so a mid-game reload must establish its own base shot.
@@ -68,6 +72,9 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
   const tick = () => {
     const now = performance.now();
+    sampler.push(now - lastFrameAt);
+    lastFrameAt = now;
+
     const { room, standings } = useGameStore.getState();
 
     director = tickDirector(director, now);
@@ -123,6 +130,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     });
 
     useWorldView.getState().setOffscreen(offscreenPlayerIds(anchors, shown, viewport));
+
+    if (now - lastPublishAt >= 500) {
+      lastPublishAt = now;
+      useWorldView.getState().setFrameStats(sampler.stats());
+    }
   };
 
   app.ticker.add(tick);

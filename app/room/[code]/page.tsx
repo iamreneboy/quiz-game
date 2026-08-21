@@ -1,5 +1,5 @@
 'use client';
-import { use, useEffect, useState } from 'react';
+import { Suspense, use, useEffect, useState } from 'react';
 import { useGameStore } from '@/lib/store';
 import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useHostDriver } from '@/lib/useHostDriver';
@@ -13,6 +13,7 @@ import GameView from '@/components/GameView';
 import ResultsView from '@/components/ResultsView';
 import SettingsControl from '@/components/SettingsControl';
 import PixiStage from '@/components/PixiStage';
+import PerfOverlay from '@/components/PerfOverlay';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -58,6 +59,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     <div className="relative min-h-screen">
       {room && room.status !== 'finished' && <PixiStage code={code} />}
       <SettingsControl />
+      <Suspense fallback={null}>
+        <PerfOverlay />
+      </Suspense>
       <div className="relative z-10">{content}</div>
     </div>
   );
