@@ -5,6 +5,7 @@ import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useHostDriver } from '@/lib/useHostDriver';
 import { loadSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
+import { startCueBridge } from '@/lib/presentation/cueBus';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
@@ -20,6 +21,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const channel = useRoomChannel(code);
   const { start, error: hostError } = useHostDriver(code, channel);
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
+
+  useEffect(() => startCueBridge(), []);
 
   useEffect(() => { setHasSession(!!loadSession(code)); }, [code]);
 
