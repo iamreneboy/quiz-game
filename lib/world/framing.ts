@@ -38,11 +38,17 @@ export function frameTarget(mode: FramingMode, input: FramingInput): CameraState
   const { metrics } = input;
 
   switch (mode) {
-    case 'startLine':
-      return clampCamera(
-        { centerX: segmentToWorldX(0), span: START_LINE_SEGMENTS * SEGMENT_WIDTH },
-        metrics,
-      );
+    case 'startLine': {
+      // With a lobby grid present, frame the formation; otherwise hold the
+      // fixed establishing shot on the start line.
+      if (input.anchors.length === 0) {
+        return clampCamera(
+          { centerX: segmentToWorldX(0), span: START_LINE_SEGMENTS * SEGMENT_WIDTH },
+          metrics,
+        );
+      }
+      return fit(input.anchors, PACK_PADDING, input);
+    }
 
     case 'establishing':
       return clampCamera({ centerX: metrics.length / 2, span: metrics.length }, metrics);

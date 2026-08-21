@@ -9,6 +9,8 @@ import {
   worldXToScreen,
   horizonY,
   markerAnchors,
+  gridAnchors,
+  type GridPlayer,
 } from '@/lib/world/geometry';
 
 describe('trackMetrics', () => {
@@ -108,5 +110,41 @@ describe('markerAnchors', () => {
 
   it('returns an empty list for no standings', () => {
     expect(markerAnchors([], metrics)).toEqual([]);
+  });
+});
+
+describe('gridAnchors', () => {
+  const players = (n: number): GridPlayer[] =>
+    Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
+
+  it('places everyone behind the start line', () => {
+    for (const a of gridAnchors(players(8), trackMetrics(12))) {
+      expect(a.x).toBeLessThan(0);
+      expect(a.x).toBeGreaterThanOrEqual(-TRACK_MARGIN);
+    }
+  });
+
+  it('staggers into two rows', () => {
+    const anchors = gridAnchors(players(4), trackMetrics(12));
+    expect(anchors[0].row).toBe(0);
+    expect(anchors[1].row).toBe(1);
+    expect(anchors[2].row).toBe(0);
+    expect(anchors[1].y).toBeLessThan(anchors[0].y);
+  });
+
+  it('puts each pair further back than the last', () => {
+    const anchors = gridAnchors(players(6), trackMetrics(12));
+    expect(anchors[2].x).toBeLessThan(anchors[0].x);
+    expect(anchors[4].x).toBeLessThan(anchors[2].x);
+  });
+
+  it('handles an empty lobby', () => {
+    expect(gridAnchors([], trackMetrics(12))).toEqual([]);
+  });
+
+  it('keeps a single player on the front row', () => {
+    const [only] = gridAnchors(players(1), trackMetrics(12));
+    expect(only.row).toBe(0);
+    expect(only.y).toBe(0);
   });
 });

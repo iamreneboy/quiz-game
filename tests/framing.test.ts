@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SEGMENT_WIDTH, markerAnchors, trackMetrics, type MarkerAnchor } from '@/lib/world/geometry';
+import { SEGMENT_WIDTH, markerAnchors, trackMetrics, gridAnchors, type MarkerAnchor } from '@/lib/world/geometry';
 import { spanLimits } from '@/lib/world/camera';
 import { frameTarget, offscreenPlayerIds, type FramingInput } from '@/lib/world/framing';
 
@@ -115,5 +115,24 @@ describe('offscreenPlayerIds', () => {
     const anchors = anchorsFor([['tail', 0], ['leader', 30]], 32);
     const camera = frameTarget('pack', input(anchors, 32, { localPlayerId: 'leader' }));
     expect(offscreenPlayerIds(anchors, camera, viewport)).toContain('tail');
+  });
+});
+
+describe('startLine framing', () => {
+  it('frames the grid formation when one is present', () => {
+    const anchors = gridAnchors([{ id: 'a' }, { id: 'b' }, { id: 'c' }], trackMetrics(12));
+    const shot = frameTarget('startLine', input(anchors, 12, { localPlayerId: 'a' }));
+    const fallback = frameTarget('startLine', input([], 12, { localPlayerId: 'a' }));
+
+    // The whole formation is inside the shot...
+    const lo = Math.min(...anchors.map(a => a.x));
+    expect(shot.centerX - shot.span / 2).toBeLessThanOrEqual(lo);
+    // ...and the shot is tighter and further back than the fixed establishing one.
+    expect(shot.span).toBeLessThan(fallback.span);
+    expect(shot.centerX).toBeLessThan(fallback.centerX);
+  });
+
+  it('falls back to a fixed shot with an empty grid', () => {
+    expect(frameTarget('startLine', input([], 12)).span).toBeGreaterThan(0);
   });
 });

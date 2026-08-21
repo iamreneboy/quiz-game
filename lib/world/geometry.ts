@@ -115,3 +115,40 @@ export function markerAnchors(
     };
   });
 }
+
+/** Structural subset of `PlayerPublic` for the lobby formation. */
+export interface GridPlayer {
+  id: string;
+}
+
+/** Column spacing of the starting grid, in world units. */
+export const GRID_COLUMN_WIDTH = 90;
+
+/** Gap between the front row and the start line. */
+export const GRID_LEAD_IN = 40;
+
+/**
+ * The lobby starting grid (spec §7): a staggered two-row race formation in the
+ * run-off `TRACK_MARGIN` already reserves, so eight players read as a grid
+ * rather than a queue. Join order is grid order.
+ */
+export function gridAnchors(
+  players: readonly GridPlayer[],
+  metrics: TrackMetrics,
+): MarkerAnchor[] {
+  return players.map((player, index) => {
+    const row = index % 2;
+    const column = Math.floor(index / 2);
+    const x = Math.max(
+      metrics.minX,
+      -GRID_LEAD_IN - column * GRID_COLUMN_WIDTH,
+    );
+    return {
+      playerId: player.id,
+      x,
+      y: row > 0 ? -row * MARKER_ROW_HEIGHT : 0,
+      row,
+      segment: 0,
+    };
+  });
+}
