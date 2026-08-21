@@ -10,7 +10,7 @@ Spec §5 requires the camera's pack framing to bias toward including "both the l
 
 ## Decision
 
-`lib/world/framing.ts`'s `fit()` holds the leader near the front of the frame (`LEADER_BIAS = 0.8`, i.e. 80% of the way across) when the group fits within the span limit, but if the field overflows `MAX_SPAN_SEGMENTS`, the local player is never dropped from frame — the camera re-centers to keep the local player in view, and the leader is the one that may fall out of shot instead. A dropped leader gets a chevron/off-screen indicator in `TrackReadout` (Task 7) rather than silently vanishing. Reasoning: being unable to see *yourself* in your own game is a worse failure than not being able to see whoever's currently winning, and the accessible HTML readout already shows everyone's rank regardless of what the camera frames.
+`lib/world/framing.ts`'s `fit()` centers the frame on the group when the whole field fits within the span limit — no leader bias needed, everyone's visible. If the field overflows `MAX_SPAN_SEGMENTS`, the local player is never dropped from frame — the camera re-centers to keep the local player in view — while the leader is held near the front of the frame (`LEADER_BIAS = 0.8`, i.e. 80% of the way across) and may fall out of shot if that conflicts with keeping the local player visible. A dropped leader gets a chevron/off-screen indicator in `TrackReadout` (Task 7) rather than silently vanishing. Reasoning: being unable to see *yourself* in your own game is a worse failure than not being able to see whoever's currently winning, and the accessible HTML readout already shows everyone's rank regardless of what the camera frames.
 
 ## Consequences
 
