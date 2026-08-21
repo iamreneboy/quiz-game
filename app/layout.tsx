@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Chakra_Petch, Manrope } from 'next/font/google';
+import MotionProvider from '@/components/MotionProvider';
 import './globals.css';
 
 // Display face: angular, telemetry-flavoured — headings, numerals, buttons.
@@ -25,7 +26,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <MotionProvider>{children}</MotionProvider>
+      </body>
     </html>
   );
 }
