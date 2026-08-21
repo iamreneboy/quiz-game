@@ -45,7 +45,7 @@ Landing, host setup, and join gate share one recurring visual signature: HUD vie
 
 - `npm test` — 8 files, 55 tests (pre-existing `rank`/`serverTime`/`store` + new `tokens`(6) `celebration`(8) `deriveCues`(20) `cueBus`(5) `profile`(9))
 - `npx tsc --noEmit` — clean
-- `npm run lint` — clean except one **pre-existing, unrelated** error, see `docs/CURRENT.md` tech debt
+- `npm run lint` — clean except one **pre-existing, unrelated** error, see `docs/progress/CURRENT.md` tech debt
 - `npm run build` — succeeds (Turbopack, self-hosted fonts)
 - `npx playwright test` — 14/14, including the game-flow suite's new `[data-testid="pixi-stage"] canvas` assertion
 - Manual: Pixi canvas lifecycle (single instance under Strict Mode, resize follows `resizeTo`, resolution capped at 2×, teardown on navigation, rebuild on profile change), cue stream verified against a real two-player game, reduced-motion collapse verified via screenshot timing contrast

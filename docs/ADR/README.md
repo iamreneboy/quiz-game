@@ -2,7 +2,7 @@
 
 One file per significant, hard-to-reverse, or non-obvious decision — the kind a future session needs the *why* for, not just the *what* (the code already shows the what).
 
-**When to add one:** a choice with real trade-offs, a constraint later phases must respect, or a deviation from a spec/plan that isn't self-explanatory from the diff. Don't write one for routine implementation details — those belong in the relevant `docs/phases/PN-*.md` notes instead.
+**When to add one:** a choice with real trade-offs, a constraint later phases must respect, or a deviation from a spec/plan that isn't self-explanatory from the diff. Don't write one for routine implementation details — those belong in the relevant `docs/progress/PN-*.md` notes instead.
 
 **Format:** `NNNN-kebab-case-title.md`, sequential, never reused or renumbered even if superseded — a superseding decision gets a new number and links back.
 

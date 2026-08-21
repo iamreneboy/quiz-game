@@ -1,12 +1,12 @@
 # Current work — Circuit Break
 
-> Live tracker only. Read this first; don't read `docs/phases/*` or old plans unless this file points you there. Move a phase's entry out to `docs/phases/PN-*.md` the day its last task lands — this file should never grow past "what's active right now."
+> Live tracker only. Read this first; don't read other files in `docs/progress/` or old plans unless this file points you there. Move a phase's entry out to `docs/progress/PN-*.md` the day its last task lands — this file should never grow past "what's active right now."
 
 ## Current phase
 
 None in progress.
 
-- **Last completed:** P0 — Foundation & design system → [`docs/phases/P0-foundation-design-system.md`](phases/P0-foundation-design-system.md)
+- **Last completed:** P0 — Foundation & design system → [`docs/progress/P0-foundation-design-system.md`](P0-foundation-design-system.md)
 - **Next up:** P1 — Track world (scope only, not yet spec'd or planned — see `docs/superpowers/specs/2026-08-21-m2-the-show-roadmap.md` §P1)
 
 ## Active task
