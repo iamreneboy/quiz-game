@@ -22,7 +22,7 @@
 - Design tokens: the `@theme` block in `app/globals.css` is the **source of truth**; `lib/presentation/tokens.ts` is a hand-mirror kept honest by `tests/tokens.test.ts`. No codegen.
 - Motion curve tokens, exact values (used verbatim in CSS and TS):
   `--ease-snap: cubic-bezier(0.2, 0, 0, 1)` · `--ease-settle: cubic-bezier(0.34, 1.4, 0.5, 1)` · `--ease-drift: cubic-bezier(0.45, 0, 0.55, 1)`
-- Duration tokens (ms): `cut 120`, `beat 260`, `settle 460`, `drift 1400`. Tailwind v4 has **no `--duration-*` theme namespace** — these live in a plain `:root` block and are consumed as `duration-[var(--dur-beat)]` or from `tokens.ts`.
+- Duration tokens (ms): `cut 120`, `beat 260`, `settle 460`, `drift 1400`. Tailwind v4 has **no `--duration-*` theme namespace** — these live in a plain `:root` block and are consumed as `duration-(--dur-beat)` or from `tokens.ts`.
 - `localStorage` keys keep the existing `cb:` prefix. Profile override key: `cb:settings:profile`.
 - **Prerequisites for e2e:** Docker Desktop running and local Supabase up (`npx supabase start`) — `.env.local` points at `http://127.0.0.1:54321`. The dev server may already be running; `playwright.config.ts` reuses it outside CI.
 - Out of scope (do not build): any visible Pixi scene content, avatars, round choreography, audio playback, ceremony, stage view, runtime FPS watchdog, token codegen. Lobby / question loop / track / results keep their placeholder styling.
@@ -265,7 +265,7 @@ Replace the entire contents of `app/globals.css`:
 }
 
 /* Durations. Tailwind v4 has no --duration-* theme namespace, so these are
-   plain custom properties: use them as duration-[var(--dur-beat)] in classes
+   plain custom properties: use them as duration-(--dur-beat) in classes
    or via DURATION in lib/presentation/tokens.ts. */
 :root {
   --dur-cut: 120ms;
@@ -2172,7 +2172,7 @@ type Size = 'md' | 'lg';
 
 const base =
   'inline-flex items-center justify-center gap-2 rounded-control font-display font-semibold ' +
-  'uppercase tracking-[0.12em] ease-snap duration-[var(--dur-cut)] ' +
+  'uppercase tracking-[0.12em] ease-snap duration-(--dur-cut) ' +
   'transition-[background-color,border-color,color,box-shadow,transform] ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan ' +
   'disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none ' +
@@ -2223,7 +2223,7 @@ export default function Input({ className = '', ...rest }: ComponentProps<'input
       {...rest}
       className={
         'w-full rounded-control border border-haze/80 bg-abyss/70 px-4 py-3 text-ink ' +
-        'placeholder:text-ink-mute ease-snap duration-[var(--dur-cut)] ' +
+        'placeholder:text-ink-mute ease-snap duration-(--dur-cut) ' +
         'transition-[border-color,box-shadow] ' +
         'focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/35 ' +
         className
@@ -2341,7 +2341,7 @@ export default function SettingsControl() {
         onClick={() => setOpen(o => !o)}
         className={
           'grid h-10 w-10 place-items-center rounded-full border border-haze/80 bg-night/70 ' +
-          'text-ink-dim backdrop-blur-md ease-snap duration-[var(--dur-cut)] ' +
+          'text-ink-dim backdrop-blur-md ease-snap duration-(--dur-cut) ' +
           'transition-[color,border-color] hover:border-neon-cyan hover:text-neon-cyan ' +
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan'
         }
@@ -2803,7 +2803,7 @@ export default function HostSetup() {
                   aria-pressed={on}
                   onClick={() => toggleCat(c.key)}
                   className={
-                    'rounded-full border px-4 py-2 text-sm font-semibold ease-snap duration-[var(--dur-cut)] ' +
+                    'rounded-full border px-4 py-2 text-sm font-semibold ease-snap duration-(--dur-cut) ' +
                     'transition-[background-color,border-color,color] ' +
                     (on
                       ? 'border-neon-cyan bg-neon-cyan/10 text-neon-cyan'
@@ -2888,7 +2888,7 @@ export default function HostSetup() {
                 title={a.label}
                 aria-pressed={avatar === a.key}
                 className={
-                  'h-12 w-12 rounded-control text-2xl ease-snap duration-[var(--dur-cut)] transition-[background-color,box-shadow] ' +
+                  'h-12 w-12 rounded-control text-2xl ease-snap duration-(--dur-cut) transition-[background-color,box-shadow] ' +
                   (avatar === a.key
                     ? 'bg-neon-cyan/15 ring-2 ring-neon-cyan'
                     : 'bg-abyss/70 hover:bg-night')
@@ -3017,7 +3017,7 @@ export default function JoinGate({ code, onJoined }: { code: string; onJoined: (
                 title={a.label}
                 aria-pressed={avatar === a.key}
                 className={
-                  'h-12 w-12 rounded-control text-2xl ease-snap duration-[var(--dur-cut)] transition-[background-color,box-shadow] ' +
+                  'h-12 w-12 rounded-control text-2xl ease-snap duration-(--dur-cut) transition-[background-color,box-shadow] ' +
                   (avatar === a.key
                     ? 'bg-neon-cyan/15 ring-2 ring-neon-cyan'
                     : 'bg-abyss/70 hover:bg-night')
