@@ -109,6 +109,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
     const blended = zoneWeights(shown.centerX, metrics);
 
+    scene.setPlayers(useGameStore.getState().players);
     scene.applyFrame({
       camera: shown,
       viewport,

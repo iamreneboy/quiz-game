@@ -13,6 +13,7 @@ import { layersForProfile, type WorldDefinition } from '../definition';
 import type { WorldFrameState } from '../frame';
 import type { ZoneId } from '../zones';
 import { Grade } from './Grade';
+import { Markers, type MarkerPlayer } from './Markers';
 import { ParallaxLayer } from './ParallaxLayer';
 import { TrackSurface } from './TrackSurface';
 
@@ -21,6 +22,8 @@ export class WorldScene {
   private readonly backdrop = new Container();
   private readonly zoneLayers = new Map<ZoneId, ParallaxLayer[]>();
   private readonly grade: Grade;
+  private readonly markers: Markers;
+  private players: readonly MarkerPlayer[] = [];
   private track: TrackSurface | null = null;
   private trackSegments = -1;
 
@@ -38,8 +41,15 @@ export class WorldScene {
       for (const layer of layers) this.backdrop.addChild(layer.sprite);
     }
 
+    this.markers = new Markers(profile);
+    this.root.addChild(this.markers.container);
+
     this.root.addChild(this.grade.graphic);
     app.stage.addChild(this.root);
+  }
+
+  setPlayers(players: readonly MarkerPlayer[]): void {
+    this.players = players;
   }
 
   applyFrame(frame: WorldFrameState): void {
@@ -59,6 +69,9 @@ export class WorldScene {
     this.track!.update(frame.camera, frame.viewport);
 
     this.grade.update(frame.grade, frame.viewport);
+
+    this.markers.sync(frame.anchors, this.players, frame.localPlayerId, frame.elapsedMs);
+    this.markers.update(frame.camera, frame.viewport, frame.elapsedMs);
   }
 
   destroy(): void {
@@ -66,6 +79,7 @@ export class WorldScene {
     this.zoneLayers.clear();
     this.track?.destroy();
     this.grade.destroy();
+    this.markers.destroy();
     this.app.stage.removeChild(this.root);
     this.root.destroy({ children: true });
   }

@@ -8,7 +8,7 @@ import TimerRing from './TimerRing';
 import QuestionCard from './QuestionCard';
 import AnswerButtons from './AnswerButtons';
 import RevealPanel from './RevealPanel';
-import Track from './Track';
+import TrackReadout from './TrackReadout';
 
 export default function GameView({ code }: { code: string }) {
   const room = useGameStore(s => s.room);
@@ -33,7 +33,7 @@ export default function GameView({ code }: { code: string }) {
   }
 
   if (room.phase === 'countdown') return <Countdown endsAt={room.ends_at} />;
-  if (room.phase === 'track') return <Track code={code} />;
+  if (room.phase === 'track') return <TrackReadout code={code} />;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-6">
