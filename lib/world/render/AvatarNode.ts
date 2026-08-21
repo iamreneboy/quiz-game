@@ -70,6 +70,14 @@ export class AvatarNode {
     // The accent is a RIM, never a body tint (spec decision 4).
     this.rim.roundRect(-38, -AVATAR_HEIGHT, 76, AVATAR_HEIGHT, 14)
       .stroke({ color: accent, width: 3, alpha: 0.85 });
+
+    // The YOU ring (spec section 5): silver, outside the accent rim, so "which
+    // one is me" survives a crowded segment. P1's Markers drew this too.
+    if (isLocal) {
+      this.rim.roundRect(-45, -AVATAR_HEIGHT - 7, 90, AVATAR_HEIGHT + 14, 20)
+        .stroke({ color: COLOR.silver, width: 3, alpha: 0.9 });
+    }
+
     this.bodyHolder.addChild(this.rim);
     this.container.addChild(this.bodyHolder);
 
