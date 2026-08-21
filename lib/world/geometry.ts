@@ -121,7 +121,7 @@ export interface GridPlayer {
   id: string;
 }
 
-/** Column spacing of the starting grid, in world units. */
+/** Maximum column spacing of the starting grid, in world units; compresses to fit the run-off. */
 export const GRID_COLUMN_WIDTH = 90;
 
 /** Gap between the front row and the start line. */
@@ -130,22 +130,26 @@ export const GRID_LEAD_IN = 40;
 /**
  * The lobby starting grid (spec §7): a staggered two-row race formation in the
  * run-off `TRACK_MARGIN` already reserves, so eight players read as a grid
- * rather than a queue. Join order is grid order.
+ * rather than a queue. The run-off is fixed, so column spacing compresses to
+ * fit it rather than growing past it. Join order is grid order.
  */
 export function gridAnchors(
   players: readonly GridPlayer[],
   metrics: TrackMetrics,
 ): MarkerAnchor[] {
+  // The run-off is fixed, so the formation compresses to fit it rather than
+  // clamping per column — a clamp piles every column past the margin onto the
+  // same x, and the field can reach 20 (PRD section 13).
+  const columns = Math.ceil(players.length / 2);
+  const runOff = -GRID_LEAD_IN - metrics.minX;
+  const spacing = Math.min(GRID_COLUMN_WIDTH, runOff / Math.max(1, columns - 1));
+
   return players.map((player, index) => {
     const row = index % 2;
     const column = Math.floor(index / 2);
-    const x = Math.max(
-      metrics.minX,
-      -GRID_LEAD_IN - column * GRID_COLUMN_WIDTH,
-    );
     return {
       playerId: player.id,
-      x,
+      x: Math.max(metrics.minX, -GRID_LEAD_IN - column * spacing),
       y: row > 0 ? -row * MARKER_ROW_HEIGHT : 0,
       row,
       segment: 0,

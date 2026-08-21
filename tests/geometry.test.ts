@@ -147,4 +147,15 @@ describe('gridAnchors', () => {
     expect(only.row).toBe(0);
     expect(only.y).toBe(0);
   });
+
+  it('compresses the formation to fit the run-off for a full field', () => {
+    const anchors = gridAnchors(players(20), trackMetrics(12));
+    for (const a of anchors) {
+      expect(a.x).toBeLessThan(0);
+      expect(a.x).toBeGreaterThanOrEqual(-TRACK_MARGIN);
+    }
+    // Every column gets its own x — no two pairs stack on the same spot.
+    const columnXs = anchors.filter(a => a.row === 0).map(a => a.x);
+    expect(new Set(columnXs).size).toBe(columnXs.length);
+  });
 });
