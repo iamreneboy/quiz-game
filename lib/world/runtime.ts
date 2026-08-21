@@ -16,6 +16,7 @@ import {
   driftOffset,
   isMoveComplete,
   sampleMove,
+  shouldRetarget,
   type CameraMove,
 } from './camera';
 import {
@@ -41,9 +42,6 @@ const SUBSCRIBED: CueType[] = [
   'lead-changed',
   'final-question',
 ];
-
-/** World units of target change below which a new move is not worth starting. */
-const RETARGET_EPSILON = 8;
 
 export interface WorldRuntimeOptions {
   app: Application<Renderer>;
@@ -92,11 +90,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
     if (!camera) {
       camera = target;
-    } else if (
-      !move ||
-      Math.abs(move.to.centerX - target.centerX) > RETARGET_EPSILON ||
-      Math.abs(move.to.span - target.span) > RETARGET_EPSILON
-    ) {
+    } else if (shouldRetarget(move, target)) {
       move = beginMove(camera, target, intent.style, profile, now);
     }
 

@@ -4,12 +4,14 @@ import { SEGMENT_WIDTH, trackMetrics } from '@/lib/world/geometry';
 import {
   MAX_SPAN_SEGMENTS,
   MIN_SPAN_SEGMENTS,
+  RETARGET_EPSILON,
   beginMove,
   clampCamera,
   cubicBezierEase,
   driftOffset,
   isMoveComplete,
   sampleMove,
+  shouldRetarget,
   spanLimits,
 } from '@/lib/world/camera';
 
@@ -119,6 +121,32 @@ describe('moves', () => {
     const move = beginMove(from, to, 'cut', 'high', 1000);
     expect(isMoveComplete(move, 1000 + DURATION.cut - 1)).toBe(false);
     expect(isMoveComplete(move, 1000 + DURATION.cut)).toBe(true);
+  });
+});
+
+describe('shouldRetarget', () => {
+  const metrics = trackMetrics(12);
+  const from = clampCamera({ centerX: 500, span: 4 * SEGMENT_WIDTH }, metrics);
+  const to = clampCamera({ centerX: 2500, span: 6 * SEGMENT_WIDTH }, metrics);
+  const move = beginMove(from, to, 'drift', 'high', 1000);
+
+  it('retargets when no move is in flight', () => {
+    expect(shouldRetarget(null, to)).toBe(true);
+  });
+
+  it('does not retarget when the target is unchanged within the epsilon', () => {
+    const target = { centerX: to.centerX + RETARGET_EPSILON / 2, span: to.span };
+    expect(shouldRetarget(move, target)).toBe(false);
+  });
+
+  it('retargets when centerX drifts past the epsilon', () => {
+    const target = { centerX: to.centerX + RETARGET_EPSILON + 1, span: to.span };
+    expect(shouldRetarget(move, target)).toBe(true);
+  });
+
+  it('retargets when span drifts past the epsilon', () => {
+    const target = { centerX: to.centerX, span: to.span + RETARGET_EPSILON + 1 };
+    expect(shouldRetarget(move, target)).toBe(true);
   });
 });
 

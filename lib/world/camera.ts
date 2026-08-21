@@ -14,6 +14,9 @@ export const MIN_SPAN_SEGMENTS = 2.5;
 /** Legibility cap on the widest shot (spec §5, accepted edge). */
 export const MAX_SPAN_SEGMENTS = 14;
 
+/** World units of target change below which a new move is not worth starting. */
+export const RETARGET_EPSILON = 8;
+
 const DRIFT_AMPLITUDE = 0.015;
 const DRIFT_PERIOD_MS = 11_000;
 
@@ -71,6 +74,23 @@ export function cubicBezierEase(
   }
 
   return curve(y1, y2, t);
+}
+
+/**
+ * Debounce on when a new move is worth starting: no move in flight always
+ * retargets; otherwise only a target drift past the epsilon (in either
+ * centre or span) is worth interrupting the current move for.
+ */
+export function shouldRetarget(
+  move: CameraMove | null,
+  target: CameraState,
+  epsilon: number = RETARGET_EPSILON,
+): boolean {
+  if (!move) return true;
+  return (
+    Math.abs(move.to.centerX - target.centerX) > epsilon ||
+    Math.abs(move.to.span - target.span) > epsilon
+  );
 }
 
 export function beginMove(
