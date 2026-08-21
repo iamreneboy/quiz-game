@@ -59,12 +59,12 @@ export class WorldScene {
     }
 
     // The track is world content, so it must sit above the backdrop but below
-    // the grade; rebuild only if the room's question count changed.
+    // the markers and the grade; rebuild only if the room's question count changed.
     if (this.trackSegments !== frame.metrics.segments) {
       this.track?.destroy();
       this.track = new TrackSurface(this.definition, frame.metrics);
       this.trackSegments = frame.metrics.segments;
-      this.root.addChildAt(this.track.container, this.root.getChildIndex(this.grade.graphic));
+      this.root.addChildAt(this.track.container, this.root.getChildIndex(this.markers.container));
     }
     this.track!.update(frame.camera, frame.viewport);
 

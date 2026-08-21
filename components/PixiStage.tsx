@@ -13,8 +13,8 @@ const STRIP_PHASES = new Set(['read', 'answer', 'reveal']);
  * Canvas lifecycle and layout. Pixi owns the world; HTML owns everything
  * readable and interactive (PRD §9), so accessibility never depends on canvas.
  *
- * P1 renders the world here with a camera framed from current standings.
- * Task 6 replaces the static framing below with the cue-driven runtime.
+ * The camera is driven by lib/world/runtime.ts's cue-driven runtime (see
+ * createWorldRuntime below).
  */
 export default function PixiStage({ code }: { code: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -62,6 +62,7 @@ export default function PixiStage({ code }: { code: string }) {
         resizeObserver = observer;
 
         const { createWorldRuntime } = await import('@/lib/world/runtime');
+        if (cancelled) return;
         runtime = createWorldRuntime({
           app: instance,
           scene,
