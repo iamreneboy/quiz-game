@@ -11,6 +11,7 @@ import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
 import GameView from '@/components/GameView';
 import ResultsView from '@/components/ResultsView';
+import SettingsControl from '@/components/SettingsControl';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -37,13 +38,25 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     }
   }
 
-  if (hasSession === null) return null;
-  if (!hasSession) return <JoinGate code={code} onJoined={handleJoined} />;
-  if (!room) return <main className="grid min-h-screen place-items-center text-slate-400">Connecting…</main>;
+  let content: React.ReactNode = null;
+  if (hasSession === null) {
+    content = null;
+  } else if (!hasSession) {
+    content = <JoinGate code={code} onJoined={handleJoined} />;
+  } else if (!room) {
+    content = <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>;
+  } else if (room.status === 'lobby') {
+    content = <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
+  } else if (room.status === 'finished') {
+    content = <ResultsView code={code} />;
+  } else {
+    content = <GameView code={code} />;
+  }
 
-  if (room.status === 'lobby')
-    return <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
-  if (room.status === 'finished')
-    return <ResultsView code={code} />;
-  return <GameView code={code} />;
+  return (
+    <div className="relative min-h-screen">
+      <SettingsControl />
+      <div className="relative z-10">{content}</div>
+    </div>
+  );
 }
