@@ -56,7 +56,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   return (
     <div className="relative min-h-screen">
-      {room && <PixiStage />}
+      {room && room.status !== 'finished' && <PixiStage code={code} />}
       <SettingsControl />
       <div className="relative z-10">{content}</div>
     </div>
