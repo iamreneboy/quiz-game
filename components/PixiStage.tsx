@@ -1,13 +1,9 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { useSettings } from '@/lib/useSettings';
-import { useGameStore } from '@/lib/store';
+import { loadSession } from '@/lib/session';
 import { CANVAS } from '@/lib/presentation/tokens';
 import { NIGHT_RACE } from '@/lib/world/content/nightRace';
-import { markerAnchors, trackMetrics } from '@/lib/world/geometry';
-import { clampCamera } from '@/lib/world/camera';
-import { frameTarget } from '@/lib/world/framing';
-import { gradeState, zoneWeights } from '@/lib/world/zones';
 
 /**
  * Canvas lifecycle and layout. Pixi owns the world; HTML owns everything
@@ -28,6 +24,7 @@ export default function PixiStage({ code }: { code: string }) {
     let cancelled = false;
     let app: import('pixi.js').Application | null = null;
     let scene: import('@/lib/world/render/WorldScene').WorldScene | null = null;
+    let runtime: { destroy(): void } | null = null;
 
     void (async () => {
       try {
@@ -53,30 +50,12 @@ export default function PixiStage({ code }: { code: string }) {
         scene = new WorldScene(instance, NIGHT_RACE, profile);
         host.appendChild(instance.canvas);
 
-        const startedAt = performance.now();
-        instance.ticker.add(() => {
-          if (!scene) return;
-          const { room, standings } = useGameStore.getState();
-          const metrics = trackMetrics(room?.total_rounds ?? 12);
-          const anchors = markerAnchors(standings ?? [], metrics);
-          const viewport = { width: instance.screen.width, height: instance.screen.height };
-          const camera = clampCamera(
-            frameTarget(anchors.length > 0 ? 'pack' : 'establishing', {
-              anchors, metrics, viewport, localPlayerId: null, emphasisIds: [],
-            }),
-            metrics,
-          );
-          const progress = room && room.total_rounds > 0 ? room.round / room.total_rounds : 0;
-          scene.applyFrame({
-            camera,
-            viewport,
-            metrics,
-            zones: zoneWeights(camera.centerX, metrics),
-            grade: gradeState(progress, 0),
-            anchors,
-            localPlayerId: null,
-            elapsedMs: performance.now() - startedAt,
-          });
+        const { createWorldRuntime } = await import('@/lib/world/runtime');
+        runtime = createWorldRuntime({
+          app: instance,
+          scene,
+          profile,
+          localPlayerId: loadSession(code)?.playerId ?? null,
         });
       } catch (error) {
         // A device with no usable WebGL context still gets the full HTML game.
@@ -86,6 +65,8 @@ export default function PixiStage({ code }: { code: string }) {
 
     return () => {
       cancelled = true;
+      runtime?.destroy();
+      runtime = null;
       scene?.destroy();
       scene = null;
       if (app) {
