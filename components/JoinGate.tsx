@@ -1,8 +1,26 @@
 'use client';
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabaseClient';
 import { saveSession } from '@/lib/session';
 import { AVATARS, COLORS } from '@/lib/avatars';
+import { DURATION, EASE } from '@/lib/presentation/tokens';
+import Panel from '@/components/ui/Panel';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+
+/** HUD viewfinder corners — echoes the landing page's signature on the hero panel. */
+function HudCorners() {
+  const arm = 'pointer-events-none absolute h-4 w-4 border-neon-cyan/70';
+  return (
+    <>
+      <span aria-hidden className={`${arm} -left-1.5 -top-1.5 border-l-2 border-t-2`} />
+      <span aria-hidden className={`${arm} -right-1.5 -top-1.5 border-r-2 border-t-2`} />
+      <span aria-hidden className={`${arm} -bottom-1.5 -left-1.5 border-b-2 border-l-2`} />
+      <span aria-hidden className={`${arm} -bottom-1.5 -right-1.5 border-b-2 border-r-2`} />
+    </>
+  );
+}
 
 export default function JoinGate({ code, onJoined }: { code: string; onJoined: () => void }) {
   const [nickname, setNickname] = useState('');
@@ -22,38 +40,83 @@ export default function JoinGate({ code, onJoined }: { code: string; onJoined: (
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 p-6">
-      <h1 className="text-2xl font-black">
-        Joining room <span className="text-amber-400 tracking-widest">{code}</span>
-      </h1>
-      <input
-        value={nickname} onChange={e => setNickname(e.target.value)} maxLength={20}
-        placeholder="Your nickname"
-        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
-      />
-      <div className="flex flex-wrap gap-2">
-        {AVATARS.map(a => (
-          <button key={a.key} onClick={() => setAvatar(a.key)} title={a.label}
-            className={`h-12 w-12 rounded-xl text-2xl ${avatar === a.key ? 'bg-amber-400/20 ring-2 ring-amber-400' : 'bg-slate-900'}`}>
-            {a.emoji}
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        {COLORS.map(c => (
-          <button key={c} onClick={() => setColor(c)}
-            className={`h-8 w-8 rounded-full ${color === c ? 'ring-2 ring-white' : ''}`}
-            style={{ backgroundColor: c }} />
-        ))}
-      </div>
-      {error && <p className="text-rose-400">{error}</p>}
-      <button
-        onClick={join}
-        disabled={busy || nickname.trim().length < 1}
-        className="w-full rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 disabled:opacity-40"
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-6 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: DURATION.settle / 1000, ease: EASE.settle }}
       >
-        {busy ? 'Joining…' : 'Join game'}
-      </button>
+        <p className="font-display text-[0.6875rem] font-semibold uppercase tracking-[0.42em] text-neon-cyan">
+          Starting grid
+        </p>
+        <h1 className="mt-3 font-display text-hero font-bold uppercase text-ink">
+          Joining room{' '}
+          <span className="text-neon-magenta tracking-[0.18em]">{code}</span>
+        </h1>
+      </motion.div>
+
+      <motion.div
+        className="relative"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: DURATION.settle / 1000, ease: EASE.settle, delay: 0.08 }}
+      >
+        <Panel className="relative space-y-5 p-6">
+          <HudCorners />
+          <Input
+            value={nickname}
+            onChange={e => setNickname(e.target.value)}
+            maxLength={20}
+            placeholder="Your nickname"
+            aria-label="Your nickname"
+          />
+
+          <div className="flex flex-wrap gap-2">
+            {AVATARS.map(a => (
+              <button
+                key={a.key}
+                type="button"
+                onClick={() => setAvatar(a.key)}
+                title={a.label}
+                aria-pressed={avatar === a.key}
+                className={
+                  'h-12 w-12 rounded-control text-2xl ease-snap duration-[var(--dur-cut)] transition-[background-color,box-shadow] ' +
+                  (avatar === a.key
+                    ? 'bg-neon-cyan/15 ring-2 ring-neon-cyan'
+                    : 'bg-abyss/70 hover:bg-night')
+                }
+              >
+                {a.emoji}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            {COLORS.map((c, i) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={`Racer colour ${i + 1}`}
+                aria-pressed={color === c}
+                className={`h-8 w-8 rounded-full ${color === c ? 'ring-2 ring-ink' : ''}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+
+          {error && <p className="text-wrong">{error}</p>}
+
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={join}
+            disabled={busy || nickname.trim().length < 1}
+          >
+            {busy ? 'Joining…' : 'Join game'}
+          </Button>
+        </Panel>
+      </motion.div>
     </main>
   );
 }
