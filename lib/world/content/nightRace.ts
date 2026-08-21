@@ -36,14 +36,16 @@ function mix(a: number, b: number, t: number): number {
 }
 
 /** Blocky skyline used by all three zones with different palettes and densities. */
-function skyline(seed: number, fill: number, density: number, maxHeight: number) {
+function skyline(seed: number, fill: number, density: number, maxHeight: number, windowsOnly = false) {
   return (g: Graphics, ctx: { width: number; height: number }): void => {
     const random = seeded(seed);
     let x = 0;
     while (x < ctx.width) {
       const w = 40 + random() * 70;
       const h = ctx.height * (0.35 + random() * maxHeight);
-      g.rect(x, ctx.height - h, w, h).fill({ color: fill });
+      if (!windowsOnly) {
+        g.rect(x, ctx.height - h, w, h).fill({ color: fill });
+      }
       if (random() < density) {
         // Lit windows, a fixed grid inside each block.
         for (let wy = ctx.height - h + 14; wy < ctx.height - 16; wy += 22) {
@@ -104,7 +106,7 @@ const officePark: ZoneSpec = {
       height: 380,
       anchorY: 0.9,
       layerTier: 'rich',
-      draw: skyline(7013, COLOR.warning, 1, 0.3),
+      draw: skyline(7013, COLOR.warning, 1, 0.3, true),
       ambient: { kind: 'flicker', periodMs: 5200, amount: 0.35 },
     },
     {
