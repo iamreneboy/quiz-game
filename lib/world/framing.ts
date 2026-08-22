@@ -85,7 +85,7 @@ function fit(group: readonly MarkerAnchor[], padding: number, input: FramingInpu
 
   // Overflow: hold the leader near the front of the frame, then pull back if
   // that would drop the local player. The local player is never dropped; the
-  // leader may be, and gets a chevron in the readout instead.
+  // leader may be, and is flagged off-screen in the readout instead.
   const span = limits.max;
   let centerX = hi - span * (LEADER_BIAS - 0.5);
 
@@ -100,7 +100,11 @@ function fit(group: readonly MarkerAnchor[], padding: number, input: FramingInpu
 }
 
 /**
- * Players the camera can't include — the readout renders these as chevrons.
+ * Players the camera can't include — the readout flags these as off screen.
+ *
+ * Membership only, no direction: a player can fall out on either axis (see
+ * below), so `TrackReadout` renders a non-directional marker rather than
+ * asserting a side this list does not carry.
  *
  * Both axes, deliberately. The camera is fitted on x alone, so for a long time
  * this only tested x — and a field bunched on one segment stacks UPWARD, which
@@ -113,7 +117,7 @@ function fit(group: readonly MarkerAnchor[], padding: number, input: FramingInpu
  * `AvatarNode` also draws from. A player counts as visible when any part of
  * that extent is on the canvas: the world band shrinks to 28vh during a
  * question (components/PixiStage.tsx), where a clipped head is by design and
- * chevroning the entire field would be noise.
+ * flagging the entire field would be noise.
  */
 export function offscreenPlayerIds(
   anchors: readonly MarkerAnchor[],

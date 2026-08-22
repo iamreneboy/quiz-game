@@ -10,6 +10,15 @@ import { NIGHT_RACE } from '@/lib/world/content/nightRace';
 const STRIP_PHASES = new Set(['read', 'answer', 'reveal']);
 
 /**
+ * How long a MISSING session is trusted before storage is consulted again.
+ *
+ * Half a second is well under human reaction time between finishing a join and
+ * looking for the YOU ring, and it turns a spectator's per-frame localStorage
+ * read into two reads a second.
+ */
+const SESSION_RECHECK_MS = 500;
+
+/**
  * Canvas lifecycle and layout. Pixi owns the world; HTML owns everything
  * readable and interactive (PRD §9), so accessibility never depends on canvas.
  *
@@ -34,12 +43,28 @@ export default function PixiStage({ code }: { code: string }) {
     let resizeObserver: ResizeObserver | null = null;
 
     // The session is written when the visitor joins, which can be AFTER this
-    // effect has started resolving its dynamic imports. Resolve it lazily and
-    // cache the first non-null answer, so the runtime picks it up whenever it
-    // lands instead of depending on which finished first.
+    // effect has started resolving its dynamic imports. Resolve it lazily, so
+    // the runtime picks the session up whenever it lands instead of depending
+    // on which finished first (that race is what this indirection exists for).
+    //
+    // A found answer is cached forever — one closure read per frame. A MISS is
+    // throttled, not cached: the runtime calls this every tick, and a visitor
+    // watching without joining would otherwise pay a synchronous
+    // localStorage.getItem plus a JSON.parse at 60 Hz for the whole session.
+    // Throttling rather than caching the miss is what keeps the mid-session
+    // joiner working: their next tick after SESSION_RECHECK_MS re-reads
+    // storage, finds the session, and `Avatars.apply` re-marks the rig — so
+    // the YOU ring appears within half a second of joining, with no reload.
     let localPlayerId: string | null = null;
-    const readLocalPlayerId = () =>
-      (localPlayerId ??= loadSession(code)?.playerId ?? null);
+    let nextSessionRead = 0;
+    const readLocalPlayerId = () => {
+      if (localPlayerId !== null) return localPlayerId;
+      const now = performance.now();
+      if (now < nextSessionRead) return null;
+      nextSessionRead = now + SESSION_RECHECK_MS;
+      localPlayerId = loadSession(code)?.playerId ?? null;
+      return localPlayerId;
+    };
 
     void (async () => {
       try {

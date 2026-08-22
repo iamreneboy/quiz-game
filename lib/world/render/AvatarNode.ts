@@ -61,7 +61,18 @@ export class AvatarNode {
   private readonly label: Text;
   private readonly underline = new Graphics();
   private readonly accent: number;
-  private isLocal = false;
+  /**
+   * `null` until the first `setLocal` call, so the constructor's call always
+   * draws. A `false` initialiser would make it a no-op for every non-local rig
+   * (class fields initialise BEFORE the constructor body), and the accent
+   * underline below — one of spec decision 4's four accent surfaces — would
+   * never be drawn for anyone but the local player. The sentinel is preferred
+   * over an unconditional draw in the constructor because it keeps every draw
+   * on one path and leaves `setLocal`'s idempotence guard doing its real job:
+   * `Avatars.apply` re-marks each node every frame, and a repeat of the same
+   * value still early-returns.
+   */
+  private isLocal: boolean | null = null;
   private idlePhase = Math.random() * 10_000;
 
   constructor(

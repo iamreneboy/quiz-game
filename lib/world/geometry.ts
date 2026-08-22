@@ -50,15 +50,13 @@ export const MARKER_ROW_HEIGHT = AVATAR_HEIGHT * 0.5;
  * reason a widened camera is the wrong answer: eight rows at full pitch is
  * 448 units against a frame showing 800 units of WIDTH, so framing the stack
  * makes every rig unreadable. Anything a narrower frame still cannot hold is
- * named by `offscreenPlayerIds` and gets a chevron in the readout.
+ * named by `offscreenPlayerIds` and flagged in the readout.
+ *
+ * Worth knowing: at MARKER_ROW_HEIGHT the rise only fits three rows at full
+ * pitch, so a four-way tie is already compressing. That is intended — the
+ * pitch is a soft preference, the rise is the hard cap.
  */
 export const MAX_STACK_RISE = AVATAR_HEIGHT * 1.4;
-
-/**
- * Rows a stack fits before its pitch starts compressing. Informational — the
- * cap that actually binds is MAX_STACK_RISE.
- */
-export const UNCOMPRESSED_STACK_ROWS = Math.floor(MAX_STACK_RISE / MARKER_ROW_HEIGHT) + 1;
 
 /** Topmost point of an avatar rig in world units, relative to its anchor. */
 export const RIG_TOP = AVATAR_RIG_TOP;
