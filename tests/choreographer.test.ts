@@ -12,6 +12,7 @@ import {
   beginSequence,
   bufferCue,
   completeSequence,
+  holdAnchors,
   initialChoreographerState,
   isSequenceRunning,
   notePlayerJoined,
@@ -198,5 +199,65 @@ describe('the lobby ready pulse', () => {
       state, anchorsAfter, flairFor(after, anchorsAfter), full, 10, 'reduced',
     );
     expect(states.find(v => v.playerId === 'a')!.vfx.some(v => v.kind === 'pulse')).toBe(false);
+  });
+});
+
+// Regression cover for the seam the runtime actually drives (ADR-0003). The
+// store advances `phase` and `standings` in one set and the cue bridge runs
+// after it, so by the time a drama cue is buffered the live anchors are already
+// the DESTINATIONS. Without an earlier hold every track is zero-length and the
+// TRACK beat animates nothing.
+describe('holding the pre-reveal world', () => {
+  it('moves the avatar from the held origin to the live destination', () => {
+    // The runtime holds on `phase-answer`, where standings are still last round's.
+    let state = holdAnchors(initialChoreographerState, anchorsBefore);
+    // The reveal has landed: the drama cue arrives with the destinations.
+    state = bufferCue(state, advanced, anchorsAfter);
+    state = beginSequence(state, anchorsAfter, 1000);
+
+    const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
+    expect(track.from.x).toBe(anchorsBefore[0].x);
+    expect(track.to.x).toBe(anchorsAfter[0].x);
+    expect(track.from.x).not.toBe(track.to.x);
+  });
+
+  it('draws the avatar at the held origin while the reveal is on screen', () => {
+    let state = holdAnchors(initialChoreographerState, anchorsBefore);
+    state = bufferCue(state, advanced, anchorsAfter);
+    expect(frame(state, anchorsAfter, 0).find(v => v.playerId === 'a')!.x)
+      .toBe(anchorsBefore[0].x);
+  });
+
+  it('lets a later hold on the same beat overwrite an earlier one', () => {
+    // countdown -> read -> answer: only the last settled beat should survive.
+    let state = holdAnchors(initialChoreographerState, anchorsAfter);
+    state = holdAnchors(state, anchorsBefore);
+    state = bufferCue(state, advanced, anchorsAfter);
+    state = beginSequence(state, anchorsAfter, 0);
+
+    expect(state.sequence!.tracks.find(t => t.playerId === 'a')!.from.x)
+      .toBe(anchorsBefore[0].x);
+  });
+
+  it('degrades to a still avatar when no hold was taken (mid-game reload)', () => {
+    // Landing directly on `reveal` we do not know the pre-reveal world, so
+    // bufferCue's `heldAnchors ?? liveAnchors` fallback must stand: no movement,
+    // no throw.
+    let state = bufferCue(initialChoreographerState, advanced, anchorsAfter);
+    state = beginSequence(state, anchorsAfter, 0);
+
+    const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
+    expect(track.from.x).toBe(track.to.x);
+    expect(track.from.x).toBe(anchorsAfter[0].x);
+  });
+
+  it('leaves everything else on the state untouched', () => {
+    const seeded = notePlayerJoined(initialChoreographerState, 'a', 42);
+    const held = holdAnchors(seeded, anchorsBefore);
+    expect(held.pulses).toEqual(seeded.pulses);
+    expect(held.pending).toEqual(seeded.pending);
+    expect(held.sequence).toBe(seeded.sequence);
+    expect(held.streakTier).toEqual(seeded.streakTier);
+    expect(held.heldAnchors).toEqual(anchorsBefore);
   });
 });

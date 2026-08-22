@@ -100,7 +100,26 @@ const DRAMA = new Set<Cue['type']>([
   'player-advanced', 'overtake', 'lead-changed', 'streak-tier', 'streak-broken',
 ]);
 
-/** Buffer a drama cue and capture the pre-reveal world on the first one. */
+/**
+ * Capture the settled world on a pre-reveal beat. The store advances `phase`
+ * and `standings` in one set (lib/store.ts:44-46) and the cue bridge runs
+ * after it, so by the time a drama cue arrives the live anchors are already
+ * the DESTINATIONS. The hold has to be taken earlier, on a beat where the
+ * standings are still the previous round's.
+ */
+export function holdAnchors(
+  state: ChoreographerState,
+  anchors: readonly MarkerAnchor[],
+): ChoreographerState {
+  return { ...state, heldAnchors: anchors };
+}
+
+/**
+ * Buffer a drama cue. `heldAnchors ?? liveAnchors` is the DEGRADED fallback for
+ * the one case where no hold was taken — a mid-game reload landing straight on
+ * `reveal`, where the pre-reveal world is genuinely unknown and no movement is
+ * the correct degradation.
+ */
 export function bufferCue(
   state: ChoreographerState,
   cue: Cue,

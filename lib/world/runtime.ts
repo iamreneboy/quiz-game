@@ -24,6 +24,7 @@ import {
   beginSequence,
   bufferCue,
   completeSequence,
+  holdAnchors,
   initialChoreographerState,
   notePlayerJoined,
   type ChoreographerState,
@@ -88,7 +89,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
       const { room, standings, players } = useGameStore.getState();
       const metrics = trackMetrics(room?.total_rounds ?? 12);
-      const anchors = room?.phase === 'lobby'
+      const anchors = (room?.phase ?? 'lobby') === 'lobby'
         ? gridAnchors(players, metrics)
         : markerAnchors(standings ?? [], metrics);
 
@@ -96,7 +97,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
         choreo = beginSequence(choreo, anchors, now);
       } else if (cue.type === 'phase-read' || cue.type === 'phase-countdown') {
         // A new beat hard-completes anything still in flight (spec §4).
-        choreo = completeSequence(choreo);
+        // completeSequence clears heldAnchors, so the hold comes after it.
+        choreo = holdAnchors(completeSequence(choreo), anchors);
+      } else if (cue.type === 'phase-answer') {
+        // The last settled beat before the reveal — this is the world the
+        // avatars hold while the standings run ahead of them (ADR-0003).
+        choreo = holdAnchors(choreo, anchors);
       } else if (cue.type === 'player-joined') {
         choreo = notePlayerJoined(choreo, cue.playerId, now);
       } else {
@@ -164,7 +170,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     const arena = avatars.some(a => a.vfx.some(v => v.kind === 'arena'));
     const escalation = Math.max(director.escalation, arena ? 0.75 : 0);
 
-    scene.setPlayers(useGameStore.getState().players);
+    scene.setPlayers(players);
     scene.applyFrame({
       camera: shown,
       viewport,
@@ -178,7 +184,14 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       elapsedMs,
     });
 
-    useWorldView.getState().setOffscreen(offscreenPlayerIds(anchors, shown, viewport));
+    // Point the indicators where the avatars ARE, not where the standings say
+    // they will end up — during a TRACK beat those differ for the whole travel.
+    const avatarById = new Map(avatars.map(a => [a.playerId, a]));
+    const travelling = anchors.map(anchor => {
+      const avatar = avatarById.get(anchor.playerId);
+      return avatar ? { ...anchor, x: avatar.x, y: avatar.y } : anchor;
+    });
+    useWorldView.getState().setOffscreen(offscreenPlayerIds(travelling, shown, viewport));
 
     if (now - lastPublishAt >= 500) {
       lastPublishAt = now;
