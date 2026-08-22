@@ -84,3 +84,30 @@ test.describe('the world band in portrait', () => {
     await joinerContext.close();
   });
 });
+
+// The lobby's readable half (spec §7): the Pixi start line carries the
+// formation, the HTML strip carries the names.
+test.describe('the lobby roster strip', () => {
+  test('lists joined players as text beside the canvas grid', async ({ page, browser }) => {
+    const host = page;
+    await host.goto('/host/new');
+    await host.getByPlaceholder('Your nickname').fill('Hosty');
+    await host.getByRole('button', { name: /create room/i }).click();
+    await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
+    const code = host.url().split('/').pop()!;
+
+    await expect(host.getByText('Starting grid')).toBeVisible();
+
+    const joiner = await (await browser.newContext()).newPage();
+    await joiner.goto(`/room/${code}`);
+    await joiner.getByPlaceholder('Your nickname').fill('Roster');
+    await joiner.getByRole('button', { name: 'Join game' }).click();
+
+    await expect(host.getByText('Starting grid — 2 joined')).toBeVisible();
+    await expect(host.getByTestId('lobby-roster')).toContainText('Hosty');
+    await expect(host.getByTestId('lobby-roster')).toContainText('Roster');
+
+    // The world is full-bleed in the lobby — the grid is the establishing shot.
+    await expect(host.locator('[data-testid="pixi-stage"]')).toHaveAttribute('data-band', 'full');
+  });
+});
