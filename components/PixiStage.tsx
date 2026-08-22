@@ -33,6 +33,14 @@ export default function PixiStage({ code }: { code: string }) {
     let runtime: { destroy(): void } | null = null;
     let resizeObserver: ResizeObserver | null = null;
 
+    // The session is written when the visitor joins, which can be AFTER this
+    // effect has started resolving its dynamic imports. Resolve it lazily and
+    // cache the first non-null answer, so the runtime picks it up whenever it
+    // lands instead of depending on which finished first.
+    let localPlayerId: string | null = null;
+    const readLocalPlayerId = () =>
+      (localPlayerId ??= loadSession(code)?.playerId ?? null);
+
     void (async () => {
       try {
         const { Application } = await import('pixi.js');
@@ -67,7 +75,7 @@ export default function PixiStage({ code }: { code: string }) {
           app: instance,
           scene,
           profile,
-          localPlayerId: loadSession(code)?.playerId ?? null,
+          localPlayerId: readLocalPlayerId,
         });
       } catch (error) {
         // A device with no usable WebGL context still gets the full HTML game.

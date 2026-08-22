@@ -15,10 +15,46 @@ import { COLOR } from '@/lib/presentation/tokens';
 /** Baked texture height in px. Bodies are drawn into a box of this size. */
 export const AVATAR_HEIGHT = 128;
 
+/* ── Rig envelope ──────────────────────────────────────────────────────────
+ *
+ * The numbers `AvatarNode` draws with, hoisted here so the pure layer can size
+ * a row pitch and a formation margin against the rig instead of against a
+ * literal. P1's `MARKER_ROW_HEIGHT = 74` was sized for a 52-unit puck and was
+ * never revisited when P2 replaced the puck with a 165-unit rig, which is how a
+ * bunched field ended up drawn off the top of the canvas. Anything that has to
+ * know how big a rig is reads it from here.
+ */
+
+/** Half-width of the accent rim the rig strokes around the body. */
+export const AVATAR_RIM_HALF_WIDTH = 38;
+
+/** Extra ring the LOCAL player's rig strokes outside the rim (the YOU ring). */
+export const AVATAR_LOCAL_RING_PAD = 7;
+
+/** Widest the rig gets: the YOU ring, which is the outermost thing it draws. */
+export const AVATAR_HALF_WIDTH = AVATAR_RIM_HALF_WIDTH + AVATAR_LOCAL_RING_PAD;
+
+/** Nickname label baseline offset below the feet. */
+export const AVATAR_LABEL_Y = 8;
+
+/** How far below the feet the label underline reaches. */
+export const AVATAR_LABEL_DROP = 37;
+
+/** Topmost point of a rig, relative to its own feet (negative is up). */
+export const AVATAR_RIG_TOP = -(AVATAR_HEIGHT + AVATAR_LOCAL_RING_PAD);
+
+/** Bottommost point of a rig, relative to its own feet. */
+export const AVATAR_RIG_BOTTOM = AVATAR_LABEL_DROP;
+
+/** Total vertical extent of a rig, feet-relative top to bottom. */
+export const AVATAR_RIG_HEIGHT = AVATAR_RIG_BOTTOM - AVATAR_RIG_TOP;
+
 export interface Point {
   x: number;
   y: number;
 }
+
+export type MountName = 'behind' | 'front' | 'crown';
 
 export interface IdleQuirk {
   kind: 'bob' | 'sway' | 'pulse' | 'tilt';
@@ -37,16 +73,20 @@ export interface AvatarSpec {
   key: string;
   draw(g: Graphics, ctx: AvatarDrawContext): void;
   idle: IdleQuirk;
-  /** Attachment points in rig-local units; origin is the character's feet. */
-  mounts: { behind: Point; front: Point; crown: Point };
+  /**
+   * Attachment points in rig-local units; origin is the character's feet.
+   * `readonly` on purpose: one literal is shared by all twelve specs, so a
+   * mutable type would let `spec.mounts.crown.y -= 10` corrupt the roster.
+   */
+  readonly mounts: Readonly<Record<MountName, Readonly<Point>>>;
   height: number;
 }
 
-const MOUNTS = {
+const MOUNTS: Readonly<Record<MountName, Readonly<Point>>> = {
   behind: { x: -34, y: -46 },
   front: { x: 34, y: -46 },
   crown: { x: 0, y: -104 },
-};
+} as const;
 
 function base(
   key: string,

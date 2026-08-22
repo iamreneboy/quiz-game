@@ -56,7 +56,7 @@ describe('buffering', () => {
 describe('the sequence', () => {
   it('plays the movement from the held anchors to the live ones', () => {
     let state = bufferCue(initialChoreographerState, advanced, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 1000);
+    state = beginSequence(state, anchorsAfter, 1000, 'high');
     expect(isSequenceRunning(state, 1000)).toBe(true);
 
     const settled = frame(state, anchorsAfter, 1000 + MOVEMENT_MS);
@@ -65,13 +65,13 @@ describe('the sequence', () => {
 
   it('clears the queue when it starts', () => {
     let state = bufferCue(initialChoreographerState, advanced, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
     expect(state.pending).toEqual([]);
   });
 
   it('emits a boost trail during travel and not after', () => {
     let state = bufferCue(initialChoreographerState, advanced, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
 
     const travelling = frame(state, anchorsAfter, ANTICIPATE_MS + TRAVEL_MS / 2);
     expect(travelling.find(v => v.playerId === 'a')!.vfx.some(v => v.kind === 'trail')).toBe(true);
@@ -81,7 +81,7 @@ describe('the sequence', () => {
   });
 
   it('plays nothing when nobody scored', () => {
-    const state = beginSequence(initialChoreographerState, anchorsAfter, 0);
+    const state = beginSequence(initialChoreographerState, anchorsAfter, 0, 'high');
     expect(isSequenceRunning(state, 0)).toBe(false);
   });
 });
@@ -91,7 +91,7 @@ describe('tier arbitration', () => {
     let state = bufferCue(initialChoreographerState, advanced, anchorsBefore);
     state = bufferCue(state, streak8, anchorsBefore);
     state = bufferCue(state, overtook, anchorsBefore); // overtake outranks streakMilestone
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
 
     const at = frame(state, anchorsAfter, ANTICIPATE_MS + TRAVEL_MS + 10);
     const inferno = at.find(v => v.playerId === 'a')!.vfx.find(v => v.kind === 'inferno');
@@ -102,12 +102,12 @@ describe('tier arbitration', () => {
   it('awards the arena reaction only to the headline tier', () => {
     let outranked = bufferCue(initialChoreographerState, streak8, anchorsBefore);
     outranked = bufferCue(outranked, overtook, anchorsBefore);
-    outranked = beginSequence(outranked, anchorsAfter, 0);
+    outranked = beginSequence(outranked, anchorsAfter, 0, 'high');
     const suppressed = frame(outranked, anchorsAfter, ARENA_AT_MS + 10);
     expect(suppressed.some(v => v.vfx.some(x => x.kind === 'arena'))).toBe(false);
 
     let headline = bufferCue(initialChoreographerState, streak8, anchorsBefore);
-    headline = beginSequence(headline, anchorsAfter, 0);
+    headline = beginSequence(headline, anchorsAfter, 0, 'high');
     const fired = frame(headline, anchorsAfter, ARENA_AT_MS + 10);
     expect(fired.some(v => v.vfx.some(x => x.kind === 'arena'))).toBe(true);
   });
@@ -116,7 +116,7 @@ describe('tier arbitration', () => {
 describe('interruption and reload', () => {
   it('hard-completes to the final anchors on a phase change', () => {
     let state = bufferCue(initialChoreographerState, advanced, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
     state = completeSequence(state);
 
     expect(isSequenceRunning(state, 10)).toBe(false);
@@ -127,7 +127,7 @@ describe('interruption and reload', () => {
 
   it('keeps persistent flair through a hard-complete', () => {
     let state = bufferCue(initialChoreographerState, streak8, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
     state = completeSequence(state);
     const states = frame(state, anchorsAfter, 10);
     const a = states.find(v => v.playerId === 'a')!;
@@ -157,7 +157,7 @@ describe('persistent flair', () => {
 
   it('caps the streak kind at the allowance ceiling', () => {
     let state = bufferCue(initialChoreographerState, streak8, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
     const states = avatarStates(
       state, anchorsAfter, flairFor(after, anchorsAfter),
       allowanceFor('lean'), MOVEMENT_MS + 10, 'high',
@@ -169,10 +169,10 @@ describe('persistent flair', () => {
 
   it('extinguishes a broken streak', () => {
     let state = bufferCue(initialChoreographerState, streak8, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
     state = completeSequence(state);
     state = bufferCue(state, { type: 'streak-broken', tier: 'routine', playerId: 'a' }, anchorsAfter);
-    state = beginSequence(state, anchorsAfter, 10_000);
+    state = beginSequence(state, anchorsAfter, 10_000, 'high');
     const states = frame(state, anchorsAfter, 10_000 + MOVEMENT_MS);
     expect(states.find(v => v.playerId === 'a')!.vfx.some(v => v.kind === 'inferno')).toBe(false);
   });
@@ -213,7 +213,7 @@ describe('holding the pre-reveal world', () => {
     let state = holdAnchors(initialChoreographerState, anchorsBefore);
     // The reveal has landed: the drama cue arrives with the destinations.
     state = bufferCue(state, advanced, anchorsAfter);
-    state = beginSequence(state, anchorsAfter, 1000);
+    state = beginSequence(state, anchorsAfter, 1000, 'high');
 
     const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
     expect(track.from.x).toBe(anchorsBefore[0].x);
@@ -233,7 +233,7 @@ describe('holding the pre-reveal world', () => {
     let state = holdAnchors(initialChoreographerState, anchorsAfter);
     state = holdAnchors(state, anchorsBefore);
     state = bufferCue(state, advanced, anchorsAfter);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
 
     expect(state.sequence!.tracks.find(t => t.playerId === 'a')!.from.x)
       .toBe(anchorsBefore[0].x);
@@ -244,7 +244,7 @@ describe('holding the pre-reveal world', () => {
     // bufferCue's `heldAnchors ?? liveAnchors` fallback must stand: no movement,
     // no throw.
     let state = bufferCue(initialChoreographerState, advanced, anchorsAfter);
-    state = beginSequence(state, anchorsAfter, 0);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
 
     const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
     expect(track.from.x).toBe(track.to.x);
@@ -260,7 +260,7 @@ describe('holding the pre-reveal world', () => {
 
     let state = holdAnchors(initialChoreographerState, line);
     state = bufferCue(state, advanced, afterRound1);
-    state = beginSequence(state, afterRound1, 0);
+    state = beginSequence(state, afterRound1, 0, 'high');
 
     const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
     expect(track.from.x).toBe(line[0].x);
@@ -276,5 +276,73 @@ describe('holding the pre-reveal world', () => {
     expect(held.sequence).toBe(seeded.sequence);
     expect(held.streakTier).toEqual(seeded.streakTier);
     expect(held.heldAnchors).toEqual(anchorsBefore);
+  });
+});
+
+// M1: the stagger is a §8 ladder entry ("60ms per player / none — simultaneous"),
+// and `beginSequence` used to hardcode 'high', leaving the reduced branch dead.
+describe('the stagger follows the profile', () => {
+  const build = (profile: 'high' | 'reduced') =>
+    beginSequence(bufferCue(initialChoreographerState, advanced, anchorsBefore), anchorsAfter, 0, profile);
+
+  it('runs a shorter sequence under reduced than under high', () => {
+    // Two players: high staggers the second by STAGGER_MS, reduced does not.
+    expect(isSequenceRunning(build('high'), MOVEMENT_MS)).toBe(true);
+    expect(isSequenceRunning(build('reduced'), MOVEMENT_MS)).toBe(false);
+  });
+
+  it('still finishes at exactly the movement length under reduced', () => {
+    const reduced = build('reduced');
+    expect(isSequenceRunning(reduced, MOVEMENT_MS - 1)).toBe(true);
+    expect(isSequenceRunning(reduced, MOVEMENT_MS)).toBe(false);
+  });
+});
+
+// M2: spec §4 wants the COMPUTED crossing, not a fixed fraction of the travel.
+describe('the overtake accent', () => {
+  const beforePass: FlairStanding[] = [s('a', 1), s('b', 2)];
+  const afterPass: FlairStanding[] = [s('a', 3), s('b', 2)];
+  const heldPass = markerAnchors(beforePass, metrics);
+  const livePass = markerAnchors(afterPass, metrics);
+  const pass: Cue = { type: 'overtake', tier: 'overtake', playerId: 'a', passed: ['b'] };
+
+  /** First elapsed ms at which 'a' is showing lightning. */
+  function firesAt(state: Parameters<typeof avatarStates>[0], anchors: readonly MarkerAnchor[]) {
+    for (let t = 0; t <= MOVEMENT_MS + 400; t += 2) {
+      const states = avatarStates(state, anchors, flairFor(afterPass, anchors), full, t, 'high');
+      if (states.find(v => v.playerId === 'a')!.vfx.some(v => v.kind === 'lightning')) return t;
+    }
+    return null;
+  }
+
+  it('fires where the passer actually draws level with the passed player', () => {
+    let state = bufferCue(initialChoreographerState, pass, heldPass);
+    state = beginSequence(state, livePass, 0, 'high');
+
+    const at = firesAt(state, livePass);
+    expect(at).not.toBeNull();
+
+    const states = avatarStates(state, livePass, flairFor(afterPass, livePass), full, at!, 'high');
+    const a = states.find(v => v.playerId === 'a')!;
+    const b = states.find(v => v.playerId === 'b')!;
+    // Sampled at 2ms and the accent window opens on the crossing, so 'a' is
+    // level with 'b' to within one sampling step of travel.
+    expect(a.x).toBeGreaterThanOrEqual(b.x - 1);
+    expect(a.x - b.x).toBeLessThan(40);
+
+    // ...and it is NOT the 60%-of-travel instant it used to be.
+    const fixed = 60 + ANTICIPATE_MS + TRAVEL_MS * 0.6;
+    expect(at!).toBeLessThan(fixed - 40);
+  });
+
+  it('falls back to mid-travel when the pair never cross — a same-segment tie', () => {
+    // 'a' and 'b' both sit on segment 1, so the pass exists only in the
+    // standings order: there is no x crossing to sample.
+    let state = bufferCue(initialChoreographerState, overtook, anchorsBefore);
+    state = beginSequence(state, anchorsAfter, 0, 'high');
+
+    const at = firesAt(state, anchorsAfter);
+    expect(at).not.toBeNull();
+    expect(at!).toBeCloseTo(60 + ANTICIPATE_MS + TRAVEL_MS * 0.6, -1);
   });
 });

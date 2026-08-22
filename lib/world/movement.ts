@@ -50,6 +50,46 @@ export function staggerFor(index: number, profile: Profile): number {
   return profile === 'reduced' ? 0 : index * STAGGER_MS;
 }
 
+/**
+ * The instant a passer's x reaches the player it passed (spec §4: "found by
+ * sampling the movement curve for where the passer's x crosses the passed
+ * player's"). Measured from the SEQUENCE start, like every other timeline
+ * instant, so the caller can schedule against it directly.
+ *
+ * It has to be sampled rather than solved: the stagger puts the two tracks on
+ * different clocks and `EASE.settle` overshoots past 1, so neither a closed
+ * form nor a fixed fraction of the travel is the crossing in general.
+ *
+ * Returns null when there is no crossing to time — the passer already starts
+ * ahead (a reload with no held anchors gives both tracks the same from and to),
+ * or the sampled curves never actually cross inside the movement window. The
+ * caller falls back to mid-travel, which is what the whole phase used before.
+ */
+export function crossingTime(
+  passer: MovementTrack,
+  passed: MovementTrack,
+  profile: Profile,
+  stepMs = 8,
+): number | null {
+  const lead = (t: number) =>
+    sampleMovement(passer, t, profile).x - sampleMovement(passed, t, profile).x;
+
+  if (lead(0) >= 0) return null;
+
+  const end = Math.max(passer.delayMs, passed.delayMs) + MOVEMENT_MS;
+  let previous = lead(0);
+  for (let t = stepMs; t <= end; t += stepMs) {
+    const current = lead(t);
+    if (current >= 0) {
+      // Linear interpolation inside the step the sign change happened in.
+      const span = current - previous;
+      return span === 0 ? t : t - stepMs * (current / span);
+    }
+    previous = current;
+  }
+  return null;
+}
+
 export function sampleMovement(
   track: MovementTrack,
   elapsedMs: number,

@@ -5,9 +5,13 @@
  * world units, and layout decides how tall the window showing it is.
  */
 import {
+  RIG_BOTTOM,
+  RIG_TOP,
   SEGMENT_WIDTH,
   segmentToWorldX,
+  worldScale,
   worldXToScreen,
+  worldYToScreen,
   type CameraState,
   type MarkerAnchor,
   type TrackMetrics,
@@ -95,16 +99,34 @@ function fit(group: readonly MarkerAnchor[], padding: number, input: FramingInpu
   return clampCamera({ centerX, span }, metrics);
 }
 
-/** Players the camera can't include — the readout renders these as chevrons. */
+/**
+ * Players the camera can't include — the readout renders these as chevrons.
+ *
+ * Both axes, deliberately. The camera is fitted on x alone, so for a long time
+ * this only tested x — and a field bunched on one segment stacks UPWARD, which
+ * meant row-stacked avatars could be drawn entirely above the canvas with the
+ * readout reporting nobody missing.
+ *
+ * y needs the rig's vertical extent to be meaningful, and `framing.ts` must not
+ * import renderer code, so it takes RIG_TOP/RIG_BOTTOM through `geometry.ts` —
+ * plain world-unit constants re-exported from the roster CONTENT that
+ * `AvatarNode` also draws from. A player counts as visible when any part of
+ * that extent is on the canvas: the world band shrinks to 28vh during a
+ * question (components/PixiStage.tsx), where a clipped head is by design and
+ * chevroning the entire field would be noise.
+ */
 export function offscreenPlayerIds(
   anchors: readonly MarkerAnchor[],
   camera: CameraState,
   viewport: Viewport,
 ): string[] {
+  const scale = worldScale(camera, viewport);
   return anchors
     .filter(a => {
       const x = worldXToScreen(a.x, camera, viewport);
-      return x < 0 || x > viewport.width;
+      if (x < 0 || x > viewport.width) return true;
+      const y = worldYToScreen(a.y, camera, viewport);
+      return y + RIG_TOP * scale > viewport.height || y + RIG_BOTTOM * scale < 0;
     })
     .map(a => a.playerId);
 }

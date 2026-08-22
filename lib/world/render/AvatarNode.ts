@@ -11,7 +11,18 @@ import { Container, Graphics, Sprite, Text, TextStyle, type Application, type Te
 import { COLOR } from '@/lib/presentation/tokens';
 import type { Profile } from '@/lib/presentation/profile';
 import type { AvatarFrameState } from '../choreographer';
-import { AVATAR_HEIGHT, type AvatarSpec } from '../content/roster';
+import {
+  AVATAR_HEIGHT,
+  AVATAR_LABEL_DROP,
+  AVATAR_LABEL_Y,
+  AVATAR_LOCAL_RING_PAD,
+  AVATAR_RIM_HALF_WIDTH,
+  type AvatarSpec,
+  type MountName,
+} from '../content/roster';
+import { staticDecals, type StaticDecal } from '../decals';
+import type { VfxAllowance } from '../vfxBudget';
+import { VFX_TINTS } from './Vfx';
 
 const MEDAL_TINTS = { gold: COLOR.gold, silver: COLOR.silver, bronze: COLOR.bronze } as const;
 
@@ -39,10 +50,18 @@ export function clearBakedAvatars(): void {
 export class AvatarNode {
   readonly container = new Container();
   private readonly glow = new Graphics();
+  /** Static stand-ins drawn when the budget has turned particles off (spec §8). */
+  private readonly decals = new Graphics();
   private readonly shadow = new Graphics();
   private readonly rim = new Graphics();
+  /** The YOU ring is its own graphic so `setLocal` can add it after the fact. */
+  private readonly localRing = new Graphics();
   private readonly bodyHolder = new Container();
   private readonly body: Sprite;
+  private readonly label: Text;
+  private readonly underline = new Graphics();
+  private readonly accent: number;
+  private isLocal = false;
   private idlePhase = Math.random() * 10_000;
 
   constructor(
@@ -59,48 +78,90 @@ export class AvatarNode {
      */
     private readonly profile: Profile,
   ) {
+    this.accent = accent;
     this.shadow.ellipse(0, 0, 34, 9).fill({ color: accent, alpha: 0.35 });
     this.container.addChild(this.shadow);
     this.container.addChild(this.glow);
+    this.container.addChild(this.decals);
 
     this.body = new Sprite(bake(app, spec));
     this.body.anchor.set(0.5, 1);
     this.bodyHolder.addChild(this.body);
 
     // The accent is a RIM, never a body tint (spec decision 4).
-    this.rim.roundRect(-38, -AVATAR_HEIGHT, 76, AVATAR_HEIGHT, 14)
+    this.rim
+      .roundRect(-AVATAR_RIM_HALF_WIDTH, -AVATAR_HEIGHT, AVATAR_RIM_HALF_WIDTH * 2, AVATAR_HEIGHT, 14)
       .stroke({ color: accent, width: 3, alpha: 0.85 });
 
-    // The YOU ring (spec section 5): silver, outside the accent rim, so "which
-    // one is me" survives a crowded segment. P1's Markers drew this too.
-    if (isLocal) {
-      this.rim.roundRect(-45, -AVATAR_HEIGHT - 7, 90, AVATAR_HEIGHT + 14, 20)
-        .stroke({ color: COLOR.silver, width: 3, alpha: 0.9 });
-    }
-
     this.bodyHolder.addChild(this.rim);
+    this.bodyHolder.addChild(this.localRing);
     this.container.addChild(this.bodyHolder);
 
-    const label = new Text({
+    this.label = new Text({
       text: nickname,
       style: new TextStyle({
         fontFamily: 'system-ui, sans-serif',
         fontSize: 20,
         fontWeight: '700',
-        fill: isLocal ? COLOR.silver : 0xc7cede,
+        fill: 0xc7cede,
       }),
     });
-    label.anchor.set(0.5, 0);
-    label.y = 8;
-    this.container.addChild(label);
+    this.label.anchor.set(0.5, 0);
+    this.label.y = AVATAR_LABEL_Y;
+    this.container.addChild(this.label);
+    this.container.addChild(this.underline);
 
-    const underline = new Graphics();
-    underline.roundRect(-26, 32, 52, isLocal ? 5 : 3, 2).fill({ color: accent });
-    this.container.addChild(underline);
+    this.setLocal(isLocal);
   }
 
-  /** @param state fully choreographed; this method decides nothing. */
-  apply(state: AvatarFrameState, screenX: number, screenY: number, scale: number, elapsedMs: number): void {
+  /**
+   * Mark (or un-mark) this rig as the local player's.
+   *
+   * Re-markable rather than fixed at construction: `PixiStage` reads the
+   * session AFTER two dynamic imports and `Application.init()`, and the runtime
+   * can be created before the visitor's join has been saved. Deciding "is this
+   * me" only once, at node construction, made the YOU ring depend on that race.
+   */
+  setLocal(isLocal: boolean): void {
+    if (isLocal === this.isLocal) return;
+    this.isLocal = isLocal;
+
+    // The YOU ring (spec section 5): silver, outside the accent rim, so "which
+    // one is me" survives a crowded segment. P1's Markers drew this too.
+    this.localRing.clear();
+    if (isLocal) {
+      const half = AVATAR_RIM_HALF_WIDTH + AVATAR_LOCAL_RING_PAD;
+      this.localRing
+        .roundRect(
+          -half,
+          -AVATAR_HEIGHT - AVATAR_LOCAL_RING_PAD,
+          half * 2,
+          AVATAR_HEIGHT + AVATAR_LOCAL_RING_PAD * 2,
+          20,
+        )
+        .stroke({ color: COLOR.silver, width: 3, alpha: 0.9 });
+    }
+
+    this.label.style.fill = isLocal ? COLOR.silver : 0xc7cede;
+    this.underline
+      .clear()
+      .roundRect(-26, AVATAR_LABEL_DROP - 5, 52, isLocal ? 5 : 3, 2)
+      .fill({ color: this.accent });
+  }
+
+  /**
+   * @param state fully choreographed; this method decides nothing.
+   * @param allowance resolved by `vfxBudget`; the static-decal decision it
+   *   drives lives in `decals.ts`, not in a level check here.
+   */
+  apply(
+    state: AvatarFrameState,
+    screenX: number,
+    screenY: number,
+    scale: number,
+    allowance: VfxAllowance,
+    elapsedMs: number,
+  ): void {
     this.container.x = screenX;
     this.container.y = screenY;
 
@@ -119,6 +180,39 @@ export class AvatarNode {
       this.glow
         .circle(0, -AVATAR_HEIGHT / 2, AVATAR_HEIGHT * 0.62)
         .fill({ color: MEDAL_TINTS[state.medal], alpha: 0.22 });
+    }
+
+    this.drawDecals(staticDecals(state.vfx, allowance));
+  }
+
+  /**
+   * The `minimal` half of spec §8's budget table: a tinted glow for the streak
+   * tier, a small flame wedge for the turbo. Drawn in RIG-LOCAL units, so —
+   * unlike the particle mount points, which are screen-space — the container's
+   * scale applies to them for free. Cheap on purpose: this level exists because
+   * frames are scarce.
+   */
+  private drawDecals(decals: readonly StaticDecal[]): void {
+    this.decals.clear();
+    for (const decal of decals) {
+      const mount = this.spec.mounts[decal.mount];
+      const tint = VFX_TINTS[decal.source];
+      const size = AVATAR_HEIGHT * decal.size;
+      const alpha = 0.2 + 0.35 * decal.intensity;
+
+      if (decal.shape === 'glow') {
+        this.decals.circle(mount.x, mount.y, size).fill({ color: tint, alpha: alpha * 0.6 });
+        this.decals.circle(mount.x, mount.y, size * 0.55).fill({ color: tint, alpha });
+      } else {
+        this.decals
+          .poly([
+            mount.x - size * 0.5, mount.y,
+            mount.x, mount.y - size,
+            mount.x + size * 0.5, mount.y,
+            mount.x, mount.y + size * 0.45,
+          ])
+          .fill({ color: tint, alpha });
+      }
     }
   }
 
@@ -140,12 +234,30 @@ export class AvatarNode {
     }
   }
 
-  mountPoint(which: 'behind' | 'front' | 'crown'): { x: number; y: number } {
+  /**
+   * Where a particle for this rig is born, in SCREEN space.
+   *
+   * `spec.mounts` are rig-local units and `container.x/y` are pixels, so the
+   * offsets have to go through the container's scale — adding them raw put
+   * every particle in the phase in the wrong place (a crown mount 104px above
+   * a 42px-tall avatar at an establishing shot). `container.scale` rather than
+   * the caller's `scale` on purpose: it carries the emphasis multiplier, so the
+   * mount tracks the rig as actually drawn.
+   */
+  mountPoint(which: MountName): { x: number; y: number } {
     const point = this.spec.mounts[which];
-    return { x: this.container.x + point.x, y: this.container.y + point.y };
+    return {
+      x: this.container.x + point.x * this.container.scale.x,
+      y: this.container.y + point.y * this.container.scale.y,
+    };
   }
 
   destroy(): void {
-    this.container.destroy({ children: true });
+    // Pixi v8 frees a Graphics' `_ownedContext` only when options is falsy or
+    // `options.context === true`, and a Text's TextStyle only on
+    // `options.style` — `{ children: true }` alone strands both. The body's
+    // texture is the SHARED baked one, so it is explicitly not destroyed here;
+    // `clearBakedAvatars` owns those.
+    this.container.destroy({ children: true, context: true, style: true, texture: false });
   }
 }

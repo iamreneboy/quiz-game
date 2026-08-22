@@ -65,17 +65,30 @@ export class Avatars {
 
       let node = this.nodes.get(state.playerId);
       if (!node) {
-        const accent = Number.parseInt(player.color.replace('#', ''), 16) || COLOR.neonCyan;
+        // NaN, not falsy: a #000000 accent parses to 0 and would fall through
+        // `||` to cyan. Unreachable with today's server-assigned palette, but
+        // the trap springs the moment a custom colour lands.
+        const parsed = Number.parseInt(player.color.replace('#', ''), 16);
         node = new AvatarNode(
-          this.app, specFor(player.avatar), accent, player.nickname,
-          player.id === localPlayerId, this.profile,
+          this.app, specFor(player.avatar),
+          Number.isNaN(parsed) ? COLOR.neonCyan : parsed,
+          player.nickname, player.id === localPlayerId, this.profile,
         );
         this.nodes.set(state.playerId, node);
         // Below the pool, so particles read in front of the characters.
         this.container.addChildAt(node.container, 0);
       }
 
-      node.apply(state, originX + state.x * scale, ground + state.y * scale, scale, elapsedMs);
+      // Re-marked every frame, not only at construction: `localPlayerId` can
+      // arrive after the runtime does (components/PixiStage.tsx reads the
+      // session behind two dynamic imports), and `setLocal` early-returns
+      // unless it actually changed.
+      node.setLocal(player.id === localPlayerId);
+
+      node.apply(
+        state, originX + state.x * scale, ground + state.y * scale,
+        scale, allowance, elapsedMs,
+      );
 
       for (const request of state.vfx) {
         // `glow` is drawn by the rig itself, not emitted as particles.

@@ -4,6 +4,7 @@ import {
   MOVEMENT_MS,
   STAGGER_MS,
   TRAVEL_MS,
+  crossingTime,
   sampleMovement,
   staggerFor,
   type MovementTrack,
@@ -85,5 +86,64 @@ describe('staggerFor', () => {
 
   it('keeps a full field inside the 4s TRACK beat', () => {
     expect(staggerFor(7, 'high') + MOVEMENT_MS).toBeLessThan(4000);
+  });
+});
+
+// Spec §4: "Overtake lightning fires at the crossing instant, found by sampling
+// the movement curve for where the passer's x crosses the passed player's."
+describe('crossingTime', () => {
+  const passer: MovementTrack = {
+    playerId: 'passer', from: { x: 320, y: 0 }, to: { x: 960, y: 0 }, delayMs: 60,
+  };
+  const stationary: MovementTrack = {
+    playerId: 'passed', from: { x: 640, y: 0 }, to: { x: 640, y: 0 }, delayMs: 0,
+  };
+
+  it('lands where the two x positions actually meet', () => {
+    const t = crossingTime(passer, stationary, 'high');
+    expect(t).not.toBeNull();
+    expect(sampleMovement(passer, t!, 'high').x)
+      .toBeCloseTo(sampleMovement(stationary, t!, 'high').x, 0);
+  });
+
+  it('is not the fixed 60%-of-travel instant it replaced', () => {
+    const fixed = passer.delayMs + ANTICIPATE_MS + TRAVEL_MS * 0.6;
+    expect(crossingTime(passer, stationary, 'high')).not.toBeCloseTo(fixed, 0);
+  });
+
+  it('falls inside the travel phase, after the anticipation crouch', () => {
+    const t = crossingTime(passer, stationary, 'high')!;
+    expect(t).toBeGreaterThan(passer.delayMs + ANTICIPATE_MS);
+    expect(t).toBeLessThan(passer.delayMs + ANTICIPATE_MS + TRAVEL_MS);
+  });
+
+  it('accounts for the passed player moving on its own staggered clock', () => {
+    const moving: MovementTrack = {
+      playerId: 'passed', from: { x: 640, y: 0 }, to: { x: 960, y: 0 }, delayMs: 0,
+    };
+    const chasing: MovementTrack = {
+      playerId: 'passer', from: { x: 320, y: 0 }, to: { x: 1280, y: 0 }, delayMs: 60,
+    };
+    const t = crossingTime(chasing, moving, 'high');
+    expect(t).not.toBeNull();
+    expect(sampleMovement(chasing, t!, 'high').x)
+      .toBeCloseTo(sampleMovement(moving, t!, 'high').x, 0);
+  });
+
+  // The documented fallbacks — the caller schedules mid-travel for all three.
+  it('returns null when the passer already starts ahead', () => {
+    expect(crossingTime(stationary, passer, 'high')).toBeNull();
+  });
+
+  it('returns null when the two start level, as a same-segment tie does', () => {
+    const level = { ...passer, from: { x: 640, y: 0 } };
+    expect(crossingTime(level, stationary, 'high')).toBeNull();
+  });
+
+  it('returns null when the passer never reaches the passed player', () => {
+    const short: MovementTrack = {
+      playerId: 'passer', from: { x: 320, y: 0 }, to: { x: 420, y: 0 }, delayMs: 0,
+    };
+    expect(crossingTime(short, stationary, 'high')).toBeNull();
   });
 });

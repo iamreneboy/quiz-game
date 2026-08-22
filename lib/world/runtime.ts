@@ -83,22 +83,36 @@ function fieldAnchors(
   metrics: TrackMetrics,
 ): MarkerAnchor[] {
   const { room, standings, players } = state;
+  // Only racers get a rig. A non-playing MC host is in `players` but not in
+  // `standings` (supabase/migrations/0002_rpcs.sql, `where p.is_playing`), so
+  // an unfiltered roster gave them an avatar on the grid and the start line —
+  // shifting every other grid slot, since `gridAnchors` uses array index as
+  // grid order — and then deleted it at the first reveal. This stays a filter
+  // at the call site rather than a rule in geometry.ts on purpose: it is
+  // selection of WHO is in the field, which the server already decides, not
+  // track math, and both anchor functions are deliberately shape-agnostic.
+  const racers = players.filter(p => p.is_playing);
   return (room?.phase ?? 'lobby') === 'lobby'
-    ? gridAnchors(players, metrics)
+    ? gridAnchors(racers, metrics)
     : standings?.length
       ? markerAnchors(standings, metrics)
-      : startLineAnchors(players, metrics);
+      : startLineAnchors(racers, metrics);
 }
 
 export interface WorldRuntimeOptions {
   app: Application<Renderer>;
   scene: WorldScene;
   profile: Profile;
-  localPlayerId: string | null;
+  /**
+   * Read every tick rather than captured once: the runtime can be constructed
+   * before the visitor's session has been saved, and a value fixed at
+   * construction made the YOU ring depend on that race.
+   */
+  localPlayerId: () => string | null;
 }
 
 export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): void } {
-  const { app, scene, profile, localPlayerId } = options;
+  const { app, scene, profile } = options;
   const startedAt = performance.now();
   const sampler = createFrameSampler();
   let lastFrameAt = startedAt;
@@ -122,7 +136,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       const anchors = fieldAnchors(state, metrics);
 
       if (cue.type === 'phase-track') {
-        choreo = beginSequence(choreo, anchors, now);
+        choreo = beginSequence(choreo, anchors, now, profile);
       } else if (cue.type === 'phase-read' || cue.type === 'phase-countdown') {
         // A new beat hard-completes anything still in flight (spec §4).
         // completeSequence clears heldAnchors, so the hold comes after it.
@@ -153,6 +167,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     const metrics = trackMetrics(room?.total_rounds ?? 12);
     const anchors = fieldAnchors(state, metrics);
     const viewport = { width: app.screen.width, height: app.screen.height };
+    const localPlayerId = options.localPlayerId();
 
     const target = clampCamera(
       frameTarget(intent.mode, {

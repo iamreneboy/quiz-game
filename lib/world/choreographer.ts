@@ -15,6 +15,7 @@ import {
   ANTICIPATE_MS,
   MOVEMENT_MS,
   TRAVEL_MS,
+  crossingTime,
   sampleMovement,
   staggerFor,
   type MovementTrack,
@@ -133,11 +134,19 @@ export function bufferCue(
   };
 }
 
-/** Compile the queue into a timeline. Called on `phase-track`. */
+/**
+ * Compile the queue into a timeline. Called on `phase-track`.
+ *
+ * `profile` is threaded in rather than assumed: the stagger is a ladder entry
+ * (spec §8, "60ms per player / none — simultaneous") and hardcoding `'high'`
+ * here left `staggerFor`'s reduced branch dead in production, inflating
+ * `durationMs` by up to 420ms for the one profile whose point is not animating.
+ */
 export function beginSequence(
   state: ChoreographerState,
   liveAnchors: readonly MarkerAnchor[],
   now: number,
+  profile: Profile,
 ): ChoreographerState {
   if (state.pending.length === 0) {
     return { ...state, pending: [], heldAnchors: null, sequence: null };
@@ -155,10 +164,11 @@ export function beginSequence(
       playerId: anchor.playerId,
       from: { x: from.x, y: from.y },
       to: { x: anchor.x, y: anchor.y },
-      delayMs: staggerFor(index, 'high'),
+      delayMs: staggerFor(index, profile),
     };
   });
   const delayOf = new Map(tracks.map(t => [t.playerId, t.delayMs]));
+  const trackOf = new Map(tracks.map(t => [t.playerId, t]));
 
   const lightnings: Scheduled[] = [];
   const ignitions: (Scheduled & { tier: StreakTier })[] = [];
@@ -171,13 +181,29 @@ export function beginSequence(
       case 'player-advanced':
         break;
 
-      case 'overtake':
-        // The crossing lands mid-travel; that is when the accent reads.
+      case 'overtake': {
+        // Spec §4: the accent reads at the CROSSING, sampled off the two
+        // movement curves. A pass over several players resolves to the LAST
+        // crossing — the instant the passer clears the frontmost of them, which
+        // is when the pass is complete. Mid-travel is the documented fallback
+        // for a pair the curves never cross (see `crossingTime`).
+        const passer = trackOf.get(cue.playerId);
+        const crossings = passer
+          ? cue.passed
+              .map(id => {
+                const other = trackOf.get(id);
+                return other ? crossingTime(passer, other, profile) : null;
+              })
+              .filter((t): t is number => t !== null)
+          : [];
         lightnings.push({
           playerId: cue.playerId,
-          atMs: (delayOf.get(cue.playerId) ?? 0) + ANTICIPATE_MS + TRAVEL_MS * 0.6,
+          atMs: crossings.length > 0
+            ? Math.max(...crossings)
+            : (delayOf.get(cue.playerId) ?? 0) + ANTICIPATE_MS + TRAVEL_MS * 0.6,
         });
         break;
+      }
 
       case 'lead-changed':
         leadChange = { playerId: cue.playerId, previousLeaderId: cue.previousLeaderId };

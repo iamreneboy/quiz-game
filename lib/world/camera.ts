@@ -30,8 +30,18 @@ export interface CameraMove {
   ease: [number, number, number, number];
 }
 
+/**
+ * The widest shot is capped by the WORLD, not by the track length.
+ *
+ * Capping at `metrics.length` looks right and is wrong for short games: the
+ * lobby grid lives entirely in the run-off, so at `total_rounds = 1` the max
+ * span was 320 while the content sat at [-260, -40] and the whole formation
+ * framed out of shot. `maxX - minX` is the real extent of everything anything
+ * places, and MAX_SPAN_SEGMENTS still holds the legibility ceiling.
+ */
 export function spanLimits(metrics: TrackMetrics): { min: number; max: number } {
-  const max = Math.min(metrics.length, MAX_SPAN_SEGMENTS * SEGMENT_WIDTH);
+  const boundsWidth = metrics.maxX - metrics.minX;
+  const max = Math.min(boundsWidth, MAX_SPAN_SEGMENTS * SEGMENT_WIDTH);
   return { min: Math.min(MIN_SPAN_SEGMENTS * SEGMENT_WIDTH, max), max };
 }
 
@@ -41,8 +51,10 @@ export function clampCamera(state: CameraState, metrics: TrackMetrics): CameraSt
   const half = span / 2;
   const boundsWidth = metrics.maxX - metrics.minX;
 
-  // A span that covers the full track length can't be clamped to an edge — centre it instead.
-  if (span >= metrics.length) {
+  // Only a span covering the whole WORLD — run-off included — can't be clamped
+  // to an edge. Testing `metrics.length` here centred short tracks on the
+  // segments and pushed the run-off, and everything standing in it, out of frame.
+  if (span >= boundsWidth) {
     return { centerX: (metrics.minX + metrics.maxX) / 2, span };
   }
 

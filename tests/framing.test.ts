@@ -1,7 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { SEGMENT_WIDTH, markerAnchors, trackMetrics, gridAnchors, type MarkerAnchor } from '@/lib/world/geometry';
+import {
+  RIG_BOTTOM,
+  RIG_HALF_WIDTH,
+  RIG_TOP,
+  SEGMENT_WIDTH,
+  markerAnchors,
+  startLineAnchors,
+  trackMetrics,
+  gridAnchors,
+  worldScale,
+  worldXToScreen,
+  worldYToScreen,
+  type MarkerAnchor,
+} from '@/lib/world/geometry';
 import { spanLimits } from '@/lib/world/camera';
 import { frameTarget, offscreenPlayerIds, type FramingInput } from '@/lib/world/framing';
+
+const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
+
+/** Every corner of a rig drawn at `anchor`, in screen pixels. */
+function rigBox(anchor: MarkerAnchor, camera: { centerX: number; span: number }, view = viewport) {
+  const scale = worldScale(camera, view);
+  const x = worldXToScreen(anchor.x, camera, view);
+  const y = worldYToScreen(anchor.y, camera, view);
+  return {
+    left: x - RIG_HALF_WIDTH * scale,
+    right: x + RIG_HALF_WIDTH * scale,
+    top: y + RIG_TOP * scale,
+    bottom: y + RIG_BOTTOM * scale,
+  };
+}
 
 const viewport = { width: 1280, height: 720 };
 
@@ -32,7 +60,8 @@ describe('frameTarget', () => {
 
   it('shows the whole track when establishing a short game', () => {
     const target = frameTarget('establishing', input([], 8));
-    expect(target.span).toBe(spanLimits(trackMetrics(8)).max);
+    expect(target.span).toBe(trackMetrics(8).length);
+    expect(target.span).toBeLessThanOrEqual(spanLimits(trackMetrics(8)).max);
   });
 
   it('falls back to establishing when there are no anchors', () => {
@@ -116,6 +145,69 @@ describe('offscreenPlayerIds', () => {
     const camera = frameTarget('pack', input(anchors, 32, { localPlayerId: 'leader' }));
     expect(offscreenPlayerIds(anchors, camera, viewport)).toContain('tail');
   });
+
+  // C1: the camera is fitted on x alone, so a bunched field stacks UPWARD out of
+  // frame at a perfectly normal x. Testing x only reported nobody missing.
+  it('reports a player stacked above the canvas', () => {
+    const stacked: MarkerAnchor[] = [
+      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, segment: 4 },
+      { playerId: 'orbit', x: 4 * SEGMENT_WIDTH, y: -2000, row: 9, segment: 4 },
+    ];
+    const camera = frameTarget('pack', input(stacked, 12));
+    expect(offscreenPlayerIds(stacked, camera, viewport)).toEqual(['orbit']);
+  });
+
+  it('reports a player stacked below the canvas', () => {
+    const sunk: MarkerAnchor[] = [
+      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, segment: 4 },
+      { playerId: 'basement', x: 4 * SEGMENT_WIDTH, y: 2000, row: 0, segment: 4 },
+    ];
+    const camera = frameTarget('pack', input(sunk, 12));
+    expect(offscreenPlayerIds(sunk, camera, viewport)).toEqual(['basement']);
+  });
+
+  it('reports nobody for eight players tied on one segment', () => {
+    // The measured C1 failure: rows 5-7 were drawn entirely above the canvas
+    // and the readout named none of them. The compressed stack now fits.
+    const anchors = startLineAnchors(players(8), trackMetrics(12));
+    const camera = frameTarget('pack', input(anchors, 12, { localPlayerId: 'p3' }));
+    expect(offscreenPlayerIds(anchors, camera, viewport)).toEqual([]);
+    for (const anchor of anchors) {
+      const box = rigBox(anchor, camera);
+      expect(box.top).toBeGreaterThan(0);
+      expect(box.bottom).toBeLessThan(viewport.height);
+    }
+  });
+
+  it('does not chevron the whole field when the world shrinks to a strip', () => {
+    // read/answer/reveal cut the band to 28vh, where a clipped head is by
+    // design — a player counts as visible while any of the rig is on canvas.
+    const strip = { width: 1280, height: 202 };
+    const anchors = startLineAnchors(players(8), trackMetrics(12));
+    const camera = frameTarget('pack', input(anchors, 12));
+    expect(offscreenPlayerIds(anchors, camera, strip).length).toBeLessThan(anchors.length);
+  });
+});
+
+// I4: for a one- or two-question game the whole lobby grid stands in the
+// run-off, which a length-capped span could not reach.
+describe('short games still frame the lobby grid', () => {
+  for (const rounds of [1, 2]) {
+    it(`frames all eight rigs at total_rounds = ${rounds}`, () => {
+      const metrics = trackMetrics(rounds);
+      const anchors = gridAnchors(players(8), metrics);
+      const camera = frameTarget('startLine', input(anchors, rounds, { localPlayerId: 'p0' }));
+
+      for (const anchor of anchors) {
+        const box = rigBox(anchor, camera);
+        expect(box.left).toBeGreaterThan(0);
+        expect(box.right).toBeLessThan(viewport.width);
+        expect(box.top).toBeGreaterThan(0);
+        expect(box.bottom).toBeLessThan(viewport.height);
+      }
+      expect(offscreenPlayerIds(anchors, camera, viewport)).toEqual([]);
+    });
+  }
 });
 
 describe('startLine framing', () => {
@@ -134,5 +226,16 @@ describe('startLine framing', () => {
 
   it('falls back to a fixed shot with an empty grid', () => {
     expect(frameTarget('startLine', input([], 12)).span).toBeGreaterThan(0);
+  });
+
+  // I3: the rearmost pair sat exactly on `metrics.minX`, which is also the
+  // camera's left bound, so ~40% of each was drawn off-canvas.
+  it('draws the rearmost rig of a full grid whole', () => {
+    for (const n of [7, 8, 12, 20]) {
+      const anchors = gridAnchors(players(n), trackMetrics(12));
+      const camera = frameTarget('startLine', input(anchors, 12, { localPlayerId: 'p0' }));
+      const rear = anchors.reduce((a, b) => (a.x <= b.x ? a : b));
+      expect(rigBox(rear, camera).left).toBeGreaterThan(0);
+    }
   });
 });
