@@ -35,3 +35,8 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0006](0006-spatial-zones-plus-mood-grade.md) | Spatial zones plus a separate global mood grade | P1 |
 | [0007](0007-quality-as-world-definition-data.md) | Quality is world-definition data, not construction flags | P1 |
 | [0008](0008-local-player-outranks-leader-in-overflow.md) | The local player outranks the leader when the field can't all fit | P1 |
+| [0009](0009-drama-buffered-to-the-track-beat.md) | Drama is buffered at the reveal transition and played at the TRACK beat | P2 |
+| [0010](0010-exclusive-arena-reaction-subdued-avatar-vfx.md) | The arena reaction is exclusive; per-avatar VFX is subdued, never omitted | P2 |
+| [0011](0011-accent-is-a-rim-never-a-body-tint.md) | The player accent colour is a rim, never a body tint | P2 |
+| [0012](0012-vfx-budget-adapts-without-touching-profile.md) | The VFX budget adapts at runtime without touching `profile` | P2 |
+| [0013](0013-persistent-vs-transient-vfx.md) | Persistent VFX derive from standings; transient VFX live only inside a sequence | P2 |
