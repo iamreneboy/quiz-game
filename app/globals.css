@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source not "../docs";
 
 /* ---------------------------------------------------------------------------
    Circuit Break — night-race design system (PRD §8).
