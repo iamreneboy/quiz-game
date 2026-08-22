@@ -47,8 +47,11 @@ export default function TrackReadout({ code }: { code: string }) {
               {s.player_id === myId && <span className="ml-2 text-xs text-ink-mute">you</span>}
             </span>
             {offscreen.includes(s.player_id) && (
-              <span className="text-xs text-warning" title="Outside the current camera shot">
-                ◀ off screen
+              <span
+                className="whitespace-nowrap text-xs text-warning"
+                title="Outside the current camera shot"
+              >
+                off screen
               </span>
             )}
             <span className="tabular-nums text-sm text-ink-dim">

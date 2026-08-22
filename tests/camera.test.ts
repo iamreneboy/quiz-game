@@ -16,10 +16,21 @@ import {
 } from '@/lib/world/camera';
 
 describe('spanLimits', () => {
-  it('caps the widest shot at the track length for a short game', () => {
-    const limits = spanLimits(trackMetrics(8));
-    expect(limits.max).toBe(8 * SEGMENT_WIDTH);
+  it('caps the widest shot at the world width, run-off included, for a short game', () => {
+    // Not the track LENGTH: the lobby grid stands entirely in the run-off, so a
+    // length-capped max framed a short game with the whole formation off-shot.
+    const metrics = trackMetrics(8);
+    const limits = spanLimits(metrics);
+    expect(limits.max).toBe(metrics.maxX - metrics.minX);
+    expect(limits.max).toBeGreaterThan(metrics.length);
     expect(limits.min).toBe(MIN_SPAN_SEGMENTS * SEGMENT_WIDTH);
+  });
+
+  it('still keeps the minimum span reachable on a one-question game', () => {
+    const metrics = trackMetrics(1);
+    const limits = spanLimits(metrics);
+    expect(limits.min).toBe(MIN_SPAN_SEGMENTS * SEGMENT_WIDTH);
+    expect(limits.max).toBeGreaterThanOrEqual(limits.min);
   });
 
   it('caps the widest shot at MAX_SPAN_SEGMENTS for a long game', () => {

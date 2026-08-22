@@ -12,8 +12,8 @@ import type { Profile } from '@/lib/presentation/profile';
 import { layersForProfile, type WorldDefinition } from '../definition';
 import type { WorldFrameState } from '../frame';
 import type { ZoneId } from '../zones';
+import { Avatars, type AvatarPlayer } from './Avatars';
 import { Grade } from './Grade';
-import { Markers, type MarkerPlayer } from './Markers';
 import { ParallaxLayer } from './ParallaxLayer';
 import { TrackSurface } from './TrackSurface';
 
@@ -22,8 +22,8 @@ export class WorldScene {
   private readonly backdrop = new Container();
   private readonly zoneLayers = new Map<ZoneId, ParallaxLayer[]>();
   private readonly grade: Grade;
-  private readonly markers: Markers;
-  private players: readonly MarkerPlayer[] = [];
+  private readonly avatars: Avatars;
+  private players: readonly AvatarPlayer[] = [];
   private track: TrackSurface | null = null;
   private trackSegments = -1;
 
@@ -41,14 +41,14 @@ export class WorldScene {
       for (const layer of layers) this.backdrop.addChild(layer.sprite);
     }
 
-    this.markers = new Markers(profile);
-    this.root.addChild(this.markers.container);
+    this.avatars = new Avatars(app, profile);
+    this.root.addChild(this.avatars.container);
 
     this.root.addChild(this.grade.graphic);
     app.stage.addChild(this.root);
   }
 
-  setPlayers(players: readonly MarkerPlayer[]): void {
+  setPlayers(players: readonly AvatarPlayer[]): void {
     this.players = players;
   }
 
@@ -59,19 +59,22 @@ export class WorldScene {
     }
 
     // The track is world content, so it must sit above the backdrop but below
-    // the markers and the grade; rebuild only if the room's question count changed.
+    // the avatars and the grade; rebuild only if the room's question count changed.
     if (this.trackSegments !== frame.metrics.segments) {
       this.track?.destroy();
       this.track = new TrackSurface(this.definition, frame.metrics);
       this.trackSegments = frame.metrics.segments;
-      this.root.addChildAt(this.track.container, this.root.getChildIndex(this.markers.container));
+      this.root.addChildAt(this.track.container, this.root.getChildIndex(this.avatars.container));
     }
     this.track!.update(frame.camera, frame.viewport);
 
     this.grade.update(frame.grade, frame.viewport);
 
-    this.markers.sync(frame.anchors, this.players, frame.localPlayerId, frame.elapsedMs);
-    this.markers.update(frame.camera, frame.viewport, frame.elapsedMs);
+    this.avatars.setPlayers(this.players);
+    this.avatars.apply(
+      frame.avatars, frame.camera, frame.viewport,
+      frame.allowance, frame.localPlayerId, frame.elapsedMs,
+    );
   }
 
   destroy(): void {
@@ -79,7 +82,7 @@ export class WorldScene {
     this.zoneLayers.clear();
     this.track?.destroy();
     this.grade.destroy();
-    this.markers.destroy();
+    this.avatars.destroy();
     this.app.stage.removeChild(this.root);
     this.root.destroy({ children: true });
   }

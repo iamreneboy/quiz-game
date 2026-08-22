@@ -2,6 +2,14 @@
 import { useGameStore } from '@/lib/store';
 import { avatarEmoji } from '@/lib/avatars';
 
+/**
+ * The lobby's readable half (spec §7). The Pixi start line carries the
+ * formation; this strip carries the names, so nothing readable depends on
+ * canvas (PRD §9).
+ *
+ * `Starting grid — {n} joined` and the start-button copy are asserted verbatim
+ * in e2e/game-flow.spec.ts and e2e/world.spec.ts — do not reword them.
+ */
 export default function LobbyView({
   code, isHost, onStart, startError,
 }: { code: string; isHost: boolean; onStart: () => void; startError: string | null }) {
@@ -9,30 +17,38 @@ export default function LobbyView({
   const playing = players.filter(p => p.is_playing);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6">
+    <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col justify-end gap-6 p-6">
       <header className="text-center">
-        <p className="text-slate-400">Join at <b className="text-slate-200">{typeof window !== 'undefined' ? window.location.host : ''}</b> with code</p>
+        <p className="text-slate-400">
+          Join at <b className="text-slate-200">{typeof window !== 'undefined' ? window.location.host : ''}</b> with code
+        </p>
         <p className="text-6xl font-black tracking-[0.2em] text-amber-400">{code}</p>
       </header>
 
-      <section className="flex-1">
-        <h2 className="mb-4 font-bold text-slate-300">
+      <section className="rounded-2xl border border-white/10 bg-abyss/70 p-4 backdrop-blur-sm">
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-slate-400">
           Starting grid — {players.length} joined
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <ul data-testid="lobby-roster" className="flex flex-wrap gap-2">
           {players.map(p => (
-            <div key={p.id} className="flex items-center gap-3 rounded-xl bg-slate-900 p-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full text-xl"
-                style={{ backgroundColor: `${p.color}33`, boxShadow: `inset 0 0 0 2px ${p.color}` }}>
+            <li
+              key={p.id}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3"
+            >
+              <span
+                className="grid h-7 w-7 place-items-center rounded-full text-base"
+                style={{ backgroundColor: `${p.color}33`, boxShadow: `inset 0 0 0 2px ${p.color}` }}
+                aria-hidden
+              >
                 {avatarEmoji(p.avatar)}
               </span>
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{p.nickname}</p>
-                {p.is_host && <p className="text-xs text-amber-400">{p.is_playing ? 'Host' : 'MC'}</p>}
-              </div>
-            </div>
+              <span className="text-sm font-semibold">{p.nickname}</span>
+              {p.is_host && (
+                <span className="text-xs font-bold text-amber-400">{p.is_playing ? 'Host' : 'MC'}</span>
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       {isHost ? (
