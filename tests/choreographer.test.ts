@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Cue } from '@/lib/presentation/cues';
 import { allowanceFor } from '@/lib/world/vfxBudget';
-import { markerAnchors, trackMetrics, type MarkerAnchor } from '@/lib/world/geometry';
+import { markerAnchors, startLineAnchors, trackMetrics, type MarkerAnchor } from '@/lib/world/geometry';
 import { flairFor, type FlairStanding } from '@/lib/world/flair';
 import { ANTICIPATE_MS, MOVEMENT_MS, TRAVEL_MS } from '@/lib/world/movement';
 import {
@@ -249,6 +249,23 @@ describe('holding the pre-reveal world', () => {
     const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
     expect(track.from.x).toBe(track.to.x);
     expect(track.from.x).toBe(anchorsAfter[0].x);
+  });
+
+  it('travels on round 1, from the start line to the first segment', () => {
+    // Round 1 has no standings at all until its own reveal, so the pre-reveal
+    // world is the start line rather than an empty anchor list.
+    const roster = [{ id: 'a' }, { id: 'b' }];
+    const line = startLineAnchors(roster, metrics);
+    const afterRound1 = markerAnchors([s('a', 1), s('b', 0)], metrics);
+
+    let state = holdAnchors(initialChoreographerState, line);
+    state = bufferCue(state, advanced, afterRound1);
+    state = beginSequence(state, afterRound1, 0);
+
+    const track = state.sequence!.tracks.find(t => t.playerId === 'a')!;
+    expect(track.from.x).toBe(line[0].x);
+    expect(track.to.x).toBe(afterRound1[0].x);
+    expect(track.from.x).not.toBe(track.to.x);
   });
 
   it('leaves everything else on the state untouched', () => {

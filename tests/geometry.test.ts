@@ -9,6 +9,7 @@ import {
   worldXToScreen,
   horizonY,
   markerAnchors,
+  startLineAnchors,
   gridAnchors,
   type GridPlayer,
 } from '@/lib/world/geometry';
@@ -110,6 +111,42 @@ describe('markerAnchors', () => {
 
   it('returns an empty list for no standings', () => {
     expect(markerAnchors([], metrics)).toEqual([]);
+  });
+});
+
+// `standings` is null until the first round resolves (lib/store.ts:19), but the
+// race has already started and the countdown renders at the FULL band
+// (components/PixiStage.tsx:10) — so the field has to be standing somewhere.
+describe('startLineAnchors', () => {
+  const metrics = trackMetrics(10);
+  const roster = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+  it('puts every player on segment 0', () => {
+    const anchors = startLineAnchors(roster, metrics);
+    expect(anchors.map(a => a.playerId)).toEqual(['a', 'b', 'c']);
+    expect(anchors.every(a => a.segment === 0)).toBe(true);
+    expect(anchors.every(a => a.x === segmentToWorldX(0))).toBe(true);
+  });
+
+  it('lays the field out exactly as markerAnchors does for an all-zero field', () => {
+    // The real contract: round 1's own reveal produces a level field, so the
+    // start line must be the same shape and nothing novel enters the layout.
+    expect(startLineAnchors(roster, metrics)).toEqual(
+      markerAnchors(
+        roster.map(p => ({ player_id: p.id, correct: 0, speed_points: 0 })),
+        metrics,
+      ),
+    );
+  });
+
+  it('row-stacks the field, since everyone is tied on the line', () => {
+    const anchors = startLineAnchors(roster, metrics);
+    expect(anchors.map(a => a.row)).toEqual([0, 1, 2]);
+    expect(anchors.map(a => a.y)).toEqual([0, -MARKER_ROW_HEIGHT, -2 * MARKER_ROW_HEIGHT]);
+  });
+
+  it('returns an empty list for an empty roster', () => {
+    expect(startLineAnchors([], metrics)).toEqual([]);
   });
 });
 

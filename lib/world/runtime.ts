@@ -38,7 +38,15 @@ import {
 } from './director';
 import { flairFor } from './flair';
 import { frameTarget, offscreenPlayerIds } from './framing';
-import { gridAnchors, markerAnchors, trackMetrics, type CameraState } from './geometry';
+import {
+  gridAnchors,
+  markerAnchors,
+  startLineAnchors,
+  trackMetrics,
+  type CameraState,
+  type MarkerAnchor,
+  type TrackMetrics,
+} from './geometry';
 import { createFrameSampler } from './perf';
 import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
@@ -59,6 +67,28 @@ const SUBSCRIBED: CueType[] = [
   'streak-broken',
   'player-joined',
 ];
+
+/**
+ * Where the field stands right now. Pure dispatch — every layout it picks from
+ * lives in geometry.ts. Both the cue handler and `tick()` go through this so
+ * they can never disagree.
+ *
+ * `standings?.length` rather than a null check on purpose: `standings` is null
+ * until the first round resolves (lib/store.ts:19), and an empty array has to
+ * take the same branch, otherwise round 1 renders an empty track through a
+ * countdown that is drawn at the FULL band (components/PixiStage.tsx:10).
+ */
+function fieldAnchors(
+  state: ReturnType<typeof useGameStore.getState>,
+  metrics: TrackMetrics,
+): MarkerAnchor[] {
+  const { room, standings, players } = state;
+  return (room?.phase ?? 'lobby') === 'lobby'
+    ? gridAnchors(players, metrics)
+    : standings?.length
+      ? markerAnchors(standings, metrics)
+      : startLineAnchors(players, metrics);
+}
 
 export interface WorldRuntimeOptions {
   app: Application<Renderer>;
@@ -87,11 +117,9 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       const now = performance.now();
       director = reduceCue(director, cue, now);
 
-      const { room, standings, players } = useGameStore.getState();
-      const metrics = trackMetrics(room?.total_rounds ?? 12);
-      const anchors = (room?.phase ?? 'lobby') === 'lobby'
-        ? gridAnchors(players, metrics)
-        : markerAnchors(standings ?? [], metrics);
+      const state = useGameStore.getState();
+      const metrics = trackMetrics(state.room?.total_rounds ?? 12);
+      const anchors = fieldAnchors(state, metrics);
 
       if (cue.type === 'phase-track') {
         choreo = beginSequence(choreo, anchors, now);
@@ -116,16 +144,14 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     sampler.push(now - lastFrameAt);
     lastFrameAt = now;
 
-    const { room, standings, players } = useGameStore.getState();
+    const state = useGameStore.getState();
+    const { room, standings, players } = state;
 
     director = tickDirector(director, now);
     const intent = activeIntent(director);
 
     const metrics = trackMetrics(room?.total_rounds ?? 12);
-    const inLobby = (room?.phase ?? 'lobby') === 'lobby';
-    const anchors = inLobby
-      ? gridAnchors(players, metrics)
-      : markerAnchors(standings ?? [], metrics);
+    const anchors = fieldAnchors(state, metrics);
     const viewport = { width: app.screen.width, height: app.screen.height };
 
     const target = clampCamera(

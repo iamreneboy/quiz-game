@@ -116,6 +116,23 @@ export function markerAnchors(
   });
 }
 
+/**
+ * Where the field stands before the first reveal. `standings` is null until a
+ * round resolves (lib/store.ts:19), but the race has already started and the
+ * countdown renders at the full band — so the avatars have to be somewhere.
+ * Everyone is on segment 0, which is what `markerAnchors` already draws for a
+ * field that is level.
+ */
+export function startLineAnchors(
+  players: readonly { id: string }[],
+  metrics: TrackMetrics,
+): MarkerAnchor[] {
+  return markerAnchors(
+    players.map(p => ({ player_id: p.id, correct: 0, speed_points: 0 })),
+    metrics,
+  );
+}
+
 /** Structural subset of `PlayerPublic` for the lobby formation. */
 export interface GridPlayer {
   id: string;
