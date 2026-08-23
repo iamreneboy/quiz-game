@@ -26,6 +26,7 @@ function standing(id: string, correct: number, speed = 0, streak = 0): Standing 
     correct,
     speed_points: speed,
     longest_streak: streak,
+    current_streak: streak,
   };
 }
 
@@ -97,6 +98,7 @@ describe('phase beats', () => {
           correct_index: 2,
           fun_fact: null,
           counts: [1, 0, 1, 0],
+          picks: [],
           fastest: { player_id: A, nickname: 'A', time_remaining_ms: 3200 },
           standings: [],
         },
@@ -158,6 +160,7 @@ describe('phase beats', () => {
           correct_index: 1,
           fun_fact: 'fact',
           counts: [0, 2, 0, 0],
+          picks: [],
           fastest: { player_id: B, nickname: 'B', time_remaining_ms: 4100 },
           standings: [],
         },

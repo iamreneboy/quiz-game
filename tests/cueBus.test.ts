@@ -97,10 +97,10 @@ describe('startCueBridge', () => {
     const reveal: PhaseEvent = {
       phase: 'reveal', round: 1, ends_at: null, server_now: new Date().toISOString(),
       payload: {
-        correct_index: 0, fun_fact: null, counts: [1, 0, 0, 0], fastest: null,
+        correct_index: 0, fun_fact: null, counts: [1, 0, 0, 0], picks: [], fastest: null,
         standings: [
-          { player_id: 'p1', nickname: 'A', avatar: 'duck', color: '#f59e0b', correct: 1, speed_points: 10, longest_streak: 1 },
-          { player_id: 'p2', nickname: 'B', avatar: 'cat', color: '#38bdf8', correct: 0, speed_points: 0, longest_streak: 0 },
+          { player_id: 'p1', nickname: 'A', avatar: 'duck', color: '#f59e0b', correct: 1, speed_points: 10, longest_streak: 1, current_streak: 1 },
+          { player_id: 'p2', nickname: 'B', avatar: 'cat', color: '#38bdf8', correct: 0, speed_points: 0, longest_streak: 0, current_streak: 0 },
         ],
       },
     };
