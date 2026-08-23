@@ -1384,8 +1384,8 @@ export default function TimerRing() {
   const stroke = hot ? 'var(--color-wrong)' : 'var(--color-warning)';
 
   return (
-    <div className={`relative h-[74px] w-[74px] ${step >= 3 ? 'animate-pulse' : ''}`}>
-      <svg viewBox="0 0 74 74" className="h-[74px] w-[74px] -rotate-90" aria-hidden="true">
+    <div className={`relative h-18.5 w-18.5 ${step >= 3 ? 'animate-pulse' : ''}`}>
+      <svg viewBox="0 0 74 74" className="h-18.5 w-18.5 -rotate-90" aria-hidden="true">
         <circle cx="37" cy="37" r={R} fill="none" stroke="var(--color-dusk)" strokeWidth="7" />
         <circle
           cx="37" cy="37" r={R} fill="none"
