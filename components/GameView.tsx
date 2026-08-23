@@ -4,6 +4,8 @@ import { useGameStore } from '@/lib/store';
 import { supabase } from '@/lib/supabaseClient';
 import { loadSession } from '@/lib/session';
 import { msUntil } from '@/lib/serverTime';
+import { saveAnswerLock } from '@/lib/staging/answerLock';
+import { useStaging } from '@/lib/staging/useStaging';
 import TimerRing from './TimerRing';
 import QuestionCard from './QuestionCard';
 import AnswerButtons from './AnswerButtons';
@@ -16,6 +18,9 @@ export default function GameView({ code }: { code: string }) {
   const reveal = useGameStore(s => s.reveal);
   const myAnswer = useGameStore(s => s.myAnswer);
   const setMyAnswer = useGameStore(s => s.setMyAnswer);
+  const steps = useStaging(s => s.steps);
+  const lockedChoice = useStaging(s => s.lockedChoice);
+  const spectating = useStaging(s => s.spectating);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!room) return null;
@@ -23,6 +28,7 @@ export default function GameView({ code }: { code: string }) {
   async function choose(i: number) {
     if (!room || myAnswer !== null) return;
     setMyAnswer(i); // optimistic lock
+    saveAnswerLock(code, room.round, i);
     const session = loadSession(code);
     if (!session) return;
     const { error } = await supabase.rpc('submit_answer', {
@@ -47,12 +53,12 @@ export default function GameView({ code }: { code: string }) {
         </div>
       )}
 
-      {question && room.phase !== 'reveal' && (
+      {question && steps.options && (
         <AnswerButtons
           options={question.options}
-          locked={room.phase !== 'answer' || myAnswer !== null}
-          chosen={myAnswer}
-          correctIndex={null}
+          live={steps.optionsLive}
+          lockedChoice={lockedChoice}
+          spectating={spectating}
           onChoose={choose}
         />
       )}
