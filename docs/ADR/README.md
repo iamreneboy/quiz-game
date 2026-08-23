@@ -52,3 +52,7 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0023](0023-audio-escalation-reuses-the-vignette-ramp.md) | Audio escalation reuses the vignette's ramp | P4 |
 | [0024](0024-the-first-cue-batch-is-catch-up.md) | The first cue batch is catch-up | P4 |
 | [0025](0025-sounds-are-generated-source-not-assets.md) | Sounds are generated source, not assets | P4 |
+| [0026](0026-the-podium-is-a-fourth-anchor-layout.md) | The podium is a fourth anchor layout | P5a |
+| [0027](0027-the-results-phase-gets-a-deadline.md) | The results phase gets a deadline | P5a |
+| [0028](0028-the-wires-second-opening.md) | The wire's second opening — `answered` and `avg_answer_ms` | P5a |
+| [0029](0029-confetti-gets-its-own-pool.md) | Confetti gets its own pool | P5a |
