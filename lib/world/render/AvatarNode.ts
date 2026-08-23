@@ -21,6 +21,7 @@ import {
   type MountName,
 } from '../content/roster';
 import { staticDecals, type StaticDecal } from '../decals';
+import { quirkOffset } from '../quirk';
 import type { VfxAllowance } from '../vfxBudget';
 import { VFX_TINTS } from './Vfx';
 
@@ -237,12 +238,7 @@ export class AvatarNode {
 
     const { kind, periodMs, amount } = this.spec.idle;
     const phase = Math.sin(((elapsedMs + this.idlePhase) / periodMs) * Math.PI * 2);
-    switch (kind) {
-      case 'bob': return { y: phase * amount * 14, rotation: 0 };
-      case 'sway': return { y: 0, rotation: phase * amount * 0.5 };
-      case 'tilt': return { y: 0, rotation: phase * amount * 0.28 };
-      case 'pulse': return { y: phase * amount * 5, rotation: 0 };
-    }
+    return quirkOffset(kind, phase, amount);
   }
 
   /**
