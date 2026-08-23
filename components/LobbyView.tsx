@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useGameStore } from '@/lib/store';
 import { avatarEmoji } from '@/lib/avatars';
 
@@ -51,6 +52,8 @@ export default function LobbyView({
         </ul>
       </section>
 
+      {isHost && <StageLink code={code} />}
+
       {isHost ? (
         <div className="space-y-2">
           {startError && <p className="text-center text-rose-400">{startError}</p>}
@@ -67,5 +70,58 @@ export default function LobbyView({
         <p className="text-center text-slate-400">Waiting for the host to start…</p>
       )}
     </main>
+  );
+}
+
+/**
+ * The way into the broadcast screen (PRD §1: a room hands out a join link, a
+ * QR and a stage link).
+ *
+ * Host-only: a player tapping this on their phone would replace their own game
+ * with a spectator view of it. The anchor carries a real href so it can be
+ * copied, opened in a new tab, or dragged onto a second display — a button
+ * that only calls `window.open` can do none of those.
+ */
+function StageLink({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window === 'undefined' ? '' : `${window.location.origin}/stage/${code}`;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard access can be denied outright (insecure origin, permission
+      // policy). The URL is on screen either way, so this is a silent no-op
+      // rather than an error the host can do anything about.
+    }
+  }
+
+  return (
+    <section className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-abyss/70 p-4">
+      <div className="min-w-0">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Stage view</h2>
+        <p className="truncate text-sm text-slate-300">{url}</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          onClick={copy}
+          className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-slate-200"
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+        <a
+          data-testid="stage-link"
+          href={`/stage/${code}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-amber-400 px-3 py-2 text-sm font-bold text-slate-950"
+        >
+          Open
+        </a>
+      </div>
+    </section>
   );
 }
