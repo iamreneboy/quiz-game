@@ -1,11 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { useGameStore } from '@/lib/store';
 import { useStaging } from '@/lib/staging/useStaging';
 import { msUntil } from '@/lib/serverTime';
 import { CATEGORIES, TIER_NAMES } from '@/lib/rank';
+import { distributionRows } from '@/lib/staging/distribution';
 import LowerThird from '@/components/LowerThird';
 import TimerRing from '@/components/TimerRing';
+import RevealPanel from '@/components/RevealPanel';
+import StageOptions from './StageOptions';
+import StageQuestion from './StageQuestion';
 
 /**
  * The broadcast shell (spec §6) — the stage view's answer to StageShell.
@@ -23,7 +28,18 @@ export default function StageBroadcast() {
   const beat = useStaging(s => s.beat);
   const room = useGameStore(s => s.room);
   const question = useGameStore(s => s.question);
+  const reveal = useGameStore(s => s.reveal);
+  const standings = useGameStore(s => s.standings);
+  const steps = useStaging(s => s.steps);
+  const revealSteps = useStaging(s => s.reveal);
   const cat = question ? CATEGORIES.find(c => c.key === question.category) : undefined;
+
+  /**
+   * `myId` is null: there is no local player on a broadcast screen, so no face
+   * in a stack ever carries the "you are here" ring (spec §4).
+   */
+  const rows =
+    reveal && question ? distributionRows(question.options, reveal, standings ?? [], null) : undefined;
 
   return (
     <div
@@ -54,7 +70,28 @@ export default function StageBroadcast() {
 
       <div data-testid="stage-band" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         {beat === 'countdown' && <StageCountdown endsAt={room?.ends_at ?? null} />}
-        {/* Task 5 fills read / answer / reveal. Task 6 fills lobby. Task 7 fills track / results. */}
+
+        {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
+          <>
+            <StageQuestion question={question} steps={steps} />
+            <AnimatePresence initial={false}>
+              {steps.options && (
+                <StageOptions
+                  key="stage-options"
+                  options={question.options}
+                  mode={steps.optionsMode}
+                  rows={rows}
+                  revealSteps={revealSteps}
+                />
+              )}
+            </AnimatePresence>
+            {beat === 'reveal' && reveal && (
+              <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
+            )}
+          </>
+        )}
+
+        {/* Task 6 fills lobby. Task 7 fills track / results. */}
         <LowerThird />
       </div>
     </div>
