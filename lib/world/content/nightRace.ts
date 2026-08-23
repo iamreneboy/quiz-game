@@ -7,7 +7,7 @@
  */
 import type { Graphics } from 'pixi.js';
 import { COLOR } from '@/lib/presentation/tokens';
-import type { LayerSpec, WorldDefinition, ZoneSpec } from '../definition';
+import type { WorldDefinition, ZoneSpec } from '../definition';
 
 /** Deterministic 0..1 sequence — a tiny LCG, seeded per layer. */
 function seeded(seed: number): () => number {
