@@ -14,7 +14,18 @@ export default function ResultsView({ code }: { code: string }) {
   const winner = standings[0];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 p-6">
+    <main className="mx-auto flex max-w-2xl flex-col gap-8 p-6">
+      {/*
+        Reserves exactly the height PixiStage is showing, so the board can
+        never overlap the podium. The 0px fallback is what a client with no
+        canvas at all gets — the full board, immediately.
+        P5b replaces everything below this spacer.
+      */}
+      <div
+        aria-hidden="true"
+        className="shrink-0 transition-[height] duration-(--dur-settle) ease-settle"
+        style={{ height: 'var(--ceremony-band, 0px)' }}
+      />
       <header className="text-center">
         <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Race complete</p>
         <p className="mt-2 text-4xl font-black">

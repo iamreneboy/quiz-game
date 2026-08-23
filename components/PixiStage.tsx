@@ -5,6 +5,7 @@ import { useSettings } from '@/lib/useSettings';
 import { loadSession } from '@/lib/session';
 import { CANVAS } from '@/lib/presentation/tokens';
 import { NIGHT_RACE } from '@/lib/world/content/nightRace';
+import { useCeremony } from '@/lib/ceremony/useCeremony';
 
 /** Phases where the question fills most of the screen: the world shrinks to a strip (spec §7). */
 const STRIP_PHASES = new Set(['read', 'answer', 'reveal']);
@@ -30,7 +31,25 @@ export default function PixiStage({ code }: { code: string }) {
   const hydrated = useSettings(s => s.hydrated);
   const profile = useSettings(s => s.profile);
   const phase = useGameStore(s => s.room?.phase ?? 'lobby');
-  const band = STRIP_PHASES.has(phase) ? 'strip' : 'full';
+  const board = useCeremony(s => s.steps.board);
+  const band = phase === 'results' ? 'podium' : STRIP_PHASES.has(phase) ? 'strip' : 'full';
+
+  /**
+   * The results band is the only one that MOVES within its phase, which is why
+   * it is a custom property rather than a class (ADR-0015): P5b's results board
+   * reads the same value for its top spacer, so the board physically cannot
+   * overlap the podium. `strip` and `full` keep their class-based sizing — a
+   * property buys nothing where the value is one of two constants.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (band !== 'podium') {
+      root.style.removeProperty('--ceremony-band');
+      return;
+    }
+    root.style.setProperty('--ceremony-band', board ? '50vh' : '100vh');
+    return () => { root.style.removeProperty('--ceremony-band'); };
+  }, [band, board]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -130,7 +149,11 @@ export default function PixiStage({ code }: { code: string }) {
       data-band={band}
       aria-hidden="true"
       className={`pointer-events-none fixed inset-x-0 top-0 z-0 transition-[height] duration-(--dur-settle) ease-settle ${
-        band === 'strip' ? 'h-[28vh] portrait:h-[28vh] landscape:h-screen' : 'h-screen'
+        band === 'podium'
+          ? 'h-(--ceremony-band)'
+          : band === 'strip'
+            ? 'h-[28vh] portrait:h-[28vh] landscape:h-screen'
+            : 'h-screen'
       }`}
     />
   );

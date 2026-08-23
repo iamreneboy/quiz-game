@@ -67,7 +67,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   return (
     <div className="relative min-h-screen">
-      {room && room.status !== 'finished' && <PixiStage code={code} />}
+      {/* Mounted through results: the podium ceremony is a canvas beat (P5a). */}
+      {room && <PixiStage code={code} />}
       <TensionFrame />
       <SettingsControl />
       <Suspense fallback={null}>
