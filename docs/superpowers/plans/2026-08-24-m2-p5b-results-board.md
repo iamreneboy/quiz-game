@@ -382,7 +382,7 @@ export default function ResultsTable({
                       </span>
                       <span
                         data-testid="player-name"
-                        className="block max-w-[8.5rem] truncate font-semibold text-ink sm:max-w-[14rem]"
+                        className="block max-w-34 truncate font-semibold text-ink sm:max-w-56"
                       >
                         {s.nickname}
                       </span>
