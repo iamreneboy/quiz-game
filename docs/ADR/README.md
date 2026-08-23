@@ -57,3 +57,5 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0028](0028-the-wires-second-opening.md) | The wire's second opening — `answered` and `avg_answer_ms` | P5a |
 | [0029](0029-confetti-gets-its-own-pool.md) | Confetti gets its own pool | P5a |
 | [0030](0030-the-results-board-is-present-before-it-is-visible.md) | The results board is present before it is visible | P5b |
+| [0031](0031-the-viewer-role-is-explicit.md) | The viewer role is explicit, never inferred from a missing session | P6a |
+| [0032](0032-the-stage-view-is-composed-not-configured.md) | The stage view is composed, not configured | P6a |
