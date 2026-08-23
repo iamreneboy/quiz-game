@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { loadSession } from '@/lib/session';
 import { msUntil } from '@/lib/serverTime';
 import { loadAnswerLock, saveAnswerLock, clearAnswerLock } from '@/lib/staging/answerLock';
+import { distributionRows } from '@/lib/staging/distribution';
 import { useStaging } from '@/lib/staging/useStaging';
 import StageShell from './StageShell';
 import TimerRing from './TimerRing';
@@ -22,7 +23,15 @@ export default function GameView({ code }: { code: string }) {
   const steps = useStaging(s => s.steps);
   const lockedChoice = useStaging(s => s.lockedChoice);
   const spectating = useStaging(s => s.spectating);
+  const standings = useGameStore(s => s.standings);
+  const revealSteps = useStaging(s => s.reveal);
+  const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const rows =
+    reveal && question
+      ? distributionRows(question.options, reveal, standings ?? [], myId)
+      : undefined;
 
   const phase = room?.phase;
   const round = room?.round ?? 0;
@@ -84,6 +93,8 @@ export default function GameView({ code }: { code: string }) {
             lockedChoice={lockedChoice}
             spectating={spectating}
             onChoose={choose}
+            rows={rows}
+            revealSteps={revealSteps}
           />
         ) : null
       }
@@ -93,7 +104,7 @@ export default function GameView({ code }: { code: string }) {
             <p className="text-center text-sm text-ink-mute">You&rsquo;re watching this one.</p>
           )}
           {room.phase === 'reveal' && question && reveal && (
-            <RevealPanel reveal={reveal} question={question} />
+            <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
           )}
           {submitError && <p className="text-center text-sm text-wrong">{submitError}</p>}
         </>

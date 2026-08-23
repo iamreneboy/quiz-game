@@ -1,35 +1,60 @@
+'use client';
+import { AnimatePresence, motion } from 'motion/react';
 import type { QuestionPublic, RevealPayload } from '@/lib/types';
+import type { RevealSteps } from '@/lib/staging/beats';
+import { EASE } from '@/lib/presentation/tokens';
 
-export default function RevealPanel({ reveal, question }: { reveal: RevealPayload; question: QuestionPublic }) {
-  const total = reveal.counts.reduce((a, b) => a + b, 0) || 1;
+/**
+ * The reveal's caption (spec §5).
+ *
+ * The distribution itself is the options grid, transformed in place
+ * (decision 3) — this carries only what the rows cannot: the textual
+ * confirmation, the fastest stamp, and the fun fact. Timings come from
+ * `steps`, which is derived from the server deadline, so a reload lands with
+ * everything present and nothing replays (ADR-0014).
+ */
+export default function RevealPanel({
+  reveal, question, steps,
+}: {
+  reveal: RevealPayload;
+  question: QuestionPublic;
+  steps: RevealSteps;
+}) {
   return (
-    <div className="space-y-4">
-      <p className="text-center text-sm font-bold uppercase tracking-widest text-emerald-400">Correct answer</p>
-      <p className="text-center text-2xl font-black">{question.options[reveal.correct_index]}</p>
+    <div className="space-y-3">
+      <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-correct">
+        Correct answer
+        <span className="ml-2 normal-case tracking-normal text-ink">
+          {question.options[reveal.correct_index]}
+        </span>
+      </p>
 
-      <div className="space-y-2">
-        {question.options.map((opt, i) => (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            <span className="w-28 truncate text-slate-400 sm:w-40">{opt}</span>
-            <div className="h-4 flex-1 overflow-hidden rounded bg-slate-800">
-              <div
-                className={i === reveal.correct_index ? 'h-full bg-emerald-400' : 'h-full bg-slate-600'}
-                style={{ width: `${(reveal.counts[i] / total) * 100}%` }}
-              />
-            </div>
-            <span className="w-6 text-right tabular-nums">{reveal.counts[i]}</span>
-          </div>
-        ))}
-      </div>
+      <AnimatePresence initial={false}>
+        {steps.fastest && reveal.fastest && (
+          <motion.p
+            key="fastest"
+            initial={{ opacity: 0, scale: 1.18 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: 0.34, ease: EASE.settle } }}
+            exit={{ opacity: 0 }}
+            className="text-center text-sm font-black uppercase tracking-widest text-warning"
+          >
+            Fastest ⚡ {reveal.fastest.nickname}
+          </motion.p>
+        )}
 
-      {reveal.fastest && (
-        <p className="text-center font-bold text-amber-300">⚡ Fastest: {reveal.fastest.nickname}</p>
-      )}
-      {reveal.fun_fact && (
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 text-center text-slate-300">
-          💡 {reveal.fun_fact}
-        </div>
-      )}
+        {steps.fact && reveal.fun_fact && (
+          <motion.p
+            key="fact"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.34, ease: EASE.snap } }}
+            exit={{ opacity: 0 }}
+            className="rounded-control border border-haze/40 bg-abyss/70 p-3 text-center text-sm
+              text-ink-dim backdrop-blur-md"
+          >
+            💡 {reveal.fun_fact}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
