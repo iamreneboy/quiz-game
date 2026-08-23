@@ -56,3 +56,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0027](0027-the-results-phase-gets-a-deadline.md) | The results phase gets a deadline | P5a |
 | [0028](0028-the-wires-second-opening.md) | The wire's second opening — `answered` and `avg_answer_ms` | P5a |
 | [0029](0029-confetti-gets-its-own-pool.md) | Confetti gets its own pool | P5a |
+| [0030](0030-the-results-board-is-present-before-it-is-visible.md) | The results board is present before it is visible | P5b |
