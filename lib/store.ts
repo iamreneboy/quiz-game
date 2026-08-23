@@ -9,14 +9,22 @@ export interface GameState {
   reveal: RevealPayload | null;
   standings: Standing[] | null;
   myAnswer: number | null;
+  /**
+   * True once `get_room_state` has told us this code does not exist. Set by
+   * lib/useRoomChannel.ts, read by the stage route — a TV shows a typo as a
+   * typo rather than an eternal "Connecting…".
+   */
+  roomMissing: boolean;
   applyState(s: RoomState): void;
   applyPhaseEvent(e: PhaseEvent): void;
   addPlayer(p: PlayerPublic): void;
   setMyAnswer(i: number): void;
+  setRoomMissing(missing: boolean): void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
   room: null, players: [], question: null, reveal: null, standings: null, myAnswer: null,
+  roomMissing: false,
 
   applyState(s) {
     noteServerTime(s.room.server_now);
@@ -58,4 +66,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setMyAnswer(i) { set({ myAnswer: i }); },
+
+  setRoomMissing(missing) {
+    set(state => (state.roomMissing === missing ? state : { roomMissing: missing }));
+  },
 }));

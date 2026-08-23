@@ -10,6 +10,7 @@ export function useRoomChannel(code: string): RealtimeChannel | null {
   const applyState = useGameStore(s => s.applyState);
   const applyPhaseEvent = useGameStore(s => s.applyPhaseEvent);
   const addPlayer = useGameStore(s => s.addPlayer);
+  const setRoomMissing = useGameStore(s => s.setRoomMissing);
 
   useEffect(() => {
     const pendingEvents: PhaseEvent[] = [];
@@ -31,6 +32,7 @@ export function useRoomChannel(code: string): RealtimeChannel | null {
       if (status === 'SUBSCRIBED') {
         const { data, error } = await supabase.rpc('get_room_state', { p_code: code });
         if (!error && data) applyState(data as RoomState);
+        setRoomMissing(!!error);
         ready = true;
         for (const evt of pendingEvents.splice(0, pendingEvents.length)) {
           applyPhaseEvent(evt);
@@ -42,7 +44,7 @@ export function useRoomChannel(code: string): RealtimeChannel | null {
       supabase.removeChannel(ch);
       setChannel(null);
     };
-  }, [code, applyState, applyPhaseEvent, addPlayer]);
+  }, [code, applyState, applyPhaseEvent, addPlayer, setRoomMissing]);
 
   return channel;
 }
