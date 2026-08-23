@@ -112,6 +112,6 @@ export class Avatars {
     this.nodes.clear();
     this.vfx.destroy();
     this.container.destroy({ children: true });
-    clearBakedAvatars();
+    clearBakedAvatars(this.app);
   }
 }
