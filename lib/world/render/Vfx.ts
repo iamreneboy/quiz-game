@@ -8,6 +8,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { COLOR } from '@/lib/presentation/tokens';
 import type { VfxKind, VfxRequest } from '../choreographer';
+import { particlesAllowed } from '../decals';
 import type { VfxAllowance } from '../vfxBudget';
 
 const MAX_PARTICLES = 240;
@@ -53,7 +54,7 @@ export class Vfx {
    * @param x,y screen-space position of the request's mount point
    */
   emit(request: VfxRequest, x: number, y: number, scale: number, allowance: VfxAllowance, now: number): void {
-    if (!allowance.particles) return;
+    if (!particlesAllowed(request.kind, allowance)) return;
     // Intensity is the emission probability per frame; 1 emits every frame.
     if (Math.random() > request.intensity) return;
 

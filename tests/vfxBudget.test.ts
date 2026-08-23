@@ -79,10 +79,16 @@ describe('allowanceFor', () => {
     expect(allowanceFor('minimal').maxStreakTier).toBe(3);
   });
 
-  it('drops particles only at minimal', () => {
-    expect(allowanceFor('full').particles).toBe(true);
-    expect(allowanceFor('lean').particles).toBe(true);
-    expect(allowanceFor('minimal').particles).toBe(false);
+  it('drops turbo particles a level before streak particles (spec §8)', () => {
+    // Turbo flame: particles at full, static sprite at lean AND minimal.
+    expect(allowanceFor('full').turboParticles).toBe(true);
+    expect(allowanceFor('lean').turboParticles).toBe(false);
+    expect(allowanceFor('minimal').turboParticles).toBe(false);
+
+    // Streak tier: particles through full and lean, static glow only at minimal.
+    expect(allowanceFor('full').streakParticles).toBe(true);
+    expect(allowanceFor('lean').streakParticles).toBe(true);
+    expect(allowanceFor('minimal').streakParticles).toBe(false);
   });
 
   it('sheds the trail before anything else', () => {

@@ -20,9 +20,15 @@ const request = (kind: VfxRequest['kind'], intensity = 0.5): VfxRequest => ({
 });
 
 describe('staticDecals', () => {
-  it('draws nothing while particles are allowed — the emitter has the job', () => {
-    expect(staticDecals([request('turbo'), request('spark')], lean)).toEqual([]);
-    expect(staticDecals([request('turbo')], allowanceFor('full'))).toEqual([]);
+  it('draws nothing at full — every kind still gets a live particle', () => {
+    expect(staticDecals([request('turbo'), request('spark')], allowanceFor('full'))).toEqual([]);
+  });
+
+  it('at lean, stands in for turbo but leaves streak particles running (spec §8)', () => {
+    expect(staticDecals([request('spark')], lean)).toEqual([]);
+    const [decal] = staticDecals([request('turbo', 0.5)], lean);
+    expect(decal).toMatchObject({ source: 'turbo', shape: 'flame', mount: 'behind' });
+    expect(decal.intensity).toBe(0.5);
   });
 
   it('stands in for the turbo flame when particles are off (spec §8)', () => {

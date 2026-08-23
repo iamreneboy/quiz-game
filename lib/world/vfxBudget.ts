@@ -32,8 +32,10 @@ export interface BudgetState {
 export const initialBudgetState: BudgetState = { level: 'full', cleanRuns: 0 };
 
 export interface VfxAllowance {
-  /** false: draw static sprites instead of running particle systems. */
-  particles: boolean;
+  /** false: the turbo flame draws as a static sprite instead of a particle system. */
+  turboParticles: boolean;
+  /** false: the streak tier draws as a static glow instead of a particle system. */
+  streakParticles: boolean;
   trail: number;
   streak: number;
   maxStreakTier: 0 | 3 | 5 | 8;
@@ -44,9 +46,9 @@ export interface VfxAllowance {
 }
 
 const ALLOWANCES: Record<VfxLevel, VfxAllowance> = {
-  full: { particles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1 },
-  lean: { particles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5 },
-  minimal: { particles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5 },
+  full: { turboParticles: true, streakParticles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1 },
+  lean: { turboParticles: false, streakParticles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5 },
+  minimal: { turboParticles: false, streakParticles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5 },
 };
 
 export function allowanceFor(level: VfxLevel): VfxAllowance {

@@ -42,18 +42,30 @@ const STATIC_FORMS: Partial<Record<VfxKind, { shape: DecalShape; size: number }>
 };
 
 /**
- * The decals to draw for this frame's VFX requests. Empty whenever particles
- * are allowed — the real emitter is doing the job and a decal underneath it
- * would just be a smear.
+ * Whether `kind` runs as a live particle system at this budget, vs. drawing
+ * the static stand-in. Turbo and the streak tier are independent dials
+ * (spec §8's budget table sheds them a level apart) — shared here so the
+ * live emitter (`render/Vfx.ts`) and the static fallback never disagree and
+ * double-draw the same effect.
+ */
+export function particlesAllowed(kind: VfxKind, allowance: VfxAllowance): boolean {
+  if (kind === 'turbo') return allowance.turboParticles;
+  if (kind === 'spark' || kind === 'flame' || kind === 'inferno') return allowance.streakParticles;
+  return true;
+}
+
+/**
+ * The decals to draw for this frame's VFX requests. A kind is skipped
+ * whenever its particles are still allowed — the real emitter is doing the
+ * job and a decal underneath it would just be a smear.
  */
 export function staticDecals(
   requests: readonly VfxRequest[],
   allowance: VfxAllowance,
 ): StaticDecal[] {
-  if (allowance.particles) return [];
-
   const decals: StaticDecal[] = [];
   for (const request of requests) {
+    if (particlesAllowed(request.kind, allowance)) continue;
     const form = STATIC_FORMS[request.kind];
     if (!form || request.intensity <= 0) continue;
     decals.push({
