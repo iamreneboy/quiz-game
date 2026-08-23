@@ -4,24 +4,16 @@ import { motion } from 'motion/react';
 import AvatarStack from './AvatarStack';
 import { READ_OPTION_STAGGER, type OptionsMode, type RevealSteps } from '@/lib/staging/beats';
 import type { DistributionRow } from '@/lib/staging/distribution';
+import { OPTION_IDENTITIES } from '@/lib/staging/options';
 
 /**
  * The four answers (spec §6).
  *
- * Accents are fixed BY INDEX, not by content, so ▲ is always cyan across every
- * question in every round. Shape carries the identity, so nothing here depends
- * on color alone.
- *
- * Selection is expressed by form, not hue (spec decision 5): a dedicated
+ * Glyph and accent come from lib/staging/options.ts, shared with the stage
+ * view. Selection is expressed by form, not hue (spec decision 5): a dedicated
  * selection color would collide with option 1's cyan and make the "which
  * option" signal fight the "which is mine" signal.
  */
-const OPTIONS = [
-  { glyph: '▲', accent: 'var(--color-neon-cyan)' },
-  { glyph: '◆', accent: 'var(--color-neon-magenta)' },
-  { glyph: '●', accent: 'var(--color-neon-lime)' },
-  { glyph: '■', accent: 'var(--color-warning)' },
-] as const;
 
 export default function AnswerButtons({
   options, mode, lockedChoice, spectating, onChoose, rows, revealSteps,
@@ -62,7 +54,7 @@ export default function AnswerButtons({
       variants={{ shown: { transition: { staggerChildren: READ_OPTION_STAGGER / 1000 } } }}
     >
       {options.map((opt, i) => {
-        const { glyph, accent } = OPTIONS[i];
+        const { glyph, accent } = OPTION_IDENTITIES[i];
         const chosen = lockedChoice === i;
         const faded = lockedChoice !== null && !chosen;
         const result = mode === 'result' ? rows?.[i] : undefined;
