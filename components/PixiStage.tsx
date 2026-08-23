@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
-import { loadSession } from '@/lib/session';
+import { viewerPlayerId, type ViewerRole } from '@/lib/viewer';
 import { CANVAS } from '@/lib/presentation/tokens';
 import { NIGHT_RACE } from '@/lib/world/content/nightRace';
 import { useCeremony } from '@/lib/ceremony/useCeremony';
@@ -26,13 +26,24 @@ const SESSION_RECHECK_MS = 500;
  * The camera is driven by lib/world/runtime.ts's cue-driven runtime (see
  * createWorldRuntime below).
  */
-export default function PixiStage({ code }: { code: string }) {
+export default function PixiStage({ code, role }: { code: string; role: ViewerRole }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const hydrated = useSettings(s => s.hydrated);
   const profile = useSettings(s => s.profile);
   const phase = useGameStore(s => s.room?.phase ?? 'lobby');
   const board = useCeremony(s => s.steps.board);
-  const band = phase === 'results' ? 'podium' : STRIP_PHASES.has(phase) ? 'strip' : 'full';
+  /**
+   * The strip is a PLAYER-view compromise: on a phone the question has to
+   * dominate, so the world gives up all but 28vh. The stage view inverts it —
+   * the world is full bleed at every phase and the question overlays it. That
+   * inversion is the cinematic difference between the two surfaces (spec
+   * decision 4). The results band is shared: the podium holds 100vh and
+   * retreats to 50vh when the board lands, on both surfaces.
+   */
+  const band =
+    phase === 'results' ? 'podium'
+      : role === 'player' && STRIP_PHASES.has(phase) ? 'strip'
+        : 'full';
 
   /**
    * The results band is the only one that MOVES within its phase, which is why
@@ -77,11 +88,14 @@ export default function PixiStage({ code }: { code: string }) {
     let localPlayerId: string | null = null;
     let nextSessionRead = 0;
     const readLocalPlayerId = () => {
+      // A stage view has no local player and never consults storage, so the
+      // throttle below has nothing to protect.
+      if (role === 'stage') return null;
       if (localPlayerId !== null) return localPlayerId;
       const now = performance.now();
       if (now < nextSessionRead) return null;
       nextSessionRead = now + SESSION_RECHECK_MS;
-      localPlayerId = loadSession(code)?.playerId ?? null;
+      localPlayerId = viewerPlayerId(role, code);
       return localPlayerId;
     };
 
@@ -140,7 +154,7 @@ export default function PixiStage({ code }: { code: string }) {
         app = null;
       }
     };
-  }, [hydrated, profile, code]);
+  }, [hydrated, profile, code, role]);
 
   return (
     <div

@@ -7,9 +7,9 @@
  */
 import { on } from '@/lib/presentation/cueBus';
 import { msUntil } from '@/lib/serverTime';
-import { loadSession } from '@/lib/session';
 import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
+import { viewerPlayerId, type ViewerRole } from '@/lib/viewer';
 import { beatFor, beatTotalMs } from './beats';
 import {
   bufferCallout, clearCallout, initialCalloutState, resetCallouts, resolveCallout,
@@ -27,17 +27,18 @@ function setVar(name: string, value: number): void {
   document.documentElement.style.setProperty(name, value.toFixed(4));
 }
 
-export function startStagingRuntime(code: string): () => void {
+export function startStagingRuntime(code: string, role: ViewerRole): () => void {
   const { publish, announce, setCallout, setEscalated } = useStaging.getState();
 
-  // Resolved lazily: the session is written when the visitor joins, which can
-  // happen after this runtime starts. Same reasoning as PixiStage's lazy read,
-  // but this one is cheap to repeat — it only runs on a store change, not per
-  // frame.
+  // Resolved lazily: a PLAYER's session is written when they join, which can
+  // happen after this runtime starts. Cheap to repeat — it only runs on a
+  // store change, not per frame. On the stage this never touches storage
+  // (lib/viewer.ts) and always reports "playing", which is correct: the
+  // tension vignette should ramp for the whole room.
   const isLocalPlayerPlaying = (): boolean => {
     const { players } = useGameStore.getState();
-    const playerId = loadSession(code)?.playerId;
-    if (!playerId) return true; // not joined yet: nothing to disable
+    const playerId = viewerPlayerId(role, code);
+    if (!playerId) return true; // not joined yet, or a stage view: nothing to disable
     const me = players.find(p => p.id === playerId);
     return me ? me.is_playing : true;
   };
@@ -83,7 +84,7 @@ export function startStagingRuntime(code: string): () => void {
       publishCallouts();
     }),
     on('phase-track', () => {
-      callouts = resolveCallout(callouts, nameOf, loadSession(code)?.playerId ?? null);
+      callouts = resolveCallout(callouts, nameOf, viewerPlayerId(role, code));
       publishCallouts();
     }),
     on('phase-read', () => {
