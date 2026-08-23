@@ -12,6 +12,7 @@ import RevealPanel from '@/components/RevealPanel';
 import StageJoinPanel from './StageJoinPanel';
 import StageOptions from './StageOptions';
 import StageQuestion from './StageQuestion';
+import StageResults from './StageResults';
 
 /**
  * The broadcast shell (spec §6) — the stage view's answer to StageShell.
@@ -41,6 +42,29 @@ export default function StageBroadcast({ code }: { code: string }) {
    */
   const rows =
     reveal && question ? distributionRows(question.options, reveal, standings ?? [], null) : undefined;
+
+  if (beat === 'results') {
+    return (
+      <div
+        data-testid="stage-broadcast"
+        data-beat={beat}
+        className="fixed inset-0 z-10 overflow-y-auto p-8"
+      >
+        {/*
+          Reserves exactly the height PixiStage is showing, so the board can
+          never overlap the podium (ADR-0015: the band is published once and
+          consumed, never re-derived). The 0px fallback is what a client with
+          no canvas at all gets — the full board, immediately.
+        */}
+        <div
+          aria-hidden="true"
+          className="transition-[height] duration-(--dur-settle) ease-settle"
+          style={{ height: 'var(--ceremony-band, 0px)' }}
+        />
+        <StageResults />
+      </div>
+    );
+  }
 
   return (
     <div
