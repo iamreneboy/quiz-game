@@ -48,6 +48,7 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.playwright-cli/
 
 #temporary raw files
 docs/raw/
