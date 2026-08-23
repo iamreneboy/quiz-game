@@ -30,10 +30,12 @@
 The two numbers the board exists to show — accuracy and average answer time — are not on the wire. They are derived from `correct`, `answered` and `avg_answer_ms`, and the whole point of this module is that "the player never submitted" and "this database predates migration 0004" take **one** code path and render identically (spec §4).
 
 **Files:**
+
 - Create: `lib/results/stats.ts`
 - Create: `tests/resultStats.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Standing` from `lib/types.ts` (types only — this module imports no React, no store, no DOM).
 - Produces:
   - `interface ResultStats { accuracy: number | null; avgSeconds: number | null }`
@@ -226,10 +228,12 @@ The full field, in the design language, as a real `<table>`. It is in the DOM fr
 2. **A replayed entrance on reload.** This is the trap `CURRENT.md` tracks (P3a's `QuestionCard` badges, P3a's `StageShell` options slot, P3b's `AvatarStack`). It appears here in a *fourth* guise, and `AnimatePresence initial={false}` is **not** the fix, because nothing conditionally mounts. See Step 3's `settled` one-shot for the mechanism and why it is needed.
 
 **Files:**
+
 - Create: `components/ResultsTable.tsx`
 - Modify: `components/ResultsView.tsx` (replace the inline `<table>`; add the staging wiring)
 
 **Interfaces:**
+
 - Consumes: `resultStats`, `formatAccuracy`, `formatAvg`, `NO_VALUE` (Task 1); `Panel` from `components/ui/Panel.tsx`; `avatarEmoji` from `lib/avatars.ts`; `DURATION`, `EASE` from `lib/presentation/tokens.ts`; `useSettings` from `lib/useSettings.ts`; `BOARD_AT`, `CEREMONY_MS` from `lib/ceremony/beats.ts`; `elapsedIn` from `lib/staging/beats.ts`; `msUntil` from `lib/serverTime.ts`; `useCeremony` from `lib/ceremony/useCeremony.ts`.
 - Produces:
   - `ResultsTable(props: { standings: Standing[]; myId: string | null; show: boolean; instant: boolean }): JSX.Element` — default export of `components/ResultsTable.tsx`.
@@ -552,10 +556,12 @@ git commit -m "feat(p5b): render the full field as a staged, accessible results 
 The headline, and the last screen's application of ADR-0016's "staging never gates input": the exit link is mounted, fully opaque and focusable from the ceremony's first frame, and is never inside a fading wrapper (spec decision 5).
 
 **Files:**
+
 - Create: `components/WinnerCard.tsx`
 - Modify: `components/ResultsView.tsx` (swap the M1 header for `WinnerCard`; restyle the exit link)
 
 **Interfaces:**
+
 - Consumes: `resultStats`, `formatAccuracy`, `formatAvg` (Task 1); `Panel`; `DURATION`, `EASE`; the `show` / `instant` pair `ResultsView` already computes (Task 2).
 - Produces:
   - `WinnerCard(props: { winner: Standing; totalRounds: number; show: boolean; instant: boolean }): JSX.Element` — default export of `components/WinnerCard.tsx`.
@@ -688,6 +694,7 @@ Expected: `tsc` silent; `npm run lint` reports only the one pre-existing `app/ro
 Start the dev server (`npm run dev`) and play a two-player game to results in a **headed** browser — headless Chromium falls back to SwiftShader and is not a usable instrument for anything on this canvas (`CURRENT.md`).
 
 Confirm, and write down what you actually saw:
+
 - The podium plays; at 6s the band retreats to 50vh and the winner card lifts in, with the table's rows following it.
 - The exit link is present and tabbable during the podium, before the board enters.
 - Reload the page after the ceremony has finished: the board is simply there, settled, with no entrance replay. This is the `settled` one-shot doing its job; if the entrance replays, the one-shot is not being read before the runtime's first publish and the fix is there, not in the components.
@@ -706,9 +713,11 @@ git commit -m "feat(p5b): headline the winner and keep the exit reachable throug
 Three assertions the spec asks for (§9.5–§9.7), added to the existing full-game test rather than a new spec file — reaching results costs about 20 seconds of wall clock and there is no reason to pay it twice.
 
 **Files:**
+
 - Modify: `e2e/game-flow.spec.ts:52-58`
 
 **Interfaces:**
+
 - Consumes: `data-testid="results-board"` + `data-entered` (Task 2), `data-testid="results-table"` (Task 2), `data-testid="player-name"` (Task 2), `data-testid="winner-card"` (Task 3).
 - Produces: no code.
 
@@ -789,12 +798,14 @@ git commit -m "test(p5b): cover the board's columns, its winner and its pre-beat
 ### Task 5: Verify the phase and record the decision
 
 **Files:**
+
 - Create: `docs/ADR/0030-the-results-board-is-present-before-it-is-visible.md`
 - Create: `docs/progress/P5b-results-board.md`
 - Modify: `docs/ADR/README.md` (index row)
 - Modify: `docs/progress/CURRENT.md`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: no code.
 
@@ -868,6 +879,7 @@ Append one row to the table at the end of `docs/ADR/README.md`, matching the exi
 Create `docs/progress/P5b-results-board.md` following the shape of `docs/progress/P5a-podium-ceremony.md`: scope, what was built (one row per task), deviations from the plan, verification results with real command output, and any new tech debt.
 
 Record at minimum:
+
 - The `settled` one-shot in `ResultsView` and *why the spec's own §6 claim needed it*: the spec says "a reload past the ceremony lands with `steps.board` already true", and that is not what the runtime actually does on the first render. This is a deviation from the spec's stated mechanism, arrived at in planning, and it is the single most load-bearing thing a future reader needs from this document.
 - That the winner card omits an unknown stat while the table prints a dash, and why.
 - The narrow-portrait result from Step 2.4, including the measured `scrollWidth`.
