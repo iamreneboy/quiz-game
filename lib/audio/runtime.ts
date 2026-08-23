@@ -10,6 +10,11 @@ import { createMixer } from './mixer';
 import { applyCue, AUDIO_CUE_TYPES, endCatchUp, initialAudioState, type AudioState } from './state';
 import { DUCK_RELEASE_MS } from './design';
 import { tierRank } from '@/lib/presentation/celebration';
+import { msUntil } from '@/lib/serverTime';
+import { useGameStore } from '@/lib/store';
+import { useSettings } from '@/lib/useSettings';
+import { tensionAt, tensionStep } from '@/lib/staging/tension';
+import { driveGain, DRIVE_STEM, REVEAL_DECAY_MS, urgencyGain, URGENCY_STEM } from './design';
 
 export function startAudioRuntime(): () => void {
   const mixer = createMixer();
@@ -49,7 +54,51 @@ export function startAudioRuntime(): () => void {
   document.addEventListener('pointerdown', unlock, { once: true });
   document.addEventListener('keydown', unlock, { once: true });
 
+  // The ANSWER ramp. Deliberately re-reads the store for the CLOCK only —
+  // exactly as lib/staging/runtime.ts does — and calls the same pure
+  // `tensionAt` the vignette calls, so audio and picture cannot drift.
+  let wasAnswer = false;
+  let lastStep = -1;
+  let frame = requestAnimationFrame(function tick() {
+    frame = requestAnimationFrame(tick);
+
+    const { room, myAnswer } = useGameStore.getState();
+    if (room?.phase !== 'answer') {
+      if (wasAnswer) {
+        wasAnswer = false;
+        lastStep = -1;
+        mixer.setStemGain(DRIVE_STEM, 0, REVEAL_DECAY_MS);
+        mixer.setStemGain(URGENCY_STEM, 0, REVEAL_DECAY_MS);
+      }
+      return;
+    }
+    wasAnswer = true;
+
+    // Locked in: the gains FREEZE where they are. You are out of the decision,
+    // the room is not (lib/staging/runtime.ts:151).
+    if (myAnswer !== null) return;
+
+    const totalMs = room.timer_seconds * 1000;
+    const raw = tensionAt(room.ends_at ? msUntil(room.ends_at) : null, totalMs);
+
+    if (useSettings.getState().profile === 'reduced') {
+      // Three discrete levels, written only when the step changes: a
+      // per-frame ramp there is work with no audible result.
+      const step = tensionStep(raw);
+      if (step === lastStep) return;
+      lastStep = step;
+      const t = step / 3;
+      mixer.setStemGain(DRIVE_STEM, driveGain(t), 180);
+      mixer.setStemGain(URGENCY_STEM, urgencyGain(t), 180);
+      return;
+    }
+
+    mixer.setStemGain(DRIVE_STEM, driveGain(raw));
+    mixer.setStemGain(URGENCY_STEM, urgencyGain(raw));
+  });
+
   return () => {
+    cancelAnimationFrame(frame);
     document.removeEventListener('pointerdown', unlock);
     document.removeEventListener('keydown', unlock);
     for (const off of unsubscribes) off();
