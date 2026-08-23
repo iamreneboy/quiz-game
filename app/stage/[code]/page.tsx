@@ -48,7 +48,7 @@ export default function StagePage({ params }: { params: Promise<{ code: string }
         <PerfOverlay />
       </Suspense>
       {room ? (
-        <StageBroadcast />
+        <StageBroadcast code={code} />
       ) : (
         <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>
       )}

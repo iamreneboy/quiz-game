@@ -9,6 +9,7 @@ import { distributionRows } from '@/lib/staging/distribution';
 import LowerThird from '@/components/LowerThird';
 import TimerRing from '@/components/TimerRing';
 import RevealPanel from '@/components/RevealPanel';
+import StageJoinPanel from './StageJoinPanel';
 import StageOptions from './StageOptions';
 import StageQuestion from './StageQuestion';
 
@@ -24,7 +25,7 @@ import StageQuestion from './StageQuestion';
  * `data-beat` is the stable hook the e2e suite keys on — assert on it, never
  * on copy.
  */
-export default function StageBroadcast() {
+export default function StageBroadcast({ code }: { code: string }) {
   const beat = useStaging(s => s.beat);
   const room = useGameStore(s => s.room);
   const question = useGameStore(s => s.question);
@@ -69,6 +70,7 @@ export default function StageBroadcast() {
       </header>
 
       <div data-testid="stage-band" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        {beat === 'idle' && room?.status === 'lobby' && <StageJoinPanel code={code} />}
         {beat === 'countdown' && <StageCountdown endsAt={room?.ends_at ?? null} />}
 
         {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
