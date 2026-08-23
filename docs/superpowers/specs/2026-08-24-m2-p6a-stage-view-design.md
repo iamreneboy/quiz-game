@@ -195,7 +195,7 @@ This is an addition, not a restyle. `LobbyView` is still M1-era amber/slate and 
 
 1. `/stage/CODE` loads for an existing room with no session in storage and renders **no** `JoinGate`.
 2. The gate is present on load and dismisses on tap.
-3. In lobby, the room code and join panel are visible, and joined players appear.
+3. In lobby, the room code and the join panel are visible. The roster itself is *not* asserted here: on stage it is the canvas starting grid, not DOM, so it belongs to the headed visual pass rather than to Playwright.
 4. The host advances a phase and the stage view follows it — asserted on the shell's `data-beat`, matching how `staging.spec.ts` already asserts, never on copy.
 5. The broadcast band contains no enabled interactive controls.
 6. *(The load-bearing one)* With a session in storage for that room, the stage route still renders no YOU ring and no player-specific affordance — the regression guard for decision 1.
