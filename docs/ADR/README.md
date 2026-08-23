@@ -40,3 +40,7 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0011](0011-accent-is-a-rim-never-a-body-tint.md) | The player accent colour is a rim, never a body tint | P2 |
 | [0012](0012-vfx-budget-adapts-without-touching-profile.md) | The VFX budget adapts at runtime without touching `profile` | P2 |
 | [0013](0013-persistent-vs-transient-vfx.md) | Persistent VFX derive from standings; transient VFX live only inside a sequence | P2 |
+| [0014](0014-beat-position-derived-from-ends-at.md) | Beat position is derived from `ends_at`, not local arrival | P3a |
+| [0015](0015-continuous-values-to-css-custom-properties.md) | Continuous presentation values go to CSS custom properties; only quantized state enters React | P3a |
+| [0016](0016-staging-never-gates-input.md) | Staging never gates input — the server phase is the sole interaction authority | P3a |
+| [0017](0017-answer-selection-is-form-not-hue.md) | Answer selection is expressed by form, not hue | P3a |
