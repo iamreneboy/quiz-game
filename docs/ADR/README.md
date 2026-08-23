@@ -44,3 +44,7 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0015](0015-continuous-values-to-css-custom-properties.md) | Continuous presentation values go to CSS custom properties; only quantized state enters React | P3a |
 | [0016](0016-staging-never-gates-input.md) | Staging never gates input — the server phase is the sole interaction authority | P3a |
 | [0017](0017-answer-selection-is-form-not-hue.md) | Answer selection is expressed by form, not hue | P3a |
+| [0018](0018-the-wire-opens-once-for-picks-and-current-streak.md) | The wire opens once, for `picks` and `current_streak` | P3b |
+| [0019](0019-the-reveal-is-the-options-grid-transformed.md) | The reveal is the options grid transformed, not a second widget | P3b |
+| [0020](0020-callouts-buffer-their-own-queue.md) | Callouts buffer their own queue rather than reading the choreographer's | P3b |
+| [0021](0021-final-question-escalation-fires-on-the-run-up-beat.md) | Final-question escalation fires on the run-up beat | P3b |
