@@ -897,7 +897,7 @@ git commit -m "docs(p5b): record the board's presence-before-visibility decision
 **Spec coverage.** Every section maps to a task:
 
 | Spec | Task |
-|---|---|
+| --- | --- |
 | §2 decision 1 (DOM from the first frame, `opacity: 0`) | Task 2 Step 1 (always rendered), Task 3 Step 1, ADR-0030 |
 | §2 decision 2 (variant target, never a class) | Task 2 Step 2 and Task 3 Step 3 grep gates |
 | §2 decision 3 (`correct / answered`, `—` at 0) | Task 1 |
