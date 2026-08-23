@@ -13,6 +13,7 @@ import { layersForProfile, type WorldDefinition } from '../definition';
 import type { WorldFrameState } from '../frame';
 import type { ZoneId } from '../zones';
 import { Avatars, type AvatarPlayer } from './Avatars';
+import { Confetti } from './Confetti';
 import { Grade } from './Grade';
 import { ParallaxLayer } from './ParallaxLayer';
 import { Podium } from './Podium';
@@ -25,6 +26,8 @@ export class WorldScene {
   private readonly grade: Grade;
   private readonly avatars: Avatars;
   private readonly podium = new Podium();
+  private readonly confetti = new Confetti();
+  private lastFrameAt = 0;
   private players: readonly AvatarPlayer[] = [];
   private track: TrackSurface | null = null;
   private trackSegments = -1;
@@ -49,6 +52,13 @@ export class WorldScene {
     this.root.addChild(this.avatars.container);
 
     this.root.addChild(this.grade.graphic);
+    // Confetti ABOVE the grade — added after it — so the celebration reads at
+    // full colour instead of getting tinted by the mood overlay everything
+    // else in the world sits under. The ceremony deliberately grades the
+    // podium and the avatars on it (Task 5 holds escalation at 1 for exactly
+    // that neon-dimmed look); confetti is the one thing that's meant to pop
+    // clear of it.
+    this.root.addChild(this.confetti.container);
     app.stage.addChild(this.root);
   }
 
@@ -74,6 +84,12 @@ export class WorldScene {
 
     this.podium.update(frame);
 
+    // Same dt derivation as Avatars.apply, including the 64ms clamp that keeps
+    // a backgrounded tab from teleporting every piece off screen on return.
+    const dtMs = this.lastFrameAt === 0 ? 16 : Math.min(64, frame.elapsedMs - this.lastFrameAt);
+    this.lastFrameAt = frame.elapsedMs;
+    this.confetti.update(frame, dtMs);
+
     this.grade.update(frame.grade, frame.viewport);
 
     this.avatars.setPlayers(this.players);
@@ -89,6 +105,7 @@ export class WorldScene {
     this.track?.destroy();
     this.grade.destroy();
     this.podium.destroy();
+    this.confetti.destroy();
     this.avatars.destroy();
     this.app.stage.removeChild(this.root);
     this.root.destroy({ children: true });
