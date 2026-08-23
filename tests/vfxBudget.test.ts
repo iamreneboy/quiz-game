@@ -96,3 +96,16 @@ describe('allowanceFor', () => {
     expect(allowanceFor('minimal').trail).toBe(0);
   });
 });
+
+describe('confetti allowance', () => {
+  it('steps down the ladder with every other effect', () => {
+    expect(allowanceFor('full').confetti).toBe(1);
+    expect(allowanceFor('lean').confetti).toBe(0.5);
+    expect(allowanceFor('minimal').confetti).toBe(0);
+  });
+
+  it('is zero on the reduced profile, which pins the budget at minimal', () => {
+    const pinned = stepBudget(initialBudgetState, clean, 'reduced');
+    expect(allowanceFor(pinned.level).confetti).toBe(0);
+  });
+});

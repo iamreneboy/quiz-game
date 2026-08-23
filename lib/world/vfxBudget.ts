@@ -43,12 +43,18 @@ export interface VfxAllowance {
   accent: number;
   arena: number;
   turbo: number;
+  /**
+   * Ceremony confetti density, 0..1. At 0 the ceremony draws a single static
+   * gold wash instead of running a particle system — reduced motion should
+   * cost the celebration its MOTION, not its existence.
+   */
+  confetti: number;
 }
 
 const ALLOWANCES: Record<VfxLevel, VfxAllowance> = {
-  full: { turboParticles: true, streakParticles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1 },
-  lean: { turboParticles: false, streakParticles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5 },
-  minimal: { turboParticles: false, streakParticles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5 },
+  full: { turboParticles: true, streakParticles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1, confetti: 1 },
+  lean: { turboParticles: false, streakParticles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5, confetti: 0.5 },
+  minimal: { turboParticles: false, streakParticles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5, confetti: 0 },
 };
 
 export function allowanceFor(level: VfxLevel): VfxAllowance {
