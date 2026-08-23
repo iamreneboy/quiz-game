@@ -49,11 +49,36 @@ test('two players play a full round from lobby to results', async ({ page, brows
 
   await Promise.all([answerRound(host, 'Hosty'), answerRound(joiner, 'Joiner')]);
 
-  await expect(host.getByText('Race complete')).toBeVisible({ timeout: 20_000 });
+  const board = host.getByTestId('results-board');
+  await expect(board).toBeAttached({ timeout: 20_000 });
+
+  // P5b decision 1 + decision 5: the complete field and the exit are available
+  // from the FIRST frame of the ceremony, six seconds before the board enters.
+  // Asserted here, immediately after the board attaches, precisely because the
+  // beat has not landed yet — `data-entered` is the proof it has not.
+  await expect(board).toHaveAttribute('data-entered', 'false', { timeout: 1_000 });
+  await expect(board.getByTestId('results-row')).toHaveCount(2);
+
+  const exit = host.getByRole('link', { name: 'Back to home' });
+  await exit.focus();
+  await expect(exit).toBeFocused();
+
+  // Now let the ceremony reach its board beat.
+  await expect(board).toHaveAttribute('data-entered', 'true', { timeout: 15_000 });
+
+  await expect(host.getByText('Race complete')).toBeVisible();
   await expect(joiner.getByText('Race complete')).toBeVisible({ timeout: 20_000 });
 
+  // Six spelled-out columns (spec §7), one row per playing player.
+  await expect(host.getByTestId('results-table').locator('thead th')).toHaveCount(6);
   await expect(host.getByRole('row', { name: /Hosty/ })).toBeVisible();
   await expect(host.getByRole('row', { name: /Joiner/ })).toBeVisible();
+
+  // The headline names whoever the table ranks first — which of the two wins is
+  // decided by speed points and is not fixed by this test.
+  const topName = await board.getByTestId('results-row').first()
+    .getByTestId('player-name').innerText();
+  await expect(host.getByTestId('winner-card')).toContainText(topName);
 
   await joinerContext.close();
 });
