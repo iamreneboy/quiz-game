@@ -6,9 +6,12 @@
  * design — every decision it makes lives in a pure module that is.
  */
 import type { Application, Renderer } from 'pixi.js';
+import { CEREMONY_MS, NO_CEREMONY, ceremonyStepsAt, type CeremonySteps } from '@/lib/ceremony/beats';
 import { on } from '@/lib/presentation/cueBus';
 import type { CueType } from '@/lib/presentation/cues';
 import type { Profile } from '@/lib/presentation/profile';
+import { msUntil } from '@/lib/serverTime';
+import { elapsedIn } from '@/lib/staging/beats';
 import { useGameStore } from '@/lib/store';
 import {
   beginMove,
@@ -48,6 +51,8 @@ import {
   type TrackMetrics,
 } from './geometry';
 import { createFrameSampler } from './perf';
+import { NO_CEREMONY_FRAME, type CeremonyFrameState } from './frame';
+import { blockX, podiumAnchors, podiumBlocks } from './podium';
 import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
 import { allowanceFor, initialBudgetState, stepBudget, type BudgetState } from './vfxBudget';
@@ -59,6 +64,7 @@ const SUBSCRIBED: CueType[] = [
   'phase-read',
   'phase-answer',
   'phase-track',
+  'phase-results',
   'overtake',
   'lead-changed',
   'final-question',
@@ -67,6 +73,19 @@ const SUBSCRIBED: CueType[] = [
   'streak-broken',
   'player-joined',
 ];
+
+/**
+ * The ceremony's position, computed straight from the server deadline.
+ *
+ * Deliberately NOT read from `useCeremony`: the renderer never depends on React
+ * state. It is the same pure function that store's ticker calls, so the two
+ * surfaces cannot disagree by more than a frame.
+ */
+function ceremonySteps(state: ReturnType<typeof useGameStore.getState>): CeremonySteps {
+  const room = state.room;
+  if (room?.phase !== 'results') return NO_CEREMONY;
+  return ceremonyStepsAt(elapsedIn(CEREMONY_MS, room.ends_at ? msUntil(room.ends_at) : null));
+}
 
 /**
  * Where the field stands right now. Pure dispatch — every layout it picks from
@@ -81,6 +100,7 @@ const SUBSCRIBED: CueType[] = [
 function fieldAnchors(
   state: ReturnType<typeof useGameStore.getState>,
   metrics: TrackMetrics,
+  steps: CeremonySteps,
 ): MarkerAnchor[] {
   const { room, standings, players } = state;
   // Only racers get a rig. A non-playing MC host is in `players` but not in
@@ -92,11 +112,12 @@ function fieldAnchors(
   // selection of WHO is in the field, which the server already decides, not
   // track math, and both anchor functions are deliberately shape-agnostic.
   const racers = players.filter(p => p.is_playing);
-  return (room?.phase ?? 'lobby') === 'lobby'
-    ? gridAnchors(racers, metrics)
-    : standings?.length
-      ? markerAnchors(standings, metrics)
-      : startLineAnchors(racers, metrics);
+  const phase = room?.phase ?? 'lobby';
+
+  if (phase === 'lobby') return gridAnchors(racers, metrics);
+  // The ceremony is a fourth layout, not a fourth renderer.
+  if (phase === 'results' && standings?.length) return podiumAnchors(standings, metrics, steps);
+  return standings?.length ? markerAnchors(standings, metrics) : startLineAnchors(racers, metrics);
 }
 
 export interface WorldRuntimeOptions {
@@ -133,7 +154,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
       const state = useGameStore.getState();
       const metrics = trackMetrics(state.room?.total_rounds ?? 12);
-      const anchors = fieldAnchors(state, metrics);
+      const anchors = fieldAnchors(state, metrics, ceremonySteps(state));
 
       if (cue.type === 'phase-track') {
         choreo = beginSequence(choreo, anchors, now, profile);
@@ -165,7 +186,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     const intent = activeIntent(director);
 
     const metrics = trackMetrics(room?.total_rounds ?? 12);
-    const anchors = fieldAnchors(state, metrics);
+    const steps = ceremonySteps(state);
+    const anchors = fieldAnchors(state, metrics, steps);
     const viewport = { width: app.screen.width, height: app.screen.height };
     const localPlayerId = options.localPlayerId();
 
@@ -211,6 +233,17 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
     const arena = avatars.some(a => a.vfx.some(v => v.kind === 'arena'));
     const escalation = Math.max(director.escalation, arena ? 0.75 : 0);
 
+    const ceremony: CeremonyFrameState =
+      room?.phase === 'results' && standings?.length
+        ? {
+            active: true,
+            blocks: podiumBlocks(standings, metrics, steps),
+            spotlight: steps.spotlight,
+            spotlightX: blockX(1, metrics),
+            confetti: steps.confetti,
+          }
+        : NO_CEREMONY_FRAME;
+
     scene.setPlayers(players);
     scene.applyFrame({
       camera: shown,
@@ -223,6 +256,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       allowance,
       localPlayerId,
       elapsedMs,
+      ceremony,
     });
 
     // Point the indicators where the avatars ARE, not where the standings say

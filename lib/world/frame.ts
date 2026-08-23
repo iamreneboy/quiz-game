@@ -7,8 +7,23 @@
  */
 import type { AvatarFrameState } from './choreographer';
 import type { CameraState, TrackMetrics, Viewport } from './geometry';
+import type { PodiumBlock } from './podium';
 import type { VfxAllowance } from './vfxBudget';
 import type { GradeState, ZoneWeights } from './zones';
+
+/** The ceremony's slice of the frame. `active` is false in every other phase. */
+export interface CeremonyFrameState {
+  active: boolean;
+  blocks: readonly PodiumBlock[];
+  spotlight: boolean;
+  /** World x of the winner's block; meaningless when `blocks` is empty. */
+  spotlightX: number;
+  confetti: boolean;
+}
+
+export const NO_CEREMONY_FRAME: CeremonyFrameState = {
+  active: false, blocks: [], spotlight: false, spotlightX: 0, confetti: false,
+};
 
 export interface WorldFrameState {
   camera: CameraState;
@@ -25,4 +40,6 @@ export interface WorldFrameState {
   localPlayerId: string | null;
   /** Milliseconds since the scene was created; drives ambient animation. */
   elapsedMs: number;
+  /** The podium ceremony; `active` is false in every phase but results. */
+  ceremony: CeremonyFrameState;
 }

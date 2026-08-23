@@ -15,6 +15,7 @@ import type { ZoneId } from '../zones';
 import { Avatars, type AvatarPlayer } from './Avatars';
 import { Grade } from './Grade';
 import { ParallaxLayer } from './ParallaxLayer';
+import { Podium } from './Podium';
 import { TrackSurface } from './TrackSurface';
 
 export class WorldScene {
@@ -23,6 +24,7 @@ export class WorldScene {
   private readonly zoneLayers = new Map<ZoneId, ParallaxLayer[]>();
   private readonly grade: Grade;
   private readonly avatars: Avatars;
+  private readonly podium = new Podium();
   private players: readonly AvatarPlayer[] = [];
   private track: TrackSurface | null = null;
   private trackSegments = -1;
@@ -41,6 +43,8 @@ export class WorldScene {
       for (const layer of layers) this.backdrop.addChild(layer.sprite);
     }
 
+    // Podium BELOW avatars, so a rig stands in front of (not behind) its block.
+    this.root.addChild(this.podium.container);
     this.avatars = new Avatars(app, profile);
     this.root.addChild(this.avatars.container);
 
@@ -68,6 +72,8 @@ export class WorldScene {
     }
     this.track!.update(frame.camera, frame.viewport);
 
+    this.podium.update(frame);
+
     this.grade.update(frame.grade, frame.viewport);
 
     this.avatars.setPlayers(this.players);
@@ -82,6 +88,7 @@ export class WorldScene {
     this.zoneLayers.clear();
     this.track?.destroy();
     this.grade.destroy();
+    this.podium.destroy();
     this.avatars.destroy();
     this.app.stage.removeChild(this.root);
     this.root.destroy({ children: true });
