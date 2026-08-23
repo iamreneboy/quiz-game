@@ -7,6 +7,7 @@ import { loadSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
 import { startCueBridge } from '@/lib/presentation/cueBus';
 import { startStagingRuntime } from '@/lib/staging/runtime';
+import { startAudioRuntime } from '@/lib/audio/runtime';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
@@ -27,6 +28,10 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const { start, error: hostError } = useHostDriver(code, channel);
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
 
+  // MOUNTED FIRST, deliberately: startCueBridge seeds synchronously from the
+  // store on mount, so a subscriber registered after it would miss the whole
+  // seed batch on a client-side navigation into a room already in the store.
+  useEffect(() => startAudioRuntime(), []);
   useEffect(() => startCueBridge(), []);
   useEffect(() => startStagingRuntime(code), [code]);
 
