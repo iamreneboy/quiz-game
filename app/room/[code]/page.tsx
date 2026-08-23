@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { startCueBridge } from '@/lib/presentation/cueBus';
 import { startStagingRuntime } from '@/lib/staging/runtime';
 import { startAudioRuntime } from '@/lib/audio/runtime';
+import { startCeremonyRuntime } from '@/lib/ceremony/runtime';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
@@ -34,6 +35,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   useEffect(() => startAudioRuntime(), []);
   useEffect(() => startCueBridge(), []);
   useEffect(() => startStagingRuntime(code), [code]);
+  useEffect(() => startCeremonyRuntime(), []);
 
   useEffect(() => { setHasSession(!!loadSession(code)); }, [code]);
 
