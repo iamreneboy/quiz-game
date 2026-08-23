@@ -1,4 +1,5 @@
 'use client';
+import { AnimatePresence } from 'motion/react';
 import { useStaging } from '@/lib/staging/useStaging';
 
 /**
@@ -12,6 +13,15 @@ import { useStaging } from '@/lib/staging/useStaging';
  * and this grid owns the rest: question centred in its own band, options
  * pinned toward the thumb. The offset is 28vh, matching the strip the canvas
  * actually draws — GameView's old `pt-[30vh]` was never aligned to it.
+ *
+ * The options slot is wrapped in `AnimatePresence initial={false}` per spec
+ * §7: without it, AnswerButtons' own mount-in stagger has no way to tell
+ * "just appeared" from "reloaded mid-beat" and replays on every mount,
+ * confirmed live -- a reload mid-ANSWER re-ran the stagger on the buttons
+ * that were already on screen. `initial={false}` only suppresses the
+ * entrance for a child already present at THIS AnimatePresence's own first
+ * mount, so a genuinely fresh READ (options arrive ~1s after the beat
+ * starts, a full second after this shell mounts) still animates in.
  */
 export default function StageShell({
   header, question, options, outcome,
@@ -34,7 +44,7 @@ export default function StageShell({
       <div className="flex flex-col items-center gap-4">{header}</div>
       <div className="flex flex-col justify-center">{question}</div>
       <div className="space-y-4">
-        {options}
+        <AnimatePresence initial={false}>{options}</AnimatePresence>
         {outcome}
       </div>
       <p
