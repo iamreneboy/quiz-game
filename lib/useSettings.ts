@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { loadMuted, saveMuted } from './audio/mutePreference';
 import {
   loadOverride,
   readDeviceSignals,
@@ -14,13 +15,18 @@ export interface SettingsState {
   override: ProfileOverride;
   /** The effective profile. Later phases read exactly this: useSettings(s => s.profile). */
   profile: Profile;
+  /** Per-device audio mute. Later phases read exactly this. */
+  muted: boolean;
+  setMuted(value: boolean): void;
   hydrate(): void;
   setOverride(value: ProfileOverride): void;
 }
 
-/** Publish the profile to CSS so stylesheets can respond without a React render. */
-function publish(profile: Profile): void {
-  if (typeof document !== 'undefined') document.documentElement.dataset.profile = profile;
+/** Publish to CSS/DOM so stylesheets and tests can respond without a React render. */
+function publish(profile: Profile, muted: boolean): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.profile = profile;
+  document.documentElement.dataset.muted = String(muted);
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -28,19 +34,27 @@ export const useSettings = create<SettingsState>((set, get) => ({
   hydrated: false,
   override: 'auto',
   profile: 'high',
+  muted: false,
 
   hydrate() {
     if (get().hydrated) return;
     const override = loadOverride();
+    const muted = loadMuted();
     const profile = resolveProfile(readDeviceSignals(), override);
-    publish(profile);
-    set({ hydrated: true, override, profile });
+    publish(profile, muted);
+    set({ hydrated: true, override, profile, muted });
   },
 
   setOverride(value) {
     saveOverride(value);
     const profile = resolveProfile(readDeviceSignals(), value);
-    publish(profile);
+    publish(profile, get().muted);
     set({ override: value, profile });
+  },
+
+  setMuted(value) {
+    saveMuted(value);
+    publish(get().profile, value);
+    set({ muted: value });
   },
 }));

@@ -4,6 +4,7 @@ import { useSettings } from '@/lib/useSettings';
 import type { ProfileOverride } from '@/lib/presentation/profile';
 import Panel from '@/components/ui/Panel';
 import Select from '@/components/ui/Select';
+import Checkbox from '@/components/ui/Checkbox';
 
 const OPTIONS = [
   { value: 'auto', label: 'Auto' },
@@ -12,14 +13,17 @@ const OPTIONS = [
 ] as const;
 
 /**
- * Corner gear on the room view. P4 adds its mute toggle to this popover.
- * Rendered outside <main> so it never joins the game's interactive controls.
+ * Corner gear on the room view. Carries the motion profile and the audio
+ * mute toggle. Rendered outside <main> so it never joins the game's
+ * interactive controls.
  */
 export default function SettingsControl() {
   const [open, setOpen] = useState(false);
   const override = useSettings(s => s.override);
   const profile = useSettings(s => s.profile);
   const setOverride = useSettings(s => s.setOverride);
+  const muted = useSettings(s => s.muted);
+  const setMuted = useSettings(s => s.setMuted);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +70,13 @@ export default function SettingsControl() {
             onChange={event => setOverride(event.target.value as ProfileOverride)}
             options={OPTIONS}
           />
+          <div className="mt-4 border-t border-haze/50 pt-4">
+            <Checkbox
+              label="Mute sound"
+              checked={muted}
+              onChange={event => setMuted(event.target.checked)}
+            />
+          </div>
           <p className="mt-3 text-xs text-ink-mute">
             Currently running the {profile === 'high' ? 'full' : 'reduced'} profile.
           </p>

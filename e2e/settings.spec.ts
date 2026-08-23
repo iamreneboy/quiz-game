@@ -30,6 +30,28 @@ test.describe('performance profile settings', () => {
   });
 });
 
+test.describe('audio settings', () => {
+  test('publishes an unmuted default and toggles to muted', async ({ page }) => {
+    await page.goto('/room/ZZZZZ');
+    await expect(page.locator('html')).toHaveAttribute('data-muted', 'false');
+
+    await page.getByRole('button', { name: 'Display settings' }).click();
+    await page.getByLabel('Mute sound').check();
+    await expect(page.locator('html')).toHaveAttribute('data-muted', 'true');
+  });
+
+  test('the mute choice survives a reload', async ({ page }) => {
+    await page.goto('/room/ZZZZZ');
+    await page.getByRole('button', { name: 'Display settings' }).click();
+    await page.getByLabel('Mute sound').check();
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-muted', 'true');
+    await page.getByRole('button', { name: 'Display settings' }).click();
+    await expect(page.getByLabel('Mute sound')).toBeChecked();
+  });
+});
+
 test.describe('with prefers-reduced-motion', () => {
   // The `reducedMotion` context-option fixture does not reliably take effect
   // in this environment (verified independent of app code, even on

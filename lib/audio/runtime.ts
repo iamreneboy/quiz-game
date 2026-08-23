@@ -24,6 +24,12 @@ export function startAudioRuntime(): () => void {
   const syncBed = () => mixer.setBed(state.bed, state.escalated);
   syncBed(); // the lobby bed is the initial state, and has no cue of its own
 
+  // Muting silences Howler globally but the state machine keeps running, so
+  // unmuting mid-game lands on the right bed at the right point rather than
+  // restarting a loop from bar one.
+  mixer.setMuted(useSettings.getState().muted);
+  const unsubscribeMute = useSettings.subscribe(settings => mixer.setMuted(settings.muted));
+
   const unsubscribes = AUDIO_CUE_TYPES.map(type =>
     on(type, cue => {
       // The seed batch is emitted synchronously in one loop inside
@@ -102,6 +108,7 @@ export function startAudioRuntime(): () => void {
     document.removeEventListener('pointerdown', unlock);
     document.removeEventListener('keydown', unlock);
     for (const off of unsubscribes) off();
+    unsubscribeMute();
     mixer.destroy();
   };
 }
