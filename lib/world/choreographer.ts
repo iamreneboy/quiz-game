@@ -10,7 +10,7 @@ import type { Cue } from '@/lib/presentation/cues';
 import { isSubdued, resolveTier, type CelebrationTier } from '@/lib/presentation/celebration';
 import type { Profile } from '@/lib/presentation/profile';
 import { ARENA_AT_MS } from '@/lib/presentation/timing';
-import { LEADER_EMPHASIS, type Flair } from './flair';
+import { LEADER_EMPHASIS, type Flair, type StreakTier } from './flair';
 import type { MarkerAnchor } from './geometry';
 import {
   ANTICIPATE_MS,
@@ -59,7 +59,7 @@ export interface AvatarFrameState {
   vfx: VfxRequest[];
 }
 
-export type StreakTier = 0 | 3 | 5 | 8;
+export type { StreakTier };
 
 interface Scheduled {
   playerId: string;
@@ -83,8 +83,6 @@ export interface ChoreographerState {
   /** Captured when the first drama cue of a beat is buffered. */
   heldAnchors: readonly MarkerAnchor[] | null;
   sequence: Sequence | null;
-  /** Persistent — survives between beats, extinguished only by streak-broken. */
-  streakTier: Record<string, StreakTier>;
   /** Lobby ready pulses: playerId -> the moment they joined. */
   pulses: Record<string, number>;
 }
@@ -93,7 +91,6 @@ export const initialChoreographerState: ChoreographerState = {
   pending: [],
   heldAnchors: null,
   sequence: null,
-  streakTier: {},
   pulses: {},
 };
 
@@ -172,7 +169,6 @@ export function beginSequence(
 
   const lightnings: Scheduled[] = [];
   const ignitions: (Scheduled & { tier: StreakTier })[] = [];
-  const streakTier: Record<string, StreakTier> = { ...state.streakTier };
   let leadChange: Sequence['leadChange'] = null;
   let arenaPlayerId: string | null = null;
 
@@ -210,7 +206,6 @@ export function beginSequence(
         break;
 
       case 'streak-tier':
-        streakTier[cue.playerId] = cue.streak;
         ignitions.push({
           playerId: cue.playerId,
           atMs: (delayOf.get(cue.playerId) ?? 0) + ANTICIPATE_MS + TRAVEL_MS,
@@ -223,7 +218,8 @@ export function beginSequence(
         break;
 
       case 'streak-broken':
-        streakTier[cue.playerId] = 0;
+        // Nothing to unwind: the flame is standings-derived now, so it goes
+        // out on its own the moment `current_streak` returns to zero.
         break;
     }
   }
@@ -238,7 +234,6 @@ export function beginSequence(
     pending: [],
     heldAnchors: null,
     pulses: state.pulses,
-    streakTier,
     sequence: {
       startedAt: now, headline, tracks, lightnings, ignitions,
       arenaPlayerId, leadChange, durationMs,
@@ -291,7 +286,9 @@ export function avatarStates(
     sequence && isSubdued(tier, sequence.headline) ? SUBDUED_INTENSITY : 1;
 
   return liveAnchors.map(anchor => {
-    const own = flair.get(anchor.playerId) ?? { medal: null, emphasis: 1, edgeHolder: false };
+    const own = flair.get(anchor.playerId) ?? {
+      medal: null, emphasis: 1, edgeHolder: false, streakTier: 0 as StreakTier,
+    };
     const held = positionById.get(anchor.playerId) ?? anchor;
     const track = trackById.get(anchor.playerId);
 
@@ -309,7 +306,7 @@ export function avatarStates(
     if (own.edgeHolder && allowance.turbo > 0) {
       vfx.push({ kind: 'turbo', mount: 'behind', intensity: allowance.turbo });
     }
-    const streak = cappedStreak(state.streakTier[anchor.playerId] ?? 0, allowance.maxStreakTier);
+    const streak = cappedStreak(own.streakTier, allowance.maxStreakTier);
     if (streak.kind && allowance.streak > 0) {
       vfx.push({
         kind: streak.kind,

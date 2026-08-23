@@ -69,8 +69,10 @@ describe('staticDecals', () => {
 describe('the minimal level still signals streak and edge (spec §8)', () => {
   const metrics = trackMetrics(12);
   const standings: FlairStanding[] = [
-    { player_id: 'a', correct: 2, speed_points: 90 },
-    { player_id: 'b', correct: 2, speed_points: 40 },
+    // current_streak: 8 mirrors the streak-8 cue below — in the real system
+    // a streak-tier cue always fires alongside the standings that produced it.
+    { player_id: 'a', correct: 2, speed_points: 90, current_streak: 8 },
+    { player_id: 'b', correct: 2, speed_points: 40, current_streak: 0 },
   ];
   const anchors = markerAnchors(standings, metrics);
   const streak8: Cue = { type: 'streak-tier', tier: 'streakMilestone', playerId: 'a', streak: 8 };

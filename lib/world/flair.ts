@@ -12,11 +12,27 @@ import type { MarkerAnchor } from './geometry';
 /** PRD §8: "the leader's avatar renders slightly larger". */
 export const LEADER_EMPHASIS = 1.12;
 
+/**
+ * Consecutive-hit VFX tier: 3 spark trail, 5 flames, 8 inferno (PRD §8).
+ * Defined here rather than in the choreographer because it is derived from
+ * standings, which is what makes it survive a reload (ADR-0013).
+ */
+export type StreakTier = 0 | 3 | 5 | 8;
+
+export function streakTierFor(currentStreak: number): StreakTier {
+  if (currentStreak >= 8) return 8;
+  if (currentStreak >= 5) return 5;
+  if (currentStreak >= 3) return 3;
+  return 0;
+}
+
 /** Structural subset of `Standing`; matched by shape to stay decoupled. */
 export interface FlairStanding {
   player_id: string;
   correct: number;
   speed_points: number;
+  /** The CURRENT run, not the best one — `Standing.current_streak`. */
+  current_streak: number;
 }
 
 export interface Flair {
@@ -24,10 +40,11 @@ export interface Flair {
   /** Scale multiplier; 1 for everyone but the leader. */
   emphasis: number;
   edgeHolder: boolean;
+  streakTier: StreakTier;
 }
 
 const MEDALS = ['gold', 'silver', 'bronze'] as const;
-const NO_FLAIR: Flair = { medal: null, emphasis: 1, edgeHolder: false };
+const NO_FLAIR: Flair = { medal: null, emphasis: 1, edgeHolder: false, streakTier: 0 };
 
 export function flairFor(
   standings: readonly FlairStanding[],
@@ -54,6 +71,7 @@ export function flairFor(
       medal: index < MEDALS.length ? MEDALS[index] : null,
       emphasis: index === 0 ? LEADER_EMPHASIS : 1,
       edgeHolder: contested && anchor!.row === 0,
+      streakTier: streakTierFor(s.current_streak),
     });
   });
 

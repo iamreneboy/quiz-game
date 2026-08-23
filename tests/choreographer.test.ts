@@ -22,11 +22,14 @@ const metrics = trackMetrics(12);
 const full = allowanceFor('full');
 
 const s = (id: string, correct: number, speed = 0): FlairStanding => ({
-  player_id: id, correct, speed_points: speed,
+  player_id: id, correct, speed_points: speed, current_streak: 0,
 });
 
 const before = [s('a', 1), s('b', 1)];
 const after = [s('a', 2), s('b', 1)];
+// `current_streak: 8` mirrors the streak8 cue below — in the real system a
+// streak-tier cue always fires alongside the standings that produced it.
+const afterStreaking: FlairStanding[] = [{ ...s('a', 2), current_streak: 8 }, s('b', 1)];
 const anchorsBefore = markerAnchors(before, metrics);
 const anchorsAfter = markerAnchors(after, metrics);
 
@@ -34,8 +37,13 @@ const advanced: Cue = { type: 'player-advanced', tier: 'routine', playerId: 'a',
 const overtook: Cue = { type: 'overtake', tier: 'overtake', playerId: 'a', passed: ['b'] };
 const streak8: Cue = { type: 'streak-tier', tier: 'streakMilestone', playerId: 'a', streak: 8 };
 
-function frame(state: Parameters<typeof avatarStates>[0], anchors: readonly MarkerAnchor[], now: number) {
-  return avatarStates(state, anchors, flairFor(after, anchors), full, now, 'high');
+function frame(
+  state: Parameters<typeof avatarStates>[0],
+  anchors: readonly MarkerAnchor[],
+  now: number,
+  standings: FlairStanding[] = after,
+) {
+  return avatarStates(state, anchors, flairFor(standings, anchors), full, now, 'high');
 }
 
 describe('buffering', () => {
@@ -93,7 +101,7 @@ describe('tier arbitration', () => {
     state = bufferCue(state, overtook, anchorsBefore); // overtake outranks streakMilestone
     state = beginSequence(state, anchorsAfter, 0, 'high');
 
-    const at = frame(state, anchorsAfter, ANTICIPATE_MS + TRAVEL_MS + 10);
+    const at = frame(state, anchorsAfter, ANTICIPATE_MS + TRAVEL_MS + 10, afterStreaking);
     const inferno = at.find(v => v.playerId === 'a')!.vfx.find(v => v.kind === 'inferno');
     expect(inferno).toBeDefined();
     expect(inferno!.intensity).toBeCloseTo(SUBDUED_INTENSITY, 5);
@@ -129,7 +137,7 @@ describe('interruption and reload', () => {
     let state = bufferCue(initialChoreographerState, streak8, anchorsBefore);
     state = beginSequence(state, anchorsAfter, 0, 'high');
     state = completeSequence(state);
-    const states = frame(state, anchorsAfter, 10);
+    const states = frame(state, anchorsAfter, 10, afterStreaking);
     const a = states.find(v => v.playerId === 'a')!;
     expect(a.medal).toBe('gold');
     expect(a.vfx.some(v => v.kind === 'inferno')).toBe(true);
@@ -159,7 +167,7 @@ describe('persistent flair', () => {
     let state = bufferCue(initialChoreographerState, streak8, anchorsBefore);
     state = beginSequence(state, anchorsAfter, 0, 'high');
     const states = avatarStates(
-      state, anchorsAfter, flairFor(after, anchorsAfter),
+      state, anchorsAfter, flairFor(afterStreaking, anchorsAfter),
       allowanceFor('lean'), MOVEMENT_MS + 10, 'high',
     );
     const kinds = states.find(v => v.playerId === 'a')!.vfx.map(v => v.kind);
@@ -274,7 +282,6 @@ describe('holding the pre-reveal world', () => {
     expect(held.pulses).toEqual(seeded.pulses);
     expect(held.pending).toEqual(seeded.pending);
     expect(held.sequence).toBe(seeded.sequence);
-    expect(held.streakTier).toEqual(seeded.streakTier);
     expect(held.heldAnchors).toEqual(anchorsBefore);
   });
 });
