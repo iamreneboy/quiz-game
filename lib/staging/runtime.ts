@@ -72,7 +72,16 @@ export function startStagingRuntime(code: string): () => void {
     on('overtake', buffer),
     on('lead-changed', buffer),
     on('streak-tier', buffer),
-    on('final-question', buffer),
+    // Escalation is set the instant this cue is SEEN, not deferred to its
+    // resolution at phase-track: a reload seeding this cue can land directly
+    // in the final round's READ, ANSWER or REVEAL, none of which trigger
+    // resolveCallout, so waiting for arbitration would leave the world dark.
+    // Still buffered too, so the normal in-batch flow keeps arbitrating it
+    // against a same-beat overtake exactly as before.
+    on('final-question', cue => {
+      callouts = { ...bufferCallout(callouts, cue), escalated: true };
+      publishCallouts();
+    }),
     on('phase-track', () => {
       callouts = resolveCallout(callouts, nameOf, loadSession(code)?.playerId ?? null);
       publishCallouts();

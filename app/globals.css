@@ -129,3 +129,18 @@
     inset 0 0 calc(30px + var(--t) * 70px) calc(var(--t) * 8px)
       color-mix(in oklab, var(--color-warning), var(--color-wrong) calc(var(--t) * 100%));
 }
+
+/* The final question runs hot at the margins, never on the question or the
+   options themselves (P3a decision 4). Deeper and warmer at every point on
+   the same ramp -- it does not introduce a second clock. */
+.tension-frame--final {
+  opacity: calc(0.35 + var(--t) * 0.65);
+  box-shadow:
+    inset 0 0 calc(44px + var(--t) * 80px) calc(4px + var(--t) * 10px)
+      color-mix(in oklab, var(--color-warning), var(--color-wrong) calc(var(--t) * 100%));
+}
+
+/* READ and REVEAL have no vignette, so the shell carries the rim there. */
+[data-escalated='true'] {
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-warning) 22%, transparent);
+}

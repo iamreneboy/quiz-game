@@ -66,7 +66,6 @@ export default function GameView({ code }: { code: string }) {
   }
 
   if (room.phase === 'countdown') return <Countdown endsAt={room.ends_at} />;
-  if (room.phase === 'track') return <TrackReadout code={code} />;
 
   return (
     <StageShell
@@ -106,6 +105,7 @@ export default function GameView({ code }: { code: string }) {
           {room.phase === 'reveal' && question && reveal && (
             <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
           )}
+          {room.phase === 'track' && <TrackReadout code={code} />}
           {submitError && <p className="text-center text-sm text-wrong">{submitError}</p>}
         </>
       }

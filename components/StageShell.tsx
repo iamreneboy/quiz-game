@@ -33,20 +33,33 @@ export default function StageShell({
 }) {
   const beat = useStaging(s => s.beat);
   const announcement = useStaging(s => s.announcement);
+  const escalated = useStaging(s => s.escalated);
 
   return (
     <main
       data-testid="stage-shell"
       data-beat={beat}
-      className="mx-auto grid min-h-screen w-full max-w-2xl grid-rows-[auto_1fr_auto] gap-6 p-6
-        portrait:pt-[28vh] landscape:bg-abyss/60 landscape:backdrop-blur-sm"
+      data-escalated={escalated ? 'true' : undefined}
+      className={`mx-auto grid min-h-screen w-full max-w-2xl gap-6 p-6
+        ${beat === 'track'
+          ? 'grid-rows-[1fr_auto] portrait:pt-6'
+          : 'grid-rows-[auto_1fr_auto] portrait:pt-[28vh] landscape:bg-abyss/60 landscape:backdrop-blur-sm'}`}
     >
-      <div className="flex flex-col items-center gap-4">{header}</div>
-      <div className="flex flex-col justify-center">{question}</div>
-      <div className="space-y-4">
-        <AnimatePresence initial={false}>{options}</AnimatePresence>
-        {outcome}
-      </div>
+      {beat === 'track' ? (
+        <>
+          <div />
+          <div className="space-y-4">{outcome}</div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col items-center gap-4">{header}</div>
+          <div className="flex flex-col justify-center">{question}</div>
+          <div className="space-y-4">
+            <AnimatePresence initial={false}>{options}</AnimatePresence>
+            {outcome}
+          </div>
+        </>
+      )}
       <p
         data-testid="stage-announcer"
         aria-live="polite"

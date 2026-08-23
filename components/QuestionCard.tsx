@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import type { QuestionPublic } from '@/lib/types';
 import type { StageSteps } from '@/lib/staging/beats';
+import { useStaging } from '@/lib/staging/useStaging';
 import { TIER_NAMES, CATEGORIES } from '@/lib/rank';
 import { EASE } from '@/lib/presentation/tokens';
 
@@ -27,11 +28,18 @@ export default function QuestionCard({
   steps: StageSteps;
 }) {
   const cat = CATEGORIES.find(c => c.key === question.category);
+  const escalated = useStaging(s => s.escalated);
 
   return (
     <div className="space-y-4 text-center">
       <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
-        <span className="text-ink-mute tabular-nums">Q{round}/{totalRounds}</span>
+        {escalated ? (
+          <span className="rounded-full border border-warning/60 bg-warning/15 px-3 py-1.5 text-warning">
+            Final question
+          </span>
+        ) : (
+          <span className="text-ink-mute tabular-nums">Q{round}/{totalRounds}</span>
+        )}
         <AnimatePresence initial={false}>
           {steps.badges && (
             <>
