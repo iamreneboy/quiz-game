@@ -113,3 +113,19 @@
   transition-delay: 0ms !important;
   scroll-behavior: auto !important;
 }
+
+/* Round staging (P3a) — the ANSWER beat's closing frame.
+   Intensity comes from --tension, written by lib/staging/runtime.ts's ticker
+   so the ramp never passes through React. Under the reduced profile the
+   ticker writes three discrete levels instead of a continuous value. */
+.tension-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  --t: var(--tension, 0);
+  opacity: calc(0.2 + var(--t) * 0.8);
+  box-shadow:
+    inset 0 0 calc(30px + var(--t) * 70px) calc(var(--t) * 8px)
+      color-mix(in oklab, var(--color-warning), var(--color-wrong) calc(var(--t) * 100%));
+}

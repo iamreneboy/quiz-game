@@ -6,6 +6,7 @@ import { useHostDriver } from '@/lib/useHostDriver';
 import { loadSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
 import { startCueBridge } from '@/lib/presentation/cueBus';
+import { startStagingRuntime } from '@/lib/staging/runtime';
 import type { RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
@@ -14,6 +15,7 @@ import ResultsView from '@/components/ResultsView';
 import SettingsControl from '@/components/SettingsControl';
 import PixiStage from '@/components/PixiStage';
 import PerfOverlay from '@/components/PerfOverlay';
+import TensionFrame from '@/components/TensionFrame';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -26,6 +28,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
 
   useEffect(() => startCueBridge(), []);
+  useEffect(() => startStagingRuntime(code), [code]);
 
   useEffect(() => { setHasSession(!!loadSession(code)); }, [code]);
 
@@ -58,6 +61,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   return (
     <div className="relative min-h-screen">
       {room && room.status !== 'finished' && <PixiStage code={code} />}
+      <TensionFrame />
       <SettingsControl />
       <Suspense fallback={null}>
         <PerfOverlay />

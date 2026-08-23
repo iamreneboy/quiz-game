@@ -27,3 +27,7 @@ export const useStaging = create<StagingStore>(set => ({
     set({ announcement: text });
   },
 }));
+
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  (window as unknown as { __staging: typeof useStaging }).__staging = useStaging;
+}
