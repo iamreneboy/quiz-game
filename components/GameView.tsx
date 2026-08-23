@@ -44,12 +44,17 @@ export default function GameView({ code }: { code: string }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-6 portrait:pt-[30vh] landscape:bg-abyss/60 landscape:backdrop-blur-sm">
       {question && (
-        <QuestionCard question={question} round={room.round} totalRounds={room.total_rounds} />
+        <QuestionCard
+          question={question}
+          round={room.round}
+          totalRounds={room.total_rounds}
+          steps={steps}
+        />
       )}
 
       {room.phase === 'answer' && (
         <div className="flex justify-center">
-          <TimerRing endsAt={room.ends_at} totalMs={room.timer_seconds * 1000} />
+          <TimerRing />
         </div>
       )}
 

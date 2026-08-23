@@ -43,14 +43,10 @@ export function startStagingRuntime(code: string): () => void {
     announce(option ? `Locked in: ${option}` : 'Locked in');
   });
 
-  let frame = 0;
-  const tick = () => {
-    frame = requestAnimationFrame(tick);
-
+  const computeAndPublishDiscrete = () => {
     const { room, myAnswer } = useGameStore.getState();
     const remainingMs = room?.ends_at ? msUntil(room.ends_at) : null;
     const timerSeconds = room?.timer_seconds ?? 0;
-
     publish(
       stagingAt({
         phase: room?.phase ?? null,
@@ -61,7 +57,34 @@ export function startStagingRuntime(code: string): () => void {
         isPlaying: isLocalPlayerPlaying(),
       }),
     );
+    return { room, myAnswer, remainingMs, timerSeconds };
+  };
 
+  // Bootstrap once, the instant `room` is first known, rather than waiting
+  // for the next animation frame. `useGameStore` starts with room `null` and
+  // only resolves once the realtime channel's async SUBSCRIBED round-trip
+  // lands (lib/useRoomChannel.ts) — without this, a reload or late join mid-
+  // round renders one committed frame of `idle` before its first tick, and
+  // the READ entrance choreography plays as if it had just started.
+  //
+  // Deliberately one-shot: every OTHER phase transition is left to the rAF
+  // loop below, whose one-frame lag is what lets a genuinely fresh READ beat
+  // render "nothing yet" before "badges", which is what AnimatePresence needs
+  // to treat the badges as entering rather than already there.
+  let bootstrapped = false;
+  const tryBootstrap = (room: ReturnType<typeof useGameStore.getState>['room']) => {
+    if (bootstrapped || room === null) return;
+    bootstrapped = true;
+    computeAndPublishDiscrete();
+  };
+  tryBootstrap(useGameStore.getState().room); // covers room already set before this runs
+  const unsubscribeStore = useGameStore.subscribe(state => tryBootstrap(state.room));
+
+  let frame = 0;
+  const tick = () => {
+    frame = requestAnimationFrame(tick);
+
+    const { room, myAnswer, remainingMs, timerSeconds } = computeAndPublishDiscrete();
     const beat = beatFor(room?.phase ?? null);
     if (beat !== 'answer') {
       setVar(TENSION_VAR, 0);
@@ -89,6 +112,7 @@ export function startStagingRuntime(code: string): () => void {
   return () => {
     cancelAnimationFrame(frame);
     unsubscribe();
+    unsubscribeStore();
     setVar(TENSION_VAR, 0);
     setVar(TIMER_VAR, 0);
   };
