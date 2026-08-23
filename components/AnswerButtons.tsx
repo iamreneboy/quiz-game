@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { READ_OPTION_STAGGER } from '@/lib/staging/beats';
+import { READ_OPTION_STAGGER, type OptionsMode } from '@/lib/staging/beats';
 
 /**
  * The four answers (spec §6).
@@ -22,15 +22,16 @@ const OPTIONS = [
 ] as const;
 
 export default function AnswerButtons({
-  options, live, lockedChoice, spectating, onChoose,
+  options, mode, lockedChoice, spectating, onChoose,
 }: {
   options: string[];
-  /** True only during ANSWER: the server phase is the sole authority. */
-  live: boolean;
+  /** 'live' only during ANSWER: the server phase is the sole authority. */
+  mode: OptionsMode;
   lockedChoice: number | null;
   spectating: boolean;
   onChoose: (i: number) => void;
 }) {
+  const live = mode === 'live';
   const disabled = !live || lockedChoice !== null || spectating;
 
   // 1-4 shortcuts. Live only while a choice can actually be made, and never

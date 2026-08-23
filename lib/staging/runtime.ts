@@ -11,6 +11,10 @@ import { loadSession } from '@/lib/session';
 import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
 import { beatFor, beatTotalMs } from './beats';
+import {
+  bufferCallout, clearCallout, initialCalloutState, resetCallouts, resolveCallout,
+  type CalloutState,
+} from './callouts';
 import { stagingAt } from './staging';
 import { tensionAt, tensionStep } from './tension';
 import { useStaging } from './useStaging';
@@ -24,7 +28,7 @@ function setVar(name: string, value: number): void {
 }
 
 export function startStagingRuntime(code: string): () => void {
-  const { publish, announce } = useStaging.getState();
+  const { publish, announce, setCallout, setEscalated } = useStaging.getState();
 
   // Resolved lazily: the session is written when the visitor joins, which can
   // happen after this runtime starts. Same reasoning as PixiStage's lazy read,
@@ -42,6 +46,46 @@ export function startStagingRuntime(code: string): () => void {
     const option = useGameStore.getState().question?.options[cue.choiceIndex];
     announce(option ? `Locked in: ${option}` : 'Locked in');
   });
+
+  // ── Callouts: buffered at REVEAL, resolved at TRACK (ADR-0009) ───────────
+  let callouts: CalloutState = initialCalloutState;
+
+  const nameOf = (playerId: string): string => {
+    const { players, standings } = useGameStore.getState();
+    return (
+      players.find(p => p.id === playerId)?.nickname ??
+      standings?.find(s => s.player_id === playerId)?.nickname ??
+      'A racer'
+    );
+  };
+
+  const publishCallouts = () => {
+    setCallout(callouts.callout, callouts.deltas);
+    setEscalated(callouts.escalated);
+  };
+
+  const buffer = (cue: Parameters<typeof bufferCallout>[1]) => {
+    callouts = bufferCallout(callouts, cue);
+  };
+
+  const unsubscribes = [
+    on('overtake', buffer),
+    on('lead-changed', buffer),
+    on('streak-tier', buffer),
+    on('final-question', buffer),
+    on('phase-track', () => {
+      callouts = resolveCallout(callouts, nameOf, loadSession(code)?.playerId ?? null);
+      publishCallouts();
+    }),
+    on('phase-read', () => {
+      callouts = clearCallout(callouts);
+      publishCallouts();
+    }),
+    on('phase-results', () => {
+      callouts = resetCallouts();
+      publishCallouts();
+    }),
+  ];
 
   const computeAndPublishDiscrete = () => {
     const { room, myAnswer } = useGameStore.getState();
@@ -113,6 +157,7 @@ export function startStagingRuntime(code: string): () => void {
     cancelAnimationFrame(frame);
     unsubscribe();
     unsubscribeStore();
+    for (const off of unsubscribes) off();
     setVar(TENSION_VAR, 0);
     setVar(TIMER_VAR, 0);
   };

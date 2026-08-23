@@ -38,16 +38,20 @@ export const READ_OPTIONS_AT = 1000;
 /** Per-item delay handed to `motion`'s staggerChildren. */
 export const READ_OPTION_STAGGER = 70;
 
+/** How the options are being presented. Live only ever means ANSWER. */
+export type OptionsMode = 'dim' | 'live' | 'result';
+
 /** Which staged elements are on screen. Derived purely from beat + elapsed. */
 export interface StageSteps {
   badges: boolean;
   question: boolean;
   options: boolean;
-  /** Options are visible but not yet interactive (READ) vs. live (ANSWER). */
-  optionsLive: boolean;
+  optionsMode: OptionsMode;
 }
 
-const NOTHING: StageSteps = { badges: false, question: false, options: false, optionsLive: false };
+const NOTHING: StageSteps = {
+  badges: false, question: false, options: false, optionsMode: 'dim',
+};
 
 export function beatFor(phase: Phase | null): Beat {
   if (phase === null || phase === 'lobby') return 'idle';
@@ -73,14 +77,45 @@ export function stepsAt(beat: Beat, elapsedMs: number): StageSteps {
         badges: elapsedMs >= READ_BADGES_AT,
         question: elapsedMs >= READ_QUESTION_AT,
         options: elapsedMs >= READ_OPTIONS_AT,
-        optionsLive: false,
+        optionsMode: 'dim',
       };
     case 'answer':
-      return { badges: true, question: true, options: true, optionsLive: true };
+      return { badges: true, question: true, options: true, optionsMode: 'live' };
     case 'reveal':
-      // The question stays up under the reveal panel; the options retire.
-      return { badges: true, question: true, options: false, optionsLive: false };
+      // The options do NOT retire: they transform in place into result rows
+      // (spec decision 3), which is what keeps the morph continuous.
+      return { badges: true, question: true, options: true, optionsMode: 'result' };
     default:
       return NOTHING;
   }
+}
+
+/* ── REVEAL stagger (spec §5), in the P0 token durations ─────────────────── */
+
+export const REVEAL_ROWS_AT = 0;
+export const REVEAL_STACKS_AT = 300;
+export const REVEAL_FASTEST_AT = 900;
+export const REVEAL_FACT_AT = 1400;
+/** Per-avatar delay handed to `motion`'s staggerChildren. */
+export const REVEAL_AVATAR_STAGGER = 60;
+
+/** Which parts of the reveal have landed. Same ends_at derivation as READ. */
+export interface RevealSteps {
+  rows: boolean;
+  stacks: boolean;
+  fastest: boolean;
+  fact: boolean;
+}
+
+export const NO_REVEAL: RevealSteps = {
+  rows: false, stacks: false, fastest: false, fact: false,
+};
+
+export function revealStepsAt(elapsedMs: number): RevealSteps {
+  return {
+    rows: elapsedMs >= REVEAL_ROWS_AT,
+    stacks: elapsedMs >= REVEAL_STACKS_AT,
+    fastest: elapsedMs >= REVEAL_FASTEST_AT,
+    fact: elapsedMs >= REVEAL_FACT_AT,
+  };
 }

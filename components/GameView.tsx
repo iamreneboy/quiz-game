@@ -80,7 +80,7 @@ export default function GameView({ code }: { code: string }) {
           <AnswerButtons
             key="answer-buttons"
             options={question.options}
-            live={steps.optionsLive}
+            mode={steps.optionsMode}
             lockedChoice={lockedChoice}
             spectating={spectating}
             onChoose={choose}

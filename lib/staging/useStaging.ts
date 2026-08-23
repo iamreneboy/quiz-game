@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Callout, RailDelta } from './callouts';
 import { initialStagingState, sameStaging, type StagingState } from './staging';
 
 /**
@@ -13,18 +14,35 @@ export interface StagingStore extends StagingState {
    * happens — not re-announced on a re-render or on restore-from-storage.
    */
   announcement: string | null;
+  /** The beat's single headline (ADR-0010), or null. */
+  callout: Callout | null;
+  /** Below-headline drama, subdued into the rail. */
+  deltas: RailDelta[];
+  /** True from the final-question run-up until the results beat. */
+  escalated: boolean;
   publish(next: StagingState): void;
   announce(text: string): void;
+  setCallout(callout: Callout | null, deltas: RailDelta[]): void;
+  setEscalated(escalated: boolean): void;
 }
 
 export const useStaging = create<StagingStore>(set => ({
   ...initialStagingState,
   announcement: null,
+  callout: null,
+  deltas: [],
+  escalated: false,
   publish(next) {
     set(state => (sameStaging(state, next) ? state : next));
   },
   announce(text) {
     set({ announcement: text });
+  },
+  setCallout(callout, deltas) {
+    set({ callout, deltas });
+  },
+  setEscalated(escalated) {
+    set({ escalated });
   },
 }));
 

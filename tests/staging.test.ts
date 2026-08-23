@@ -90,3 +90,38 @@ describe('sameStaging', () => {
     expect(sameStaging(at({ remainingMs: 19_400 }), at({ remainingMs: 19_300 }))).toBe(true);
   });
 });
+
+describe('stagingAt — the reveal beat', () => {
+  it('derives reveal sub-steps from the deadline, so a reload does not replay', () => {
+    const midway = stagingAt({
+      phase: 'reveal', round: 2, remainingMs: 3000, timerSeconds: 20,
+      myAnswer: 1, isPlaying: true,
+    });
+    // 5000 nominal - 3000 remaining = 2000 elapsed: everything has landed.
+    expect(midway.reveal).toEqual({ rows: true, stacks: true, fastest: true, fact: true });
+    expect(midway.steps.optionsMode).toBe('result');
+  });
+
+  it('opens the reveal with the rows alone at the top of the beat', () => {
+    const fresh = stagingAt({
+      phase: 'reveal', round: 2, remainingMs: 5000, timerSeconds: 20,
+      myAnswer: 1, isPlaying: true,
+    });
+    expect(fresh.reveal.rows).toBe(true);
+    expect(fresh.reveal.stacks).toBe(false);
+  });
+
+  it('closes the reveal steps on every other beat', () => {
+    const answering = stagingAt({
+      phase: 'answer', round: 2, remainingMs: 8000, timerSeconds: 20,
+      myAnswer: null, isPlaying: true,
+    });
+    expect(answering.reveal).toEqual({ rows: false, stacks: false, fastest: false, fact: false });
+  });
+
+  it('treats a change of reveal step as a change worth publishing', () => {
+    const a = stagingAt({ phase: 'reveal', round: 1, remainingMs: 5000, timerSeconds: 20, myAnswer: 0, isPlaying: true });
+    const b = stagingAt({ phase: 'reveal', round: 1, remainingMs: 4500, timerSeconds: 20, myAnswer: 0, isPlaying: true });
+    expect(sameStaging(a, b)).toBe(false);
+  });
+});

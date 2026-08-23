@@ -11,7 +11,17 @@
  * quantized step and the whole second.
  */
 import type { Phase } from '@/lib/types';
-import { beatFor, beatTotalMs, elapsedIn, stepsAt, type Beat, type StageSteps } from './beats';
+import {
+  NO_REVEAL,
+  beatFor,
+  beatTotalMs,
+  elapsedIn,
+  revealStepsAt,
+  stepsAt,
+  type Beat,
+  type RevealSteps,
+  type StageSteps,
+} from './beats';
 import { tensionAt, tensionStep, type TensionStep } from './tension';
 
 export interface StagingInput {
@@ -29,6 +39,8 @@ export interface StagingState {
   beat: Beat;
   round: number;
   steps: StageSteps;
+  /** Which parts of the REVEAL beat have landed. Closed on every other beat. */
+  reveal: RevealSteps;
   tensionStep: TensionStep;
   /** Whole seconds left in ANSWER, for the ring's numeral. Null elsewhere. */
   secondsLeft: number | null;
@@ -39,7 +51,8 @@ export interface StagingState {
 export const initialStagingState: StagingState = {
   beat: 'idle',
   round: 0,
-  steps: { badges: false, question: false, options: false, optionsLive: false },
+  steps: { badges: false, question: false, options: false, optionsMode: 'dim' },
+  reveal: NO_REVEAL,
   tensionStep: 0,
   secondsLeft: null,
   lockedChoice: null,
@@ -56,6 +69,7 @@ export function stagingAt(input: StagingInput): StagingState {
     beat,
     round: input.round,
     steps: stepsAt(beat, elapsed),
+    reveal: beat === 'reveal' ? revealStepsAt(elapsed) : NO_REVEAL,
     tensionStep: isAnswer ? tensionStep(tensionAt(input.remainingMs, totalMs)) : 0,
     secondsLeft:
       isAnswer && input.remainingMs !== null
@@ -78,6 +92,10 @@ export function sameStaging(a: StagingState, b: StagingState): boolean {
     a.steps.badges === b.steps.badges &&
     a.steps.question === b.steps.question &&
     a.steps.options === b.steps.options &&
-    a.steps.optionsLive === b.steps.optionsLive
+    a.steps.optionsMode === b.steps.optionsMode &&
+    a.reveal.rows === b.reveal.rows &&
+    a.reveal.stacks === b.reveal.stacks &&
+    a.reveal.fastest === b.reveal.fastest &&
+    a.reveal.fact === b.reveal.fact
   );
 }
