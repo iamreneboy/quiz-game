@@ -4,8 +4,9 @@ import { useGameStore } from '@/lib/store';
 import { supabase } from '@/lib/supabaseClient';
 import { loadSession } from '@/lib/session';
 import { msUntil } from '@/lib/serverTime';
-import { saveAnswerLock } from '@/lib/staging/answerLock';
+import { loadAnswerLock, saveAnswerLock, clearAnswerLock } from '@/lib/staging/answerLock';
 import { useStaging } from '@/lib/staging/useStaging';
+import StageShell from './StageShell';
 import TimerRing from './TimerRing';
 import QuestionCard from './QuestionCard';
 import AnswerButtons from './AnswerButtons';
@@ -22,6 +23,23 @@ export default function GameView({ code }: { code: string }) {
   const lockedChoice = useStaging(s => s.lockedChoice);
   const spectating = useStaging(s => s.spectating);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const phase = room?.phase;
+  const round = room?.round ?? 0;
+
+  // Restore a lock the server already holds (spec §8.1). Runs when ANSWER
+  // begins and after a reload; the key is round-scoped, so it can never
+  // resurrect a previous round's choice.
+  useEffect(() => {
+    if (phase !== 'answer' || myAnswer !== null) return;
+    const stored = loadAnswerLock(code, round);
+    if (stored !== null) setMyAnswer(stored);
+  }, [code, phase, round, myAnswer, setMyAnswer]);
+
+  // A new READ means a new round: drop the previous round's key.
+  useEffect(() => {
+    if (phase === 'read' && round > 1) clearAnswerLock(code, round - 1);
+  }, [code, phase, round]);
 
   if (!room) return null;
 
@@ -42,46 +60,48 @@ export default function GameView({ code }: { code: string }) {
   if (room.phase === 'track') return <TrackReadout code={code} />;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-6 portrait:pt-[30vh] landscape:bg-abyss/60 landscape:backdrop-blur-sm">
-      {question && (
-        <QuestionCard
-          question={question}
-          round={room.round}
-          totalRounds={room.total_rounds}
-          steps={steps}
-        />
-      )}
-
-      {room.phase === 'answer' && (
-        <div className="flex justify-center">
-          <TimerRing />
-        </div>
-      )}
-
-      {question && steps.options && (
-        <AnswerButtons
-          options={question.options}
-          live={steps.optionsLive}
-          lockedChoice={lockedChoice}
-          spectating={spectating}
-          onChoose={choose}
-        />
-      )}
-      {room.phase === 'read' && (
-        <p className="text-center text-sm font-bold uppercase tracking-widest text-slate-500">Get ready…</p>
-      )}
-      {room.phase === 'answer' && myAnswer !== null && (
-        <p className="text-center font-bold text-amber-300">Locked in!</p>
-      )}
-
-      {room.phase === 'reveal' && question && reveal && (
-        <RevealPanel reveal={reveal} question={question} />
-      )}
-      {submitError && <p className="text-center text-sm text-rose-400">{submitError}</p>}
-    </main>
+    <StageShell
+      header={
+        <>
+          {question && (
+            <QuestionCard
+              question={question}
+              round={room.round}
+              totalRounds={room.total_rounds}
+              steps={steps}
+            />
+          )}
+          {room.phase === 'answer' && <TimerRing />}
+        </>
+      }
+      question={null}
+      options={
+        question && steps.options ? (
+          <AnswerButtons
+            options={question.options}
+            live={steps.optionsLive}
+            lockedChoice={lockedChoice}
+            spectating={spectating}
+            onChoose={choose}
+          />
+        ) : null
+      }
+      outcome={
+        <>
+          {spectating && room.phase === 'answer' && (
+            <p className="text-center text-sm text-ink-mute">You&rsquo;re watching this one.</p>
+          )}
+          {room.phase === 'reveal' && question && reveal && (
+            <RevealPanel reveal={reveal} question={question} />
+          )}
+          {submitError && <p className="text-center text-sm text-wrong">{submitError}</p>}
+        </>
+      }
+    />
   );
 }
 
+/** Restyled to the design system (spec §5). No choreography — not in P3's scope. */
 function Countdown({ endsAt }: { endsAt: string | null }) {
   const [n, setN] = useState(3);
   useEffect(() => {
@@ -90,7 +110,12 @@ function Countdown({ endsAt }: { endsAt: string | null }) {
   }, [endsAt]);
   return (
     <main className="grid min-h-screen place-items-center">
-      <span className="text-9xl font-black text-amber-400">{n}</span>
+      <span
+        className="font-display text-display font-black text-neon-cyan tabular-nums"
+        style={{ textShadow: '0 0 60px color-mix(in oklab, var(--color-neon-cyan) 55%, transparent)' }}
+      >
+        {n}
+      </span>
     </main>
   );
 }

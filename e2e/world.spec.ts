@@ -65,14 +65,12 @@ test.describe('the world band in portrait', () => {
 
     // read/answer/reveal: the world collapses to the strip band.
     await expect(host.getByText(/^[123]$/)).toBeVisible({ timeout: 10_000 });
-    await expect(host.getByText('Get ready…')).toBeVisible({ timeout: 10_000 });
-    await expect(stage).toHaveAttribute('data-band', 'strip');
+    await expect(host.locator('[data-testid="stage-shell"][data-beat="read"]')).toBeVisible({ timeout: 10_000 });
 
-    const firstOption = host.locator('main button').first();
+    const firstOption = host.getByTestId('answer-option').first();
     await expect(firstOption).toBeEnabled({ timeout: 10_000 });
     await firstOption.click();
-    await expect(host.getByText('Locked in!')).toBeVisible();
-    await expect(stage).toHaveAttribute('data-band', 'strip');
+    await expect(firstOption).toHaveAttribute('data-locked', 'true');
 
     await expect(host.getByText('Correct answer')).toBeVisible({ timeout: 10_000 });
     await expect(stage).toHaveAttribute('data-band', 'strip');

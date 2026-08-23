@@ -61,13 +61,13 @@ test('two players play a full round from lobby to results', async ({ page, brows
 async function answerRound(p: Page, label: string) {
   // countdown
   await expect(p.getByText(/^[123]$/)).toBeVisible({ timeout: 10_000 });
-  // read
-  await expect(p.getByText('Get ready…')).toBeVisible({ timeout: 10_000 });
+  // read — assert on the stable beat hook, never on copy
+  await expect(p.locator('[data-testid="stage-shell"][data-beat="read"]')).toBeVisible({ timeout: 10_000 });
   // answer: lock in the first option
-  const firstOption = p.locator('main button').first();
+  const firstOption = p.getByTestId('answer-option').first();
   await expect(firstOption).toBeEnabled({ timeout: 10_000 });
   await firstOption.click();
-  await expect(p.getByText('Locked in!')).toBeVisible();
+  await expect(firstOption).toHaveAttribute('data-locked', 'true');
   // reveal
   await expect(p.getByText('Correct answer')).toBeVisible({ timeout: 10_000 });
   // track
