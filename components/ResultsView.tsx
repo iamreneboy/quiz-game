@@ -8,6 +8,7 @@ import { elapsedIn } from '@/lib/staging/beats';
 import { BOARD_AT, CEREMONY_MS } from '@/lib/ceremony/beats';
 import { useCeremony } from '@/lib/ceremony/useCeremony';
 import ResultsTable from './ResultsTable';
+import WinnerCard from './WinnerCard';
 
 export default function ResultsView({ code }: { code: string }) {
   const room = useGameStore(s => s.room);
@@ -60,19 +61,23 @@ export default function ResultsView({ code }: { code: string }) {
         style={{ height: 'var(--ceremony-band, 0px)' }}
       />
 
-      <header className="text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Race complete</p>
-        <p className="mt-2 text-4xl font-black">
-          🏆 <span style={{ color: winner.color }}>{winner.nickname}</span> wins!
-        </p>
-        <p className="mt-1 text-slate-400">
-          {winner.correct}/{room.total_rounds} correct
-        </p>
-      </header>
+      <WinnerCard winner={winner} totalRounds={room.total_rounds} show={show} instant={settled} />
 
       <ResultsTable standings={standings} myId={myId} show={show} instant={settled} />
 
-      <Link href="/" className="text-center font-bold text-amber-400 hover:underline">
+      {/*
+        Spec decision 5 — ADR-0016's "staging never gates input", applied to the
+        last screen. Deliberately OUTSIDE every fading wrapper: an exit that is
+        focusable but invisible is worse than one that is simply there, so this
+        never carries the board's staged opacity.
+      */}
+      <Link
+        href="/"
+        className="mx-auto rounded-control border border-haze/50 bg-abyss/70 px-5 py-2.5
+          text-sm font-bold uppercase tracking-widest text-neon-cyan backdrop-blur-md
+          transition-colors hover:bg-haze/30
+          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan"
+      >
         Back to home
       </Link>
     </main>
