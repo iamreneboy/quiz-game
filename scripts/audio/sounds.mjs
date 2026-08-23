@@ -154,6 +154,16 @@ export const STINGS = {
 
 /* ── Beds (loops) ────────────────────────────────────────────────────────── */
 
+/*
+ * Headroom: the 'round' bed's four stems (round-base, round-drive,
+ * round-urgency, round-dread) all share one 4-bar loop length so the mixer
+ * can start them together and keep them phase-locked (see BED_STEMS in
+ * lib/audio/design.ts) — which means up to all four can be summing into the
+ * output at once (max ANSWER tension during the final-question escalation).
+ * Each is normalize()'d against that shared worst case, not in isolation,
+ * or the sum clips (audibly, in the bass, since the periodic low content —
+ * round-base's kick and round-dread's drone — reinforces most).
+ */
 const kick = (b, at, gain = 0.5) =>
   tone(b, { freq: 90, start: at, dur: 0.22, gain, wave: 'sine', bend: 0.45, env: { a: 0.001, d: 0.14, r: 0.06 } });
 
@@ -180,7 +190,10 @@ export const BEDS = {
       0.55,
     ),
 
-  // 2 bars. Always audible during a round.
+  // 2 bars. Always audible during a round. Up to 3 other round stems can
+  // play concurrently (round-drive, round-urgency, round-dread), so the
+  // peak here is budgeted for the mix, not for this loop in isolation —
+  // see the headroom note above BEDS.
   'round-base': () =>
     normalize(
       renderLoop(4, 0.6, b => {
@@ -191,10 +204,11 @@ export const BEDS = {
         }
         reverb(b, { timeS: 0.18, mix: 0.22 });
       }),
-      0.6,
+      0.4,
     ),
 
-  // 2 bars. Faded in by the ANSWER tension ramp.
+  // 2 bars. Faded in by the ANSWER tension ramp. Budgeted against round-base
+  // playing at the same time (see the headroom note above BEDS).
   'round-drive': () =>
     normalize(
       renderLoop(4, 0.6, b => {
@@ -204,10 +218,12 @@ export const BEDS = {
         }
         reverb(b, { timeS: 0.15, mix: 0.24 });
       }),
-      0.6,
+      0.4,
     ),
 
-  // 2 bars of 16ths. Arrives late in the ANSWER ramp.
+  // 2 bars of 16ths. Arrives late in the ANSWER ramp. Budgeted against
+  // round-base + round-drive playing at the same time (see the headroom
+  // note above BEDS).
   'round-urgency': () =>
     normalize(
       renderLoop(4, 0.6, b => {
@@ -218,10 +234,12 @@ export const BEDS = {
         noise(b, { start: 3, dur: 1, gain: 0.14, cutoff: 4000, env: { a: 0.8, d: 0.2, s: 0.6, r: 0.2 } });
         reverb(b, { timeS: 0.12, mix: 0.26 });
       }),
-      0.65,
+      0.43,
     ),
 
-  // 2 bars. Silent unless the final-question escalation is active.
+  // 2 bars. Silent unless the final-question escalation is active, in which
+  // case it plays alongside all three other round stems — the worst-case
+  // concurrency the headroom note above BEDS budgets for.
   'round-dread': () =>
     normalize(
       renderLoop(4, 0.8, b => {
@@ -230,7 +248,7 @@ export const BEDS = {
         noise(b, { dur: 4, gain: 0.1, cutoff: 900, env: { a: 1, d: 1, s: 0.7, r: 1 } });
         reverb(b, { timeS: 0.3, mix: 0.4 });
       }),
-      0.62,
+      0.41,
     ),
 
   // 4 bars, brighter — the ceremony.
