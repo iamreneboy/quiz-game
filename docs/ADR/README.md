@@ -49,3 +49,6 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0020](0020-callouts-buffer-their-own-queue.md) | Callouts buffer their own queue rather than reading the choreographer's | P3b |
 | [0021](0021-final-question-escalation-fires-on-the-run-up-beat.md) | Final-question escalation fires on the run-up beat | P3b |
 | [0022](0022-answer-resolved-is-derived-not-inferred.md) | `answer-resolved` is derived, not inferred | P4 |
+| [0023](0023-audio-escalation-reuses-the-vignette-ramp.md) | Audio escalation reuses the vignette's ramp | P4 |
+| [0024](0024-the-first-cue-batch-is-catch-up.md) | The first cue batch is catch-up | P4 |
+| [0025](0025-sounds-are-generated-source-not-assets.md) | Sounds are generated source, not assets | P4 |

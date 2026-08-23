@@ -7,7 +7,7 @@
  */
 import { buffer, noise, normalize, renderLoop, reverb, seed, tone } from './dsp.mjs';
 
-const A2 = 110, C3 = 130.81, D3 = 146.83, E3 = 164.81, G3 = 196;
+const A2 = 110, D3 = 146.83, E3 = 164.81, G3 = 196;
 const A3 = 220, C4 = 261.63, D4 = 293.66, E4 = 329.63, G4 = 392;
 const A4 = 440, C5 = 523.25, E5 = 659.25, A5 = 880;
 const BEAT = 0.5;
