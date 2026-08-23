@@ -9,6 +9,7 @@
 import type { Cue } from '@/lib/presentation/cues';
 import { isSubdued, resolveTier, type CelebrationTier } from '@/lib/presentation/celebration';
 import type { Profile } from '@/lib/presentation/profile';
+import { ARENA_AT_MS } from '@/lib/presentation/timing';
 import { LEADER_EMPHASIS, type Flair } from './flair';
 import type { MarkerAnchor } from './geometry';
 import {
@@ -25,8 +26,7 @@ import type { VfxAllowance } from './vfxBudget';
 /** Below-headline effects are quieter, never absent (spec §4). */
 export const SUBDUED_INTENSITY = 0.6;
 
-/** When the arena reaction lands, measured from sequence start. */
-export const ARENA_AT_MS = 1400;
+export { ARENA_AT_MS };
 const ARENA_HOLD_MS = 1200;
 
 /** How long a scheduled instant stays "firing" for the renderer. */

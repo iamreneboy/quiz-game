@@ -136,7 +136,7 @@ describe('phase beats', () => {
     });
   });
 
-  it('the last round also emits final-question at the finalQuestion tier', () => {
+  it('the last round\'s read still carries isFinal, though final-question itself now fires on the run-up', () => {
     const { batches } = run([
       source({ phase: 'track', round: 2 }),
       source({
@@ -145,9 +145,8 @@ describe('phase beats', () => {
         question: { category: 'fuel', tier: 4, prompt: 'Q?', options: ['a', 'b', 'c', 'd'] },
       }),
     ]);
-    expect(types(batches[1])).toEqual(['phase-read', 'final-question']);
+    expect(types(batches[1])).toEqual(['phase-read']);
     expect(batches[1][0]).toMatchObject({ isFinal: true });
-    expect(batches[1][1]).toEqual({ type: 'final-question', tier: 'finalQuestion', round: 3 });
   });
 
   it('phase-reveal maps the reveal payload into cue shape', () => {
@@ -224,7 +223,10 @@ describe('standings drama', () => {
       track(2, after),
       source({ phase: 'results', round: 2, standings: after }),
     ]);
-    expect(types(batches[2])).toEqual(['phase-track']);
+    // Round 2 of 3 is the run-up beat, so final-question legitimately rides
+    // alongside phase-track here — the assertion this test cares about is
+    // that no standings drama (player-advanced etc.) repeats.
+    expect(types(batches[2])).toEqual(['final-question', 'phase-track']);
     expect(types(batches[3])).toEqual(['phase-results', 'podium']);
   });
 
@@ -363,8 +365,8 @@ describe('a full recorded game', () => {
       ['phase-read'],
       ['phase-answer'],
       ['phase-reveal', 'player-advanced', 'overtake', 'lead-changed'],
-      ['phase-track'],
-      ['phase-read', 'final-question'],
+      ['final-question', 'phase-track'],
+      ['phase-read'],
       ['phase-answer'],
       ['phase-reveal', 'player-advanced', 'player-advanced'],
       ['phase-track'],
@@ -382,5 +384,68 @@ describe('a full recorded game', () => {
       expect(CELEBRATION_TIERS).toContain(cue.tier);
     }
     expect(resolveTier(batches[2])).toBe('overtake');
+  });
+});
+
+describe('final-question fires on the run-up beat', () => {
+  const finalOf = (cues: Cue[]) => cues.filter(c => c.type === 'final-question');
+
+  /** The chronological cue stream, not run()'s per-step batches. */
+  const flatCues = (steps: CueSource[]): Cue[] => run(steps).batches.flat();
+
+  it('announces the final question when the PENULTIMATE track begins', () => {
+    const cues = flatCues([
+      source({ phase: 'reveal', round: 2 }),
+      source({ phase: 'track', round: 2 }),
+    ]);
+    expect(finalOf(cues)).toHaveLength(1);
+    expect(finalOf(cues)[0]).toMatchObject({ tier: 'finalQuestion', round: 3 });
+  });
+
+  it('emits it BEFORE phase-track, so a listener that resolves on the track beat sees it', () => {
+    const cues = flatCues([
+      source({ phase: 'reveal', round: 2 }),
+      source({ phase: 'track', round: 2 }),
+    ]);
+    const types = cues.map(c => c.type);
+    expect(types.indexOf('final-question')).toBeLessThan(types.indexOf('phase-track'));
+  });
+
+  it('no longer fires at the final READ, so it cannot double-announce', () => {
+    const cues = flatCues([
+      source({ phase: 'track', round: 2 }),
+      source({ phase: 'read', round: 3 }),
+    ]);
+    expect(finalOf(cues.filter((_, i) => i > 0))).toHaveLength(0);
+  });
+
+  it('fires exactly once across a whole game', () => {
+    const cues = flatCues([
+      source({ phase: 'reveal', round: 2 }),
+      source({ phase: 'track', round: 2 }),
+      source({ phase: 'read', round: 3 }),
+      source({ phase: 'answer', round: 3 }),
+      source({ phase: 'reveal', round: 3 }),
+      source({ phase: 'track', round: 3 }),
+    ]);
+    expect(finalOf(cues)).toHaveLength(1);
+  });
+
+  it('falls back to the countdown when the game is a single round', () => {
+    const one = (phase: Phase, round: number) => ({
+      ...source({ phase, round }),
+      room: { phase, round, total_rounds: 1, ends_at: null },
+    });
+    const cues = flatCues([one('lobby', 0), one('countdown', 1)]);
+    expect(finalOf(cues)).toHaveLength(1);
+  });
+
+  it('seeds escalation for a client that reloads inside the final round', () => {
+    const { cues } = deriveCues(
+      source({ phase: 'answer', round: 3 }),
+      source({ phase: 'answer', round: 3 }),
+      initialDerivationState, // unseeded: this is a fresh client
+    );
+    expect(cues.filter(c => c.type === 'final-question')).toHaveLength(1);
   });
 });

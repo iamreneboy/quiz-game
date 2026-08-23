@@ -7,11 +7,13 @@
  */
 import { tierRank, type CelebrationTier } from '@/lib/presentation/celebration';
 import type { Cue } from '@/lib/presentation/cues';
+import { DRAMA_HOLD_MS } from '@/lib/presentation/timing';
 import type { Phase } from '@/lib/types';
 import type { MoveStyle } from './camera';
 import type { FramingMode } from './framing';
 
-export const OVERTAKE_HOLD_MS = 1200;
+/** The camera transient and the DOM callout expire together, by construction. */
+export const OVERTAKE_HOLD_MS = DRAMA_HOLD_MS;
 export const FINAL_QUESTION_HOLD_MS = 2000;
 
 export interface CameraIntent {

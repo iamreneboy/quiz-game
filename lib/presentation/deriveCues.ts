@@ -77,8 +77,21 @@ export function deriveCues(
   // First snapshot with a room: establish the baseline, announce the current
   // beat (so a reload lands in the right visual state), derive nothing else.
   if (!state.seeded) {
+    const seedCues = phaseCues(room, next);
+    // A client that reloads or joins mid-final-round never saw the run-up, so
+    // the escalation has to be seeded here or the world never goes neon.
+    const inFinalRound =
+      room.total_rounds > 0 &&
+      room.round === room.total_rounds &&
+      room.phase !== 'lobby' &&
+      room.phase !== 'results';
+    const alreadyAnnounced = seedCues.some(c => c.type === 'final-question');
+    if (inFinalRound && !alreadyAnnounced) {
+      seedCues.unshift({ type: 'final-question', tier: 'finalQuestion', round: room.round });
+    }
+
     return {
-      cues: phaseCues(room, next),
+      cues: seedCues,
       nextState: {
         seeded: true,
         phase: room.phase,
@@ -135,11 +148,21 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
   const isFinal = room.total_rounds > 0 && room.round === room.total_rounds;
 
   switch (room.phase) {
-    case 'countdown':
-      return [{ type: 'phase-countdown', tier: 'routine', endsAt: room.ends_at }];
+    case 'countdown': {
+      const cues: Cue[] = [];
+      // A one-round game has no preceding TRACK to escalate on.
+      if (room.total_rounds === 1 && room.round === 1) {
+        cues.push({ type: 'final-question', tier: 'finalQuestion', round: room.round });
+      }
+      cues.push({ type: 'phase-countdown', tier: 'routine', endsAt: room.ends_at });
+      return cues;
+    }
 
-    case 'read': {
-      const cues: Cue[] = [
+    case 'read':
+      // `final-question` no longer rides with the final READ: it fires one beat
+      // earlier, on the run-up (spec decision 7), so the final question's own
+      // announcement never spends its reading time.
+      return [
         {
           type: 'phase-read',
           tier: 'routine',
@@ -149,9 +172,6 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
           isFinal,
         },
       ];
-      if (isFinal) cues.push({ type: 'final-question', tier: 'finalQuestion', round: room.round });
-      return cues;
-    }
 
     case 'answer':
       return [{ type: 'phase-answer', tier: 'routine', round: room.round, endsAt: room.ends_at }];
@@ -176,8 +196,17 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
       ];
     }
 
-    case 'track':
-      return [{ type: 'phase-track', tier: 'routine', round: room.round }];
+    case 'track': {
+      const cues: Cue[] = [];
+      // The run-up: entering the PENULTIMATE round's track beat. Emitted
+      // BEFORE phase-track, because lib/staging/runtime.ts resolves the beat's
+      // headline on phase-track and must already hold this cue.
+      if (room.total_rounds > 1 && room.round === room.total_rounds - 1) {
+        cues.push({ type: 'final-question', tier: 'finalQuestion', round: room.round + 1 });
+      }
+      cues.push({ type: 'phase-track', tier: 'routine', round: room.round });
+      return cues;
+    }
 
     case 'results':
       return [
