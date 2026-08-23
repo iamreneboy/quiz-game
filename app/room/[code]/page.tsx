@@ -1,9 +1,9 @@
 'use client';
-import { Suspense, use, useEffect, useState } from 'react';
+import { Suspense, use, useCallback, useEffect, useSyncExternalStore } from 'react';
 import { useGameStore } from '@/lib/store';
 import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useHostDriver } from '@/lib/useHostDriver';
-import { loadSession } from '@/lib/session';
+import { loadSession, subscribeSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
 import { startCueBridge } from '@/lib/presentation/cueBus';
 import { startStagingRuntime } from '@/lib/staging/runtime';
@@ -22,7 +22,23 @@ import TensionFrame from '@/components/TensionFrame';
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
   const code = rawCode.toUpperCase();
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  /**
+   * "Does this browser hold a session for this room?" — a localStorage read,
+   * so it cannot happen during the server render.
+   *
+   * `null` is the server snapshot and means NOT KNOWN YET: React renders it
+   * through hydration and switches to the real value immediately after, which
+   * is what keeps the markup identical on both sides. Reading it through
+   * useSyncExternalStore rather than copying it into state from an effect is
+   * what keeps this off the cascading-render path (react-hooks/set-state-in-effect),
+   * and `subscribeSession` means a fresh join updates it without anyone
+   * calling a setter.
+   */
+  const hasSession = useSyncExternalStore(
+    subscribeSession,
+    useCallback(() => !!loadSession(code), [code]),
+    () => null,
+  );
   const room = useGameStore(s => s.room);
   const applyState = useGameStore(s => s.applyState);
   const channel = useRoomChannel(code);
@@ -37,10 +53,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   useEffect(() => startStagingRuntime(code), [code]);
   useEffect(() => startCeremonyRuntime(), []);
 
-  useEffect(() => { setHasSession(!!loadSession(code)); }, [code]);
-
   async function handleJoined() {
-    setHasSession(true);
+    // No setHasSession here: JoinGate has already called saveSession, which
+    // notified the store above.
     const { data } = await supabase.rpc('get_room_state', { p_code: code });
     if (data) {
       applyState(data as RoomState);
