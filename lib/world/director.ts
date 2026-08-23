@@ -49,7 +49,8 @@ const BASE_BY_PHASE: Record<Phase, CameraIntent> = {
   // The reveal holds whatever shot the answer phase left; see reduceCue.
   reveal: intent('pack', 'drift'),
   track: intent('pack', 'cut'),
-  results: intent('establishing', 'drift'),
+  // A cut to the podium is the broadcast move; a drift is a screensaver.
+  results: intent('podium', 'cut'),
 };
 
 export const initialDirectorState: DirectorState = {
@@ -103,6 +104,20 @@ export function reduceCue(state: DirectorState, cue: Cue, now: number): Director
         OVERTAKE_HOLD_MS,
         now,
       );
+
+    case 'phase-results':
+      return {
+        ...state,
+        base: BASE_BY_PHASE.results,
+        // A live overtake transient outranks nothing here — it would simply
+        // fight the cut — so the ceremony takes the frame outright.
+        transient: null,
+        // DELIBERATELY NOT RESET. `escalation` is still 1 from the final
+        // question, and a world dimmed to neon at peak is exactly the grade a
+        // spotlight wants. `phase-read` zeroes it; this must not. Do not
+        // "fix" this to match the other branches.
+        escalation: state.escalation,
+      };
 
     // `phase-reveal` deliberately holds the current shot. Everything else in
     // the P0 vocabulary belongs to a later phase (spec §5).

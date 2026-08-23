@@ -18,8 +18,9 @@ import {
   type Viewport,
 } from './geometry';
 import { clampCamera, spanLimits } from './camera';
+import { BLOCK_WIDTH, podiumX } from './podium';
 
-export type FramingMode = 'startLine' | 'establishing' | 'pack' | 'emphasis';
+export type FramingMode = 'startLine' | 'establishing' | 'pack' | 'emphasis' | 'podium';
 
 export interface FramingInput {
   anchors: readonly MarkerAnchor[];
@@ -34,6 +35,14 @@ export interface FramingInput {
 const PACK_PADDING = SEGMENT_WIDTH * 0.9;
 const EMPHASIS_PADDING = SEGMENT_WIDTH * 0.6;
 const START_LINE_SEGMENTS = 5;
+
+/**
+ * The ceremony shot: three block widths plus breathing room on each side.
+ *
+ * `clampCamera` widens this to camera.ts's MIN_SPAN if it is tighter, which is
+ * the desired floor — the podium is the closest the camera ever gets.
+ */
+const PODIUM_SPAN = BLOCK_WIDTH * 3 + PACK_PADDING * 2;
 
 /** Where the leader sits across the frame when the field overflows: 0.5 == centre. */
 const LEADER_BIAS = 0.8;
@@ -62,6 +71,12 @@ export function frameTarget(mode: FramingMode, input: FramingInput): CameraState
       if (named.length === 0) return frameTarget('pack', input);
       return fit(named, EMPHASIS_PADDING, input);
     }
+
+    case 'podium':
+      // Frames a PLACE, not a group: the podium is at a known world x, so this
+      // shot needs no anchors and cannot be thrown off by a straggler still
+      // standing back at segment 2.
+      return clampCamera({ centerX: podiumX(metrics), span: PODIUM_SPAN }, metrics);
 
     case 'pack':
     default: {

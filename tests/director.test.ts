@@ -136,9 +136,41 @@ describe('ignored cues', () => {
       { type: 'answer-locked', tier: 'routine', choiceIndex: 2 },
       { type: 'player-advanced', tier: 'routine', playerId: 'a', from: 1, to: 2 },
       { type: 'player-joined', tier: 'routine', playerId: 'a', nickname: 'A', avatar: 'duck', color: '#fff' },
-      { type: 'phase-results', tier: 'routine' },
       { type: 'podium', tier: 'victory', top: [] },
     ];
     for (const cue of ignored) expect(reduceCue(base, cue, 500)).toBe(base);
+  });
+});
+
+describe('phase-results', () => {
+  it('cuts to the podium', () => {
+    const state = reduceCue(initialDirectorState, { type: 'phase-results', tier: 'routine' }, 0);
+    expect(activeIntent(state).mode).toBe('podium');
+    expect(activeIntent(state).style).toBe('cut');
+  });
+
+  it('HOLDS escalation rather than resetting it', () => {
+    // escalation is still 1 from the final question, and a world dimmed to
+    // neon at peak is exactly the grade a spotlight wants.
+    const escalated = reduceCue(
+      initialDirectorState, { type: 'final-question', tier: 'finalQuestion', round: 12 }, 0,
+    );
+    expect(escalated.escalation).toBe(1);
+
+    const results = reduceCue(escalated, { type: 'phase-results', tier: 'routine' }, 5000);
+    expect(results.escalation).toBe(1);
+  });
+
+  it('drops a live transient so a leftover shot cannot fight the cut', () => {
+    const withTransient = reduceCue(
+      initialDirectorState,
+      { type: 'overtake', tier: 'overtake', playerId: 'p1', passed: ['p2'] },
+      0,
+    );
+    expect(withTransient.transient).not.toBeNull();
+
+    const results = reduceCue(withTransient, { type: 'phase-results', tier: 'routine' }, 10);
+    expect(results.transient).toBeNull();
+    expect(activeIntent(results).mode).toBe('podium');
   });
 });

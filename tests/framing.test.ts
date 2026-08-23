@@ -15,6 +15,7 @@ import {
 } from '@/lib/world/geometry';
 import { spanLimits } from '@/lib/world/camera';
 import { frameTarget, offscreenPlayerIds, type FramingInput } from '@/lib/world/framing';
+import { BLOCK_WIDTH, blockX } from '@/lib/world/podium';
 
 const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
 
@@ -237,5 +238,44 @@ describe('startLine framing', () => {
       const rear = anchors.reduce((a, b) => (a.x <= b.x ? a : b));
       expect(rigBox(rear, camera).left).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('podium framing', () => {
+  it('centres the finish line and holds the whole podium in frame', () => {
+    const metrics = trackMetrics(12);
+    const shot = frameTarget('podium', {
+      anchors: [], metrics, viewport: { width: 1920, height: 1080 },
+      localPlayerId: null, emphasisIds: [],
+    });
+
+    const left = shot.centerX - shot.span / 2;
+    const right = shot.centerX + shot.span / 2;
+    expect(left).toBeLessThan(blockX(2, metrics) - BLOCK_WIDTH / 2);
+    expect(right).toBeGreaterThan(blockX(3, metrics) + BLOCK_WIDTH / 2);
+  });
+
+  it('needs no anchors — it frames a place, not a group', () => {
+    const metrics = trackMetrics(12);
+    const empty = frameTarget('podium', {
+      anchors: [], metrics, viewport: { width: 1920, height: 1080 },
+      localPlayerId: null, emphasisIds: [],
+    });
+    const full = frameTarget('podium', {
+      anchors: [{ playerId: 'p1', x: 0, y: 0, row: 0, segment: 0 }],
+      metrics, viewport: { width: 1920, height: 1080 },
+      localPlayerId: 'p1', emphasisIds: [],
+    });
+    expect(empty).toEqual(full);
+  });
+
+  it('stays inside the world bounds on a short track', () => {
+    const metrics = trackMetrics(1);
+    const shot = frameTarget('podium', {
+      anchors: [], metrics, viewport: { width: 1920, height: 1080 },
+      localPlayerId: null, emphasisIds: [],
+    });
+    expect(shot.centerX - shot.span / 2).toBeGreaterThanOrEqual(metrics.minX - 0.001);
+    expect(shot.centerX + shot.span / 2).toBeLessThanOrEqual(metrics.maxX + 0.001);
   });
 });
