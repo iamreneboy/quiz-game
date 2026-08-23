@@ -178,12 +178,14 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
 
     case 'reveal': {
       const fastest = next.reveal?.fastest;
+      const correctIndex = next.reveal?.correct_index ?? null;
+      const answered = next.myAnswer !== null;
       return [
         {
           type: 'phase-reveal',
           tier: 'routine',
           round: room.round,
-          correctIndex: next.reveal?.correct_index ?? null,
+          correctIndex,
           counts: next.reveal?.counts ?? [],
           fastest: fastest
             ? {
@@ -192,6 +194,17 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
                 timeRemainingMs: fastest.time_remaining_ms,
               }
             : null,
+        },
+        // Rides immediately behind the reveal so a consumer processing in order
+        // already has the room's outcome before the personal verdict. Derived,
+        // never inferred — see ADR-0022.
+        {
+          type: 'answer-resolved',
+          tier: 'routine',
+          answered,
+          correct: answered && correctIndex !== null && next.myAnswer === correctIndex,
+          choiceIndex: next.myAnswer,
+          correctIndex,
         },
       ];
     }

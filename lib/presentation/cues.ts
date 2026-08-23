@@ -112,6 +112,17 @@ export interface AnswerLockedCue {
   choiceIndex: number;
 }
 
+export interface AnswerResolvedCue {
+  type: 'answer-resolved';
+  tier: 'routine';
+  /** False when the local player let the clock run out, or is not playing. */
+  answered: boolean;
+  /** Meaningless when `answered` is false. */
+  correct: boolean;
+  choiceIndex: number | null;
+  correctIndex: number | null;
+}
+
 /* ── Lobby / ceremony ────────────────────────────────────────────────────── */
 
 export interface PlayerJoinedCue {
@@ -153,6 +164,7 @@ export type Cue =
   | StreakBrokenCue
   | FinalQuestionCue
   | AnswerLockedCue
+  | AnswerResolvedCue
   | PlayerJoinedCue
   | PodiumCue;
 

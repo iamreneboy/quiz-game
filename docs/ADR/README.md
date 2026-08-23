@@ -48,3 +48,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0019](0019-the-reveal-is-the-options-grid-transformed.md) | The reveal is the options grid transformed, not a second widget | P3b |
 | [0020](0020-callouts-buffer-their-own-queue.md) | Callouts buffer their own queue rather than reading the choreographer's | P3b |
 | [0021](0021-final-question-escalation-fires-on-the-run-up-beat.md) | Final-question escalation fires on the run-up beat | P3b |
+| [0022](0022-answer-resolved-is-derived-not-inferred.md) | `answer-resolved` is derived, not inferred | P4 |

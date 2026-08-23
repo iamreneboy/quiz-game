@@ -76,7 +76,7 @@ describe('seeding', () => {
       standings: [standing(A, 2), standing(B, 1)],
     });
     const { batches } = run([mid]);
-    expect(types(batches[0])).toEqual(['phase-reveal']);
+    expect(types(batches[0])).toEqual(['phase-reveal', 'answer-resolved']);
   });
 });
 
@@ -112,7 +112,7 @@ describe('phase beats', () => {
       ['phase-countdown'],
       ['phase-read'],
       ['phase-answer'],
-      ['phase-reveal', 'player-advanced'],
+      ['phase-reveal', 'answer-resolved', 'player-advanced'],
       ['phase-track'],
     ]);
   });
@@ -259,7 +259,7 @@ describe('standings drama', () => {
       source({ phase: 'countdown', round: 1 }),
       reveal(1, [standing(A, 1), standing(B, 0)]),
     ]);
-    expect(types(batches[1])).toEqual(['phase-reveal', 'player-advanced']);
+    expect(types(batches[1])).toEqual(['phase-reveal', 'answer-resolved', 'player-advanced']);
   });
 });
 
@@ -360,15 +360,15 @@ describe('a full recorded game', () => {
       ['phase-countdown'],
       ['phase-read'],
       ['phase-answer'],
-      ['phase-reveal', 'player-advanced'],
+      ['phase-reveal', 'answer-resolved', 'player-advanced'],
       ['phase-track'],
       ['phase-read'],
       ['phase-answer'],
-      ['phase-reveal', 'player-advanced', 'overtake', 'lead-changed'],
+      ['phase-reveal', 'answer-resolved', 'player-advanced', 'overtake', 'lead-changed'],
       ['final-question', 'phase-track'],
       ['phase-read'],
       ['phase-answer'],
-      ['phase-reveal', 'player-advanced', 'player-advanced'],
+      ['phase-reveal', 'answer-resolved', 'player-advanced', 'player-advanced'],
       ['phase-track'],
       ['phase-results', 'podium'],
     ]);
@@ -447,5 +447,85 @@ describe('final-question fires on the run-up beat', () => {
       initialDerivationState, // unseeded: this is a fresh client
     );
     expect(cues.filter(c => c.type === 'final-question')).toHaveLength(1);
+  });
+});
+
+describe('answer-resolved', () => {
+  const revealSource = (myAnswer: number | null, correctIndex: number) =>
+    source({
+      phase: 'reveal',
+      round: 1,
+      myAnswer,
+      reveal: {
+        correct_index: correctIndex,
+        fun_fact: null,
+        counts: [1, 0, 1, 0],
+        picks: [],
+        fastest: null,
+        standings: [],
+      },
+      standings: [standing(A, 1), standing(B, 0)],
+    });
+
+  it('reports a correct local answer', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1, myAnswer: 2 }),
+      revealSource(2, 2),
+    ]);
+    const cue = batches[1].find(c => c.type === 'answer-resolved');
+    expect(cue).toMatchObject({
+      type: 'answer-resolved',
+      tier: 'routine',
+      answered: true,
+      correct: true,
+      choiceIndex: 2,
+      correctIndex: 2,
+    });
+  });
+
+  it('reports a wrong local answer', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1, myAnswer: 0 }),
+      revealSource(0, 3),
+    ]);
+    expect(batches[1].find(c => c.type === 'answer-resolved')).toMatchObject({
+      answered: true,
+      correct: false,
+      choiceIndex: 0,
+      correctIndex: 3,
+    });
+  });
+
+  it('reports answered:false when the clock ran out', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1 }),
+      revealSource(null, 3),
+    ]);
+    expect(batches[1].find(c => c.type === 'answer-resolved')).toMatchObject({
+      answered: false,
+      correct: false,
+      choiceIndex: null,
+    });
+  });
+
+  it('rides immediately behind phase-reveal and nowhere else', () => {
+    const { batches } = run([
+      source({ phase: 'countdown', round: 1 }),
+      source({ phase: 'read', round: 1 }),
+      source({ phase: 'answer', round: 1 }),
+      // null here, not a locked-in choice: this test is about cue ORDERING,
+      // and a non-null myAnswer arriving on the same snapshot as the phase
+      // change would also trip the pre-existing answer-locked cue (myAnswer
+      // null -> non-null), which is exercised elsewhere, not here.
+      revealSource(null, 1),
+      source({ phase: 'track', round: 1, standings: [standing(A, 1), standing(B, 0)] }),
+    ]);
+    expect(batches.map(types)).toEqual([
+      ['phase-countdown'],
+      ['phase-read'],
+      ['phase-answer'],
+      ['phase-reveal', 'answer-resolved', 'player-advanced'],
+      ['phase-track'],
+    ]);
   });
 });
