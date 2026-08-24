@@ -141,9 +141,9 @@ export function worldYToScreen(worldY: number, camera: CameraState, viewport: Vi
  * MAX_STACK_RISE; compressed to exactly fill it once it does not, so a stack
  * can never grow off the top of the frame no matter how deep the tie.
  */
-export function stackPitch(rowCount: number): number {
+export function stackPitch(rowCount: number, riseLimit: number = MAX_STACK_RISE): number {
   const rises = Math.max(1, rowCount - 1);
-  return Math.min(MARKER_ROW_HEIGHT, MAX_STACK_RISE / rises);
+  return Math.min(MARKER_ROW_HEIGHT, riseLimit / rises);
 }
 
 /**
@@ -154,6 +154,7 @@ export function stackPitch(rowCount: number): number {
 export function markerAnchors(
   standings: readonly AnchorStanding[],
   metrics: TrackMetrics,
+  riseLimit: number = MAX_STACK_RISE,
 ): MarkerAnchor[] {
   const bySegment = new Map<number, AnchorStanding[]>();
   for (const s of standings) {
@@ -170,7 +171,7 @@ export function markerAnchors(
   for (const group of bySegment.values()) {
     // Stable: equal speed points keep standings order, which is already ranked.
     const ordered = [...group].sort((a, b) => b.speed_points - a.speed_points);
-    const pitch = stackPitch(ordered.length);
+    const pitch = stackPitch(ordered.length, riseLimit);
     ordered.forEach((s, index) => {
       rows.set(s.player_id, index);
       pitches.set(s.player_id, pitch);
@@ -200,10 +201,12 @@ export function markerAnchors(
 export function startLineAnchors(
   players: readonly { id: string }[],
   metrics: TrackMetrics,
+  riseLimit: number = MAX_STACK_RISE,
 ): MarkerAnchor[] {
   return markerAnchors(
     players.map(p => ({ player_id: p.id, correct: 0, speed_points: 0 })),
     metrics,
+    riseLimit,
   );
 }
 
@@ -238,6 +241,7 @@ export const GRID_EDGE_MARGIN = RIG_HALF_WIDTH * 1.5;
 export function gridAnchors(
   players: readonly GridPlayer[],
   metrics: TrackMetrics,
+  riseLimit: number = MAX_STACK_RISE,
 ): MarkerAnchor[] {
   // The run-off is fixed, so the formation compresses to fit it rather than
   // clamping per column — a clamp piles every column past the margin onto the
@@ -247,7 +251,7 @@ export function gridAnchors(
   const runOff = Math.max(0, -GRID_LEAD_IN - metrics.minX - GRID_EDGE_MARGIN);
   const spacing = Math.min(GRID_COLUMN_WIDTH, runOff / Math.max(1, columns - 1));
   const rearmost = metrics.minX + GRID_EDGE_MARGIN;
-  const pitch = stackPitch(2);
+  const pitch = stackPitch(2, riseLimit);
 
   return players.map((player, index) => {
     const row = index % 2;

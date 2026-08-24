@@ -21,6 +21,7 @@ import { EASE } from '@/lib/presentation/tokens';
 import type { CeremonySteps } from '@/lib/ceremony/beats';
 import { AVATAR_HEIGHT } from './content/roster';
 import {
+  MAX_STACK_RISE,
   markerAnchors,
   segmentToWorldX,
   type AnchorStanding,
@@ -126,12 +127,13 @@ export function podiumAnchors(
   standings: readonly AnchorStanding[],
   metrics: TrackMetrics,
   steps: CeremonySteps,
+  riseLimit: number = MAX_STACK_RISE,
 ): MarkerAnchor[] {
   const blocks = new Map(
     podiumBlocks(standings, metrics, steps).map(block => [block.playerId, block]),
   );
 
-  return markerAnchors(standings, metrics).map(anchor => {
+  return markerAnchors(standings, metrics, riseLimit).map(anchor => {
     const block = blocks.get(anchor.playerId);
     // Outside the top three: hold the finish-line position you raced to.
     if (!block) return anchor;

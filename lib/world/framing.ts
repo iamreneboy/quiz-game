@@ -5,6 +5,9 @@
  * world units, and layout decides how tall the window showing it is.
  */
 import {
+  HORIZON_FRACTION,
+  MARKER_ROW_HEIGHT,
+  MAX_STACK_RISE,
   RIG_BOTTOM,
   RIG_TOP,
   SEGMENT_WIDTH,
@@ -17,7 +20,7 @@ import {
   type TrackMetrics,
   type Viewport,
 } from './geometry';
-import { clampCamera, spanLimits } from './camera';
+import { MIN_SPAN_SEGMENTS, clampCamera, spanLimits } from './camera';
 import { BLOCK_WIDTH, podiumX } from './podium';
 
 export type FramingMode = 'startLine' | 'establishing' | 'pack' | 'emphasis' | 'podium';
@@ -46,6 +49,46 @@ const PODIUM_SPAN = BLOCK_WIDTH * 3 + PACK_PADDING * 2;
 
 /** Where the leader sits across the frame when the field overflows: 0.5 == centre. */
 const LEADER_BIAS = 0.8;
+
+/**
+ * World units visible ABOVE the ground line — the number this pipeline never
+ * computed.
+ *
+ * `worldScale` picks pixels-per-unit from viewport WIDTH alone
+ * (geometry.ts:122), then every vertical measurement is taken in that scale
+ * against `horizonY = height * HORIZON_FRACTION`. So how much world fits above
+ * the ground line depends on the aspect ratio, and nothing downstream knew it.
+ * Both of P6b's framing defects are this number being too small.
+ */
+export function headroom(viewport: Viewport, span: number): number {
+  return (viewport.height * HORIZON_FRACTION * span) / viewport.width;
+}
+
+/**
+ * The floor under `stackRiseLimit`. Half a marker row: below this a stack stops
+ * reading as a ladder at all, and a compressed-but-visible stack beats a flat
+ * heap. Where the floor binds, rigs CAN clip — `offscreenPlayerIds` names them
+ * (spec §3.3).
+ */
+export const STACK_RISE_FLOOR = MARKER_ROW_HEIGHT / 2;
+
+/**
+ * How far a tie stack may rise, derived from the viewport instead of assumed.
+ *
+ * This finishes the derivation `MAX_STACK_RISE`'s own docstring starts: it
+ * works out 324 units of headroom at MIN_SPAN, subtracts the rig's 135-unit
+ * reach, and then ASSUMES 16:9 and freezes the answer at 179.2. Here the same
+ * arithmetic runs against the real viewport.
+ *
+ * MIN_SPAN rather than the live span is deliberate: the tightest shot the
+ * camera can ever take is the worst case, so the limit never depends on the
+ * camera state it would otherwise feed back into.
+ */
+export function stackRiseLimit(viewport: Viewport): number {
+  const available =
+    headroom(viewport, MIN_SPAN_SEGMENTS * SEGMENT_WIDTH) - Math.abs(RIG_TOP);
+  return Math.min(MAX_STACK_RISE, Math.max(STACK_RISE_FLOOR, available));
+}
 
 export function frameTarget(mode: FramingMode, input: FramingInput): CameraState {
   const { metrics } = input;

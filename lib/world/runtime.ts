@@ -40,7 +40,7 @@ import {
   type DirectorState,
 } from './director';
 import { flairFor } from './flair';
-import { frameTarget, offscreenPlayerIds } from './framing';
+import { frameTarget, offscreenPlayerIds, stackRiseLimit } from './framing';
 import {
   gridAnchors,
   markerAnchors,
@@ -101,6 +101,7 @@ function fieldAnchors(
   state: ReturnType<typeof useGameStore.getState>,
   metrics: TrackMetrics,
   steps: CeremonySteps,
+  riseLimit: number,
 ): MarkerAnchor[] {
   const { room, standings, players } = state;
   // Only racers get a rig. A non-playing MC host is in `players` but not in
@@ -114,10 +115,14 @@ function fieldAnchors(
   const racers = players.filter(p => p.is_playing);
   const phase = room?.phase ?? 'lobby';
 
-  if (phase === 'lobby') return gridAnchors(racers, metrics);
+  if (phase === 'lobby') return gridAnchors(racers, metrics, riseLimit);
   // The ceremony is a fourth layout, not a fourth renderer.
-  if (phase === 'results' && standings?.length) return podiumAnchors(standings, metrics, steps);
-  return standings?.length ? markerAnchors(standings, metrics) : startLineAnchors(racers, metrics);
+  if (phase === 'results' && standings?.length) {
+    return podiumAnchors(standings, metrics, steps, riseLimit);
+  }
+  return standings?.length
+    ? markerAnchors(standings, metrics, riseLimit)
+    : startLineAnchors(racers, metrics, riseLimit);
 }
 
 export interface WorldRuntimeOptions {
@@ -154,7 +159,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
       const state = useGameStore.getState();
       const metrics = trackMetrics(state.room?.total_rounds ?? 12);
-      const anchors = fieldAnchors(state, metrics, ceremonySteps(state));
+      const anchors = fieldAnchors(
+        state,
+        metrics,
+        ceremonySteps(state),
+        stackRiseLimit({ width: app.screen.width, height: app.screen.height }),
+      );
 
       if (cue.type === 'phase-track') {
         choreo = beginSequence(choreo, anchors, now, profile);
@@ -187,8 +197,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
     const metrics = trackMetrics(room?.total_rounds ?? 12);
     const steps = ceremonySteps(state);
-    const anchors = fieldAnchors(state, metrics, steps);
     const viewport = { width: app.screen.width, height: app.screen.height };
+    const anchors = fieldAnchors(state, metrics, steps, stackRiseLimit(viewport));
     const localPlayerId = options.localPlayerId();
 
     const target = clampCamera(

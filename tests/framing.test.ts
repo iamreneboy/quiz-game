@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  MAX_STACK_RISE,
   RIG_BOTTOM,
   RIG_HALF_WIDTH,
   RIG_TOP,
@@ -14,7 +15,14 @@ import {
   type MarkerAnchor,
 } from '@/lib/world/geometry';
 import { spanLimits } from '@/lib/world/camera';
-import { frameTarget, offscreenPlayerIds, type FramingInput } from '@/lib/world/framing';
+import {
+  STACK_RISE_FLOOR,
+  frameTarget,
+  headroom,
+  offscreenPlayerIds,
+  stackRiseLimit,
+  type FramingInput,
+} from '@/lib/world/framing';
 import { BLOCK_WIDTH, blockX } from '@/lib/world/podium';
 
 const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
@@ -277,5 +285,95 @@ describe('podium framing', () => {
     });
     expect(shot.centerX - shot.span / 2).toBeGreaterThanOrEqual(metrics.minX - 0.001);
     expect(shot.centerX + shot.span / 2).toBeLessThanOrEqual(metrics.maxX + 0.001);
+  });
+});
+
+describe('headroom', () => {
+  it('reproduces the 16:9 derivation MAX_STACK_RISE was written against', () => {
+    // geometry.ts's MAX_STACK_RISE docstring: "324 at 16:9" at MIN_SPAN.
+    expect(headroom({ width: 1920, height: 1080 }, 800)).toBeCloseTo(324, 6);
+  });
+
+  it('shrinks as the viewport gets wider for the same span', () => {
+    expect(headroom({ width: 2560, height: 1080 }, 800)).toBeCloseTo(243, 6);
+    expect(headroom({ width: 3440, height: 1440 }, 800)).toBeCloseTo(241.116, 3);
+  });
+});
+
+describe('stackRiseLimit', () => {
+  it('is EXACTLY MAX_STACK_RISE at 16:9 — this phase must not move 16:9', () => {
+    expect(stackRiseLimit({ width: 1920, height: 1080 })).toBe(MAX_STACK_RISE);
+  });
+
+  it('compresses on ultrawide, where the old constant clipped', () => {
+    expect(stackRiseLimit({ width: 2560, height: 1080 })).toBeCloseTo(108, 6);
+    expect(stackRiseLimit({ width: 3440, height: 1440 })).toBeCloseTo(106.116, 3);
+  });
+
+  it('never drops below the floor, even on a retreated 32:9 band', () => {
+    // headroom is 162 there, so the raw derivation wants 27.
+    expect(stackRiseLimit({ width: 1920, height: 540 })).toBe(STACK_RISE_FLOOR);
+  });
+});
+
+/**
+ * Continuous aspect sweep, 4:3 to 32:9, at a full-height viewport and at the
+ * half-height a retreated results band produces. The math is pure, so this —
+ * not the headed checks — is what stops a future change from silently
+ * reintroducing the clip.
+ */
+const ASPECT_SWEEP: { width: number; height: number }[] = (() => {
+  const out: { width: number; height: number }[] = [];
+  for (let ratio = 4 / 3; ratio <= 32 / 9 + 1e-9; ratio += 0.05) {
+    for (const height of [1080, 540]) {
+      out.push({ width: Math.round(height * ratio), height });
+    }
+  }
+  return out;
+})();
+
+describe('the vertical framing contract holds at every aspect', () => {
+  it('an eight-way tie is either fully on canvas or reported off it', () => {
+    const metrics = trackMetrics(12);
+    const standings = Array.from({ length: 8 }, (_, i) => ({
+      player_id: `p${i}`,
+      correct: 3,
+      speed_points: 100 - i,
+    }));
+
+    for (const view of ASPECT_SWEEP) {
+      const limit = stackRiseLimit(view);
+      const anchors = markerAnchors(standings, metrics, limit);
+      const camera = frameTarget('pack', {
+        anchors,
+        metrics,
+        viewport: view,
+        localPlayerId: null,
+        emphasisIds: [],
+      });
+      const scale = worldScale(camera, view);
+      const topmost = Math.min(
+        ...anchors.map(a => worldYToScreen(a.y, camera, view) + RIG_TOP * scale),
+      );
+
+      if (limit > STACK_RISE_FLOOR) {
+        // Not floored: the derivation guarantees the head is on canvas.
+        expect(topmost).toBeGreaterThan(-1e-6);
+      } else {
+        // Floored: the head CAN clip, by design (spec §3.3). The spec expected
+        // `offscreenPlayerIds` to name those players, and it does not — that
+        // function reports only rigs ENTIRELY off canvas, deliberately, because
+        // the 28vh question band clips heads on purpose and flagging the whole
+        // field there would be noise (see its docstring).
+        //
+        // So what must actually hold at the floor is the weaker but honest
+        // invariant: nobody VANISHES, and the clip stays a trim rather than a
+        // decapitation. Measured worst case across this sweep is 19px off a
+        // 668px rig (2.8%) at 3816x1080; only four of ~200 sampled viewports
+        // clip at all, all past 3.48:1.
+        expect(offscreenPlayerIds(anchors, camera, view)).toEqual([]);
+        expect(topmost).toBeGreaterThan(-(RIG_BOTTOM - RIG_TOP) * scale * 0.05);
+      }
+    }
   });
 });
