@@ -70,7 +70,7 @@ export function flairFor(
     flair.set(s.player_id, {
       medal: index < MEDALS.length ? MEDALS[index] : null,
       emphasis: index === 0 ? LEADER_EMPHASIS : 1,
-      edgeHolder: contested && anchor!.row === 0,
+      edgeHolder: contested && anchor!.rank === 0,
       streakTier: streakTierFor(s.current_streak),
     });
   });

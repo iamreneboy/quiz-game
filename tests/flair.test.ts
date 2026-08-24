@@ -53,7 +53,7 @@ describe('leader emphasis', () => {
 });
 
 describe('the turbo flame', () => {
-  it('goes to the row-0 holder when a segment is contested', () => {
+  it('goes to the rank-0 holder when a segment is contested', () => {
     const standings = [standing('a', 2, 300), standing('b', 2, 100), standing('c', 1)];
     const flair = flairFor(standings, markerAnchors(standings, metrics));
     expect(flair.get('a')!.edgeHolder).toBe(true);
