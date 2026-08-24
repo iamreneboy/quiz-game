@@ -267,9 +267,9 @@ export const GRID_EDGE_MARGIN = RIG_HALF_WIDTH * 1.5;
  * the rearmost rig whole, column spacing compressed from 73 to 51 and adjacent
  * rigs overlapped by about a third of their rim.
  *
- * Four columns is eight players, the shape this is sized for. Twenty players
- * (PRD §13's maximum) still compresses to 30 units, which a fixed run-off
- * cannot avoid.
+ * Four columns at full spacing is what this reserves; `gridAnchors` holds
+ * that cap for any field size (PRD §13's twenty-player maximum included) by
+ * growing rows per column instead of compressing spacing past it.
  */
 export const TRACK_MARGIN =
   GRID_LEAD_IN + GRID_EDGE_MARGIN + 3 * GRID_COLUMN_WIDTH;
@@ -277,27 +277,30 @@ export const TRACK_MARGIN =
 /**
  * The lobby starting grid (spec §7): a staggered two-row race formation in the
  * run-off `TRACK_MARGIN` already reserves, so eight players read as a grid
- * rather than a queue. The run-off is fixed, so column spacing compresses to
- * fit it rather than growing past it. Join order is grid order.
+ * rather than a queue. The run-off holds exactly four columns at full
+ * `GRID_COLUMN_WIDTH` spacing (`TRACK_MARGIN`'s own `3 * GRID_COLUMN_WIDTH`
+ * term reserves three gaps, i.e. four columns) — that cap stays fixed, and a
+ * field too big for two rows of four grows a third, fourth, fifth row instead
+ * of compressing column spacing. Deeper stacks compress their vertical pitch
+ * to fit `riseLimit` rather than growing past it, the same trade
+ * `markerAnchors` makes for a tied field. Join order is grid order.
  */
 export function gridAnchors(
   players: readonly GridPlayer[],
   metrics: TrackMetrics,
   riseLimit: number = MAX_STACK_RISE,
 ): MarkerAnchor[] {
-  // The run-off is fixed, so the formation compresses to fit it rather than
-  // clamping per column — a clamp piles every column past the margin onto the
-  // same x, and the field can reach 20 (PRD section 13). The usable depth stops
-  // GRID_EDGE_MARGIN short of the run-off so the rearmost rig is drawn whole.
-  const columns = Math.ceil(players.length / 2);
   const runOff = Math.max(0, -GRID_LEAD_IN - metrics.minX - GRID_EDGE_MARGIN);
+  const maxColumns = Math.floor(runOff / GRID_COLUMN_WIDTH) + 1;
+  const rowsPerColumn = Math.max(2, Math.ceil(players.length / maxColumns));
+  const columns = Math.ceil(players.length / rowsPerColumn);
   const spacing = Math.min(GRID_COLUMN_WIDTH, runOff / Math.max(1, columns - 1));
   const rearmost = metrics.minX + GRID_EDGE_MARGIN;
-  const pitch = stackPitch(2, riseLimit);
+  const pitch = stackPitch(rowsPerColumn, riseLimit);
 
   return players.map((player, index) => {
-    const row = index % 2;
-    const column = Math.floor(index / 2);
+    const row = index % rowsPerColumn;
+    const column = Math.floor(index / rowsPerColumn);
     return {
       playerId: player.id,
       x: Math.max(rearmost, -GRID_LEAD_IN - column * spacing),

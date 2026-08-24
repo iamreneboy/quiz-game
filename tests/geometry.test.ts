@@ -359,6 +359,20 @@ describe('gridAnchors', () => {
     const anchors = gridAnchors(players(2), trackMetrics(12));
     expect(anchors[1].y).toBe(-stackPitch(2));
   });
+
+  it('grows past two rows once four columns is not enough', () => {
+    // 20 players / 4 columns = 5 rows deep (rows 0-4), not the fixed 2 that
+    // used to force column spacing to compress instead.
+    const anchors = gridAnchors(players(20), trackMetrics(12));
+    const maxRow = Math.max(...anchors.map(a => a.row));
+    expect(maxRow).toBe(4);
+  });
+
+  it('leaves an eight-player field at two rows, unchanged', () => {
+    const anchors = gridAnchors(players(8), trackMetrics(12));
+    const maxRow = Math.max(...anchors.map(a => a.row));
+    expect(maxRow).toBe(1);
+  });
 });
 
 describe('the lobby grid run-off', () => {
@@ -384,11 +398,14 @@ describe('the lobby grid run-off', () => {
     expect(xs[0] - xs[1]).toBeGreaterThanOrEqual(RIG_HALF_WIDTH * 2);
   });
 
-  it('still compresses at the twenty-player maximum, by design', () => {
-    // PRD §13's ceiling. A fixed run-off cannot hold 10 columns at full
-    // width; this is a narrowed debt entry, not a retired one.
+  it('holds full column spacing at the twenty-player maximum by growing rows instead', () => {
+    // PRD §13's ceiling. Column count stays capped at 4 (the run-off's
+    // full-width capacity); the deeper stack absorbs the extra headcount via
+    // stackPitch, the same graceful compression the tie-stacks use.
     const xs = columns(20);
-    expect(xs).toHaveLength(10);
-    expect(xs[0] - xs[1]).toBeCloseTo(30, 6);
+    expect(xs).toHaveLength(4);
+    for (let i = 1; i < xs.length; i++) {
+      expect(xs[i - 1] - xs[i]).toBeCloseTo(GRID_COLUMN_WIDTH, 6);
+    }
   });
 });
