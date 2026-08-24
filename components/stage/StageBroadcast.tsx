@@ -48,6 +48,7 @@ export default function StageBroadcast({ code }: { code: string }) {
       <div
         data-testid="stage-broadcast"
         data-beat={beat}
+        data-surface="stage"
         className="fixed inset-0 z-10 overflow-y-auto p-8"
       >
         {/*
@@ -70,7 +71,8 @@ export default function StageBroadcast({ code }: { code: string }) {
     <div
       data-testid="stage-broadcast"
       data-beat={beat}
-      className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-8"
+      data-surface="stage"
+      className="pointer-events-none fixed inset-0 z-10 p-[5%]"
     >
       <header className="flex items-start justify-between gap-6">
         <div className="flex items-center gap-3 font-display text-sm font-bold uppercase tracking-[0.14em]">
@@ -93,13 +95,42 @@ export default function StageBroadcast({ code }: { code: string }) {
         {beat === 'answer' && <TimerRing />}
       </header>
 
-      <div data-testid="stage-band" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      {/*
+        The prompt sits high under the status bar rather than stacked above the
+        answers, so the pack stays visible through the whole beat. On a phone
+        the world is a strip behind a card; here it IS the backdrop.
+      */}
+      <div className="mt-[4cqh] flex flex-col items-center gap-6">
         {beat === 'idle' && room?.status === 'lobby' && <StageJoinPanel code={code} />}
         {beat === 'countdown' && <StageCountdown endsAt={room?.ends_at ?? null} />}
+        {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
+          <StageQuestion question={question} steps={steps} />
+        )}
+      </div>
 
+      {/*
+        Pinned to the world's ground line (--horizon-fraction mirrors
+        HORIZON_FRACTION), translated up so the strip SITS on the horizon
+        rather than straddling it.
+      */}
+      <div
+        data-testid="stage-horizon"
+        className="absolute inset-x-0 -translate-y-full"
+        style={{ top: `calc(100% * var(--horizon-fraction))` }}
+      >
+        <LowerThird variant="strip" />
+      </div>
+
+      {/*
+        The floor. Height is reserved from READ onward so the reveal can grow
+        into it without reflowing (ADR-0019) — see StageOptions.
+      */}
+      <div
+        data-testid="stage-floor"
+        className="absolute inset-x-[5%] bottom-[5%] flex flex-col gap-4"
+      >
         {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
           <>
-            <StageQuestion question={question} steps={steps} />
             <AnimatePresence initial={false}>
               {steps.options && (
                 <StageOptions
@@ -116,9 +147,6 @@ export default function StageBroadcast({ code }: { code: string }) {
             )}
           </>
         )}
-
-        {/* Task 6 fills lobby. Task 7 fills track / results. */}
-        <LowerThird />
       </div>
     </div>
   );

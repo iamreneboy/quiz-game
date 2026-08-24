@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { COLOR, RACER_COLORS, EASE, DURATION, CANVAS } from '@/lib/presentation/tokens';
 import { COLORS } from '@/lib/avatars';
+import { HORIZON_FRACTION } from '@/lib/world/geometry';
 
 const css = readFileSync(path.resolve(__dirname, '../app/globals.css'), 'utf8');
 
@@ -69,5 +70,11 @@ describe('tokens.ts mirrors the @theme block in globals.css', () => {
   it('canvas background is a mirrored surface color', () => {
     expect(CANVAS.background).toBe(COLOR.abyss);
     expect(CANVAS.maxResolution).toBe(2);
+  });
+});
+
+describe('the horizon is mirrored so DOM chrome can sit on the ground line', () => {
+  it('--horizon-fraction matches geometry.ts', () => {
+    expect(Number(cssVar('horizon-fraction'))).toBeCloseTo(HORIZON_FRACTION, 6);
   });
 });

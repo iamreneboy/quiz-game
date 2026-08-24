@@ -67,6 +67,11 @@
   --ease-snap: cubic-bezier(0.2, 0, 0, 1);
   --ease-settle: cubic-bezier(0.34, 1.4, 0.5, 1);
   --ease-drift: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* Ground line as a fraction of canvas height. Mirrors HORIZON_FRACTION in
+     lib/world/geometry.ts so DOM chrome can be pinned to the world's horizon;
+     tests/tokens.test.ts fails if the two drift. */
+  --horizon-fraction: 0.72;
 }
 
 /* Durations. Tailwind v4 has no --duration-* theme namespace, so these are
@@ -78,6 +83,33 @@
   --dur-settle: 460ms;
   --dur-drift: 1400ms;
   --dur-push: 2600ms;
+}
+
+/* ---------------------------------------------------------------------------
+   The stage surface (P6b).
+
+   ACTION AT A DISTANCE, ON PURPOSE. Every Tailwind v4 utility resolves through
+   a theme variable -- `.p-8` is `calc(var(--spacing) * 8)`, `.text-hero` is
+   `var(--text-hero)`, `.max-w-6xl` is `var(--container-6xl)`. Overriding those
+   variables in this scope rescales type, spacing and container widths across
+   StageQuestion, StageOptions, RevealPanel, WinnerCard and ResultsTable with no
+   edits to any of them.
+
+   The cost: INSIDE THIS SCOPE, `p-8` does not mean what it means anywhere else
+   in the app. That is the trade for one type scale instead of two -- a parallel
+   --stage-* namespace would have needed a variant prop or a stage-only copy of
+   every shared component.
+
+   Sized in cqi, so the unit is the stage container, not the window.
+--------------------------------------------------------------------------- */
+[data-surface='stage'] {
+  container-type: size;
+
+  --spacing: clamp(0.25rem, 0.3cqi, 0.5rem);
+  --text-hero: clamp(2.25rem, 3.6cqi, 5rem);
+  --text-display: clamp(4rem, 6.2cqi, 9rem);
+  --container-4xl: 78cqi;
+  --container-6xl: 90cqi;
 }
 
 @layer base {

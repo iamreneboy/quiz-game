@@ -56,8 +56,27 @@ test('the stage view follows a live game without a session', async ({ page, brow
   // ANSWER: four option tiles, none of them a control.
   await expect(broadcast).toHaveAttribute('data-beat', 'answer', { timeout: 20_000 });
   await expect(stage.getByTestId('stage-option')).toHaveCount(4);
-  await expect(stage.getByTestId('stage-band').getByRole('button')).toHaveCount(0);
-  await expect(stage.getByTestId('stage-band').getByRole('link')).toHaveCount(0);
+  await expect(stage.getByTestId('stage-floor').getByRole('button')).toHaveCount(0);
+  await expect(stage.getByTestId('stage-floor').getByRole('link')).toHaveCount(0);
+
+  // The broadcast frame: prompt high, answers on the floor, strip on the horizon.
+  const frame = stage.getByTestId('stage-broadcast');
+  await expect(frame).toHaveAttribute('data-surface', 'stage');
+
+  const floor = stage.getByTestId('stage-floor');
+  const question = stage.getByTestId('stage-question');
+  const floorBox = await floor.boundingBox();
+  const questionBox = await question.boundingBox();
+  expect(floorBox).not.toBeNull();
+  expect(questionBox).not.toBeNull();
+  // The answers sit below the prompt, not stacked immediately under it.
+  expect(floorBox!.y).toBeGreaterThan(questionBox!.y + questionBox!.height);
+
+  // Title-safe: the frame's own padding keeps the status bar off the bezel.
+  const stageViewport = stage.viewportSize()!;
+  const header = stage.locator('[data-testid="stage-broadcast"] header');
+  const headerBox = await header.boundingBox();
+  expect(headerBox!.x).toBeGreaterThanOrEqual(stageViewport.width * 0.04);
 
   await joiner.getByTestId('answer-option').first().click();
 
