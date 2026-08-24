@@ -135,14 +135,14 @@ describe('podiumAnchors', () => {
     expect(anchors.find(a => a.playerId === 'p2')!.x).toBe(blockX(2, metrics));
   });
 
-  it('preserves row, so two tied podium players do not both hold the edge', () => {
-    // p1 and p2 tie on correct; markerAnchors gives them rows 0 and 1 on the
-    // same segment. flairFor lights the turbo flame on row 0 only, and forcing
-    // row 0 here would light it on both (lib/world/flair.ts:73).
+  it('preserves rank, so two tied podium players do not both hold the edge', () => {
+    // p1 and p2 tie on correct; markerAnchors pairs them into row 0 with
+    // ranks 0 and 1. flairFor lights the turbo flame on rank 0 only, and
+    // forcing rank 0 here would light it on both (lib/world/flair.ts).
     const tied = [standing('p1', 9, 500), standing('p2', 9, 200), standing('p3', 4)];
     const anchors = podiumAnchors(tied, metrics, settled);
-    const rows = anchors.filter(a => a.playerId !== 'p3').map(a => a.row).sort();
-    expect(rows).toEqual([0, 1]);
+    const ranks = anchors.filter(a => a.playerId !== 'p3').map(a => a.rank).sort();
+    expect(ranks).toEqual([0, 1]);
   });
 
   it('keeps segment intact, so occupancy still describes the race', () => {

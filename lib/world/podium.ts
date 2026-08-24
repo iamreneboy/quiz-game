@@ -117,11 +117,12 @@ export function podiumBlocks(
 /**
  * Where every racer stands during the ceremony.
  *
- * Only `x` and `y` are overridden. `row` and `segment` are carried through from
- * the finish-line layout on purpose: `flairFor` reads BOTH — `edgeHolder` is
- * `contested && row === 0`, where `contested` counts occupants of a `segment`
- * (lib/world/flair.ts:63-73). Forcing `row: 0` would light the turbo flame on
- * every podium player tied on `correct`, instead of the one holding the edge.
+ * Only `x` and `y` are overridden. `rank` and `segment` are carried through
+ * from the finish-line layout on purpose: `flairFor` reads BOTH — `edgeHolder`
+ * is `contested && rank === 0`, where `contested` counts occupants of a
+ * `segment` (lib/world/flair.ts). Forcing `rank: 0` would light the turbo
+ * flame on every podium player tied on `correct`, instead of the one holding
+ * the edge.
  */
 export function podiumAnchors(
   standings: readonly AnchorStanding[],
