@@ -120,7 +120,24 @@ test('the stage view follows a live game without a session', async ({ page, brow
   // TRACK, then the ceremony.
   await expect(broadcast).toHaveAttribute('data-beat', 'track', { timeout: 20_000 });
   await expect(broadcast).toHaveAttribute('data-beat', 'results', { timeout: 30_000 });
-  await expect(stage.getByTestId('stage-results')).toBeVisible();
+  // Present from the results phase's first frame (ADR-0030) — but on the stage
+  // the board's column has no WIDTH until the split lands, so it is attached
+  // before it can be visible.
+  await expect(stage.getByTestId('stage-results')).toBeAttached();
+
+  // The stage splits horizontally: the canvas keeps full height and yields width.
+  const canvas = stage.getByTestId('pixi-stage');
+  const board = stage.getByTestId('stage-results');
+  await expect(board).toHaveAttribute('data-entered', 'true', { timeout: 20_000 });
+  await expect(board).toBeVisible();
+
+  const canvasBox = await canvas.boundingBox();
+  const boardBox = await board.boundingBox();
+
+  // Full height, not retreated.
+  expect(canvasBox!.height).toBeCloseTo(stageViewport.height, 0);
+  // Board sits to the RIGHT of the canvas, never over it.
+  expect(boardBox!.x).toBeGreaterThanOrEqual(canvasBox!.x + canvasBox!.width - 1);
 
   // A reload past the settled ceremony lands entered, never animating in.
   await stage.reload();

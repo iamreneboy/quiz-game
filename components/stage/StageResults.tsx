@@ -45,7 +45,7 @@ export default function StageResults() {
     <div
       data-testid="stage-results"
       data-entered={show ? 'true' : 'false'}
-      className="mx-auto flex w-full max-w-4xl flex-col gap-6"
+      className="flex h-full w-full flex-col justify-center gap-6"
     >
       <WinnerCard winner={standings[0]} totalRounds={room.total_rounds} show={show} instant={settled} />
       <ResultsTable standings={standings} myId={null} show={show} instant={settled} />

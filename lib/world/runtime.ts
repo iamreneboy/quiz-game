@@ -56,7 +56,7 @@ import { NO_CEREMONY_FRAME, type CeremonyFrameState } from './frame';
 import { blockX, podiumAnchors, podiumBlocks } from './podium';
 import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
-import { allowanceFor, initialBudgetState, stepBudget, type BudgetState } from './vfxBudget';
+import { allowanceFor, initialBudgetFor, stepBudget, type BudgetState } from './vfxBudget';
 import { gradeState, quantizeZoneWeights, zoneWeights } from './zones';
 
 /** Cue types the world acts on. P1 owned the camera set; P2 adds the drama set. */
@@ -156,7 +156,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
   let camera: CameraState | null = null;
   let move: CameraMove | null = null;
   let choreo: ChoreographerState = initialChoreographerState;
-  let budget: BudgetState = initialBudgetState;
+  let budget: BudgetState = initialBudgetFor(profile);
 
   const unsubscribes = SUBSCRIBED.map(type =>
     on(type, cue => {

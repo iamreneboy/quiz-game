@@ -31,6 +31,23 @@ export interface BudgetState {
 
 export const initialBudgetState: BudgetState = { level: 'full', cleanRuns: 0 };
 
+/**
+ * Where a client's budget STARTS, given its profile.
+ *
+ * `initialBudgetState` is always `full`, and every continuous emitter
+ * self-corrects invisibly inside the ~500ms before the first `stepBudget`
+ * tick. Confetti is one-shot: a client mounting straight into an
+ * already-elapsed ceremony past CONFETTI_AT fires once, at whatever density
+ * it happened to start with, and never gets a second chance.
+ *
+ * Mirrors stepBudget's own ceiling rule rather than inventing a second
+ * mapping, so the seed and the first tick cannot disagree.
+ */
+export function initialBudgetFor(profile: Profile): BudgetState {
+  if (profile === 'reduced') return { level: 'minimal', cleanRuns: 0 };
+  return initialBudgetState;
+}
+
 export interface VfxAllowance {
   /** false: the turbo flame draws as a static sprite instead of a particle system. */
   turboParticles: boolean;

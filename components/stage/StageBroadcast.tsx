@@ -45,23 +45,21 @@ export default function StageBroadcast({ code }: { code: string }) {
 
   if (beat === 'results') {
     return (
+      /*
+        Takes exactly the width PixiStage is NOT showing, so the board can
+        never overlap the podium (ADR-0015: the split is published once and
+        consumed, never re-derived). The 100% fallback is what a client with
+        no canvas at all gets — the full width, and the whole board
+        immediately, the same intent the old 0px height fallback had.
+      */
       <div
         data-testid="stage-broadcast"
         data-beat={beat}
         data-surface="stage"
-        className="fixed inset-0 z-10 overflow-y-auto p-8"
+        className="fixed inset-y-0 right-0 z-10 overflow-y-auto p-[5%]
+          transition-[width] duration-(--dur-settle) ease-settle"
+        style={{ width: 'calc(100% - var(--ceremony-panel, 100%))' }}
       >
-        {/*
-          Reserves exactly the height PixiStage is showing, so the board can
-          never overlap the podium (ADR-0015: the band is published once and
-          consumed, never re-derived). The 0px fallback is what a client with
-          no canvas at all gets — the full board, immediately.
-        */}
-        <div
-          aria-hidden="true"
-          className="transition-[height] duration-(--dur-settle) ease-settle"
-          style={{ height: 'var(--ceremony-band, 0px)' }}
-        />
         <StageResults />
       </div>
     );

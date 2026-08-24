@@ -48,19 +48,31 @@ export default function PixiStage({ code, role }: { code: string; role: ViewerRo
   /**
    * The results band is the only one that MOVES within its phase, which is why
    * it is a custom property rather than a class (ADR-0015): P5b's results board
-   * reads the same value for its top spacer, so the board physically cannot
+   * reads the same value for its spacer, so the board physically cannot
    * overlap the podium. `strip` and `full` keep their class-based sizing — a
    * property buys nothing where the value is one of two constants.
+   *
+   * The two surfaces move on DIFFERENT AXES. A player device retreats
+   * vertically, halving the canvas height. A television splits horizontally
+   * instead: the canvas keeps its full height and yields WIDTH to the board.
+   * That is not just composition — a 1920x1080 TV mid-ceremony would otherwise
+   * be a 1920x540 canvas, i.e. 32:9, which is precisely the shape the podium
+   * shot had to be rescued from.
    */
   useEffect(() => {
     const root = document.documentElement;
     if (band !== 'podium') {
       root.style.removeProperty('--ceremony-band');
+      root.style.removeProperty('--ceremony-panel');
       return;
+    }
+    if (role === 'stage') {
+      root.style.setProperty('--ceremony-panel', board ? '56%' : '100%');
+      return () => { root.style.removeProperty('--ceremony-panel'); };
     }
     root.style.setProperty('--ceremony-band', board ? '50vh' : '100vh');
     return () => { root.style.removeProperty('--ceremony-band'); };
-  }, [band, board]);
+  }, [band, board, role]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -163,12 +175,19 @@ export default function PixiStage({ code, role }: { code: string; role: ViewerRo
       data-testid="pixi-stage"
       data-band={band}
       aria-hidden="true"
-      className={`pointer-events-none fixed inset-x-0 top-0 z-0 transition-[height] duration-(--dur-settle) ease-settle ${
-        band === 'podium'
-          ? 'h-(--ceremony-band)'
-          : band === 'strip'
-            ? 'h-[28vh] portrait:h-[28vh] landscape:h-screen'
-            : 'h-screen'
+      /*
+        `left-0` plus an explicit width rather than `inset-x-0`: the stage's
+        ceremony panel must shrink from the RIGHT, not stay pinned to both
+        edges.
+      */
+      className={`pointer-events-none fixed left-0 top-0 z-0 transition-[height,width] duration-(--dur-settle) ease-settle ${
+        band === 'podium' && role === 'stage'
+          ? 'h-screen w-(--ceremony-panel)'
+          : band === 'podium'
+            ? 'h-(--ceremony-band) w-full'
+            : band === 'strip'
+              ? 'h-[28vh] w-full portrait:h-[28vh] landscape:h-screen'
+              : 'h-screen w-full'
       }`}
     />
   );

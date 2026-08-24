@@ -4,6 +4,7 @@ import {
   DROP_THRESHOLD,
   RECOVERY_EVALUATIONS,
   allowanceFor,
+  initialBudgetFor,
   initialBudgetState,
   stepBudget,
   type BudgetState,
@@ -107,5 +108,25 @@ describe('confetti allowance', () => {
   it('is zero on the reduced profile, which pins the budget at minimal', () => {
     const pinned = stepBudget(initialBudgetState, clean, 'reduced');
     expect(allowanceFor(pinned.level).confetti).toBe(0);
+  });
+});
+
+describe('initialBudgetFor', () => {
+  it('starts a reduced client at minimal, not full', () => {
+    // A one-shot burst (confetti) fired before the first ~500ms tick has no
+    // chance to self-correct the way continuous emitters do. A TV switched on
+    // late lands mid-ceremony, which is the normal way to hit this.
+    expect(initialBudgetFor('reduced')).toEqual({ level: 'minimal', cleanRuns: 0 });
+  });
+
+  it('starts every other profile where it starts today', () => {
+    expect(initialBudgetFor('high')).toEqual(initialBudgetState);
+  });
+
+  it('agrees with what stepBudget would decide on its first tick', () => {
+    for (const profile of ['high', 'reduced'] as const) {
+      expect(stepBudget(initialBudgetFor(profile), { p50: 16, p95: 18, samples: 0, dropped: 0 }, profile))
+        .toEqual(initialBudgetFor(profile));
+    }
   });
 });
