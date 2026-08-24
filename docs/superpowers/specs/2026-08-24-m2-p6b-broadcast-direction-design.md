@@ -155,13 +155,15 @@ Roadmap P1 named this ("slow push-in for the final question") and it was never b
 
 ### 4.3 Longer transient holds — with a shared-hold invariant
 
-`director.ts` states that "the camera transient and the DOM callout expire together, by construction." That holds only because `OVERTAKE_HOLD_MS === DRAMA_HOLD_MS` and `LowerThird` hides at `ARENA_AT_MS + DRAMA_HOLD_MS`.
+`director.ts` says "the camera transient and the DOM callout expire together, by construction". Read against the code, that is **shared duration, not a shared window**: `OVERTAKE_HOLD_MS === DRAMA_HOLD_MS` (1200), but the camera transient runs `now → now+1200` while `LowerThird` shows at `ARENA_AT_MS` (1400) and hides at `now+2600`. The two never overlap — the callout deliberately lands on the arena beat, after the camera move.
 
-Lengthening the stage's camera hold without lengthening the stage's callout would silently break it. So:
+So what must be preserved is that **both last the same length**, and lengthening the stage's camera hold without lengthening the stage's callout would break that. Hence:
 
 > There is **one** `STAGE_DRAMA_HOLD_MS`, consumed by both the stage shot book and `LowerThird` on the stage surface.
 
 The invariant survives by construction on both surfaces, or it is not worth having. A room watching a TV needs longer to find an overtake than a thumb glancing at a strip does, so the two surfaces deliberately disagree on how long a moment lasts.
+
+`director.ts`'s comment is corrected to say "share one hold duration" while this work is in it — it is currently misleading about a relationship the phase depends on.
 
 ### 4.4 Wider ceremony room shot
 
