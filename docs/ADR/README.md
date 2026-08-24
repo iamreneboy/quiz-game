@@ -59,3 +59,7 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0030](0030-the-results-board-is-present-before-it-is-visible.md) | The results board is present before it is visible | P5b |
 | [0031](0031-the-viewer-role-is-explicit.md) | The viewer role is explicit, never inferred from a missing session | P6a |
 | [0032](0032-the-stage-view-is-composed-not-configured.md) | The stage view is composed, not configured | P6a |
+| [0033](0033-the-vertical-framing-contract-is-two-levers.md) | The vertical framing contract is two levers — stacks compress, the podium widens | P6b |
+| [0034](0034-the-stage-ceremony-splits-horizontally.md) | The stage ceremony splits horizontally; the player ceremony still retreats vertically | P6b |
+| [0035](0035-the-stage-rescales-by-scoped-token-override.md) | The stage rescales by overriding theme vars in a scope, not by a parallel token namespace | P6b |
+| [0036](0036-the-shot-book-is-role-selected.md) | The shot book is role-selected — one reducer, two books | P6b |
