@@ -708,7 +708,7 @@ export default function StageGate({ code }: { code: string }) {
       data-testid="stage-gate"
       onClick={() => setDismissed(true)}
       className="fixed inset-0 z-50 grid w-full place-items-center bg-void/95 backdrop-blur-sm
-        focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-neon-cyan"
+        focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-neon-cyan"
     >
       <span className="flex flex-col items-center gap-6">
         <span className="font-display text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-neon-cyan">

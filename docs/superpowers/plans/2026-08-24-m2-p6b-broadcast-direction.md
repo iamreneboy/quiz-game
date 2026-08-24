@@ -1095,7 +1095,7 @@ Replace the returned element's className and add the variant hook. The strip is 
           exit={{ opacity: 0, transition: { duration: 0.12 } }}
           className={
             variant === 'strip'
-              ? `pointer-events-none -mx-[5.26%] flex items-center gap-4 border-y
+              ? `pointer-events-none mx-[-5.26%] flex items-center gap-4 border-y
                  border-white/10 bg-linear-to-r from-abyss/95 via-abyss/85 to-transparent
                  py-4 pl-[5%] backdrop-blur-md
                  ${isFinal ? 'border-warning/60 from-warning/25 via-warning/10' : ''}`
