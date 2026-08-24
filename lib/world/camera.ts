@@ -20,7 +20,7 @@ export const RETARGET_EPSILON = 8;
 const DRIFT_AMPLITUDE = 0.015;
 const DRIFT_PERIOD_MS = 11_000;
 
-export type MoveStyle = 'cut' | 'drift';
+export type MoveStyle = 'cut' | 'drift' | 'push';
 
 export interface CameraMove {
   from: CameraState;
@@ -113,13 +113,19 @@ export function beginMove(
   now: number,
 ): CameraMove {
   // The reduced profile keeps cuts as cuts and shortens drifts to the same
-  // length, so the camera still arrives but never lingers in motion.
+  // length, so the camera still arrives but never lingers in motion. A push is
+  // a drift that takes its time; reduced collapses it the same way.
   const isCut = style === 'cut' || profile === 'reduced';
+  const durationMs = isCut
+    ? DURATION.cut
+    : style === 'push'
+      ? DURATION.push
+      : DURATION.drift;
   return {
     from,
     to,
     startedAt: now,
-    durationMs: isCut ? DURATION.cut : DURATION.drift,
+    durationMs,
     ease: isCut ? EASE.snap : EASE.drift,
   };
 }

@@ -13,6 +13,7 @@ import type { Profile } from '@/lib/presentation/profile';
 import { msUntil } from '@/lib/serverTime';
 import { elapsedIn } from '@/lib/staging/beats';
 import { useGameStore } from '@/lib/store';
+import type { ViewerRole } from '@/lib/viewer';
 import {
   beginMove,
   clampCamera,
@@ -135,6 +136,8 @@ export interface WorldRuntimeOptions {
    * construction made the YOU ring depend on that race.
    */
   localPlayerId: () => string | null;
+  /** Selects the shot book. A TV is directed differently from a phone. */
+  role: ViewerRole;
 }
 
 export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): void } {
@@ -146,7 +149,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
   // Seed from the store: the cue bridge emitted the current beat before this
   // subscriber existed, so a mid-game reload must establish its own base shot.
-  let director: DirectorState = seedDirector(useGameStore.getState().room?.phase ?? 'lobby');
+  let director: DirectorState = seedDirector(
+    useGameStore.getState().room?.phase ?? 'lobby',
+    options.role,
+  );
   let camera: CameraState | null = null;
   let move: CameraMove | null = null;
   let choreo: ChoreographerState = initialChoreographerState;

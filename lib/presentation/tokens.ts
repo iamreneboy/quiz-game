@@ -43,6 +43,8 @@ export const DURATION = {
   beat: 260,
   settle: 460,
   drift: 1400,
+  /** A move slow enough to read AS a move on a TV. Stage direction only. */
+  push: 2600,
 } as const;
 
 /** Canvas-specific constants for components/PixiStage.tsx. */

@@ -77,6 +77,7 @@
   --dur-beat: 260ms;
   --dur-settle: 460ms;
   --dur-drift: 1400ms;
+  --dur-push: 2600ms;
 }
 
 @layer base {

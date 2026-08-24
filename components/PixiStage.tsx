@@ -134,6 +134,7 @@ export default function PixiStage({ code, role }: { code: string; role: ViewerRo
           scene,
           profile,
           localPlayerId: readLocalPlayerId,
+          role,
         });
       } catch (error) {
         // A device with no usable WebGL context still gets the full HTML game.

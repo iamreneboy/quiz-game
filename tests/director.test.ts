@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { Cue } from '@/lib/presentation/cues';
+import { DURATION } from '@/lib/presentation/tokens';
 import {
   FINAL_QUESTION_HOLD_MS,
   OVERTAKE_HOLD_MS,
+  SHOT_BOOKS,
+  STAGE_DRAMA_HOLD_MS,
   activeIntent,
   initialDirectorState,
   reduceCue,
@@ -172,5 +175,49 @@ describe('phase-results', () => {
     const results = reduceCue(withTransient, { type: 'phase-results', tier: 'routine' }, 10);
     expect(results.transient).toBeNull();
     expect(activeIntent(results).mode).toBe('podium');
+  });
+});
+
+describe('the stage shot book', () => {
+  const stage = (phase: Parameters<typeof seedDirector>[0]) => seedDirector(phase, 'stage');
+
+  it('frames READ and ANSWER wider than the player view does', () => {
+    expect(activeIntent(stage('read')).mode).toBe('packWide');
+    expect(activeIntent(stage('answer')).mode).toBe('packWide');
+    expect(activeIntent(seedDirector('read', 'player')).mode).toBe('pack');
+  });
+
+  it('takes a room shot at the ceremony instead of the tight podium', () => {
+    expect(activeIntent(stage('results')).mode).toBe('podiumRoom');
+    expect(activeIntent(seedDirector('results', 'player')).mode).toBe('podium');
+  });
+
+  it('pushes in slowly on the final question rather than holding the pack', () => {
+    const state = reduceCue(
+      stage('read'), { type: 'final-question', tier: 'finalQuestion', round: 12 }, 0,
+    );
+    const shot = activeIntent(state);
+    expect(shot.mode).toBe('packTight');
+    expect(shot.style).toBe('push');
+
+    const player = reduceCue(
+      seedDirector('read', 'player'),
+      { type: 'final-question', tier: 'finalQuestion', round: 12 }, 0,
+    );
+    expect(activeIntent(player).style).toBe('drift');
+  });
+
+  it('holds a transient longer on stage — a room needs longer than a thumb', () => {
+    expect(SHOT_BOOKS.stage.overtakeHoldMs).toBe(STAGE_DRAMA_HOLD_MS);
+    expect(SHOT_BOOKS.stage.overtakeHoldMs).toBeGreaterThan(SHOT_BOOKS.player.overtakeHoldMs);
+  });
+
+  it('finishes the push-in before the final-question transient expires', () => {
+    // Otherwise the escalation reads as a cut that already happened.
+    expect(SHOT_BOOKS.stage.finalQuestionHoldMs).toBeGreaterThan(DURATION.push);
+  });
+
+  it('defaults to player direction, so existing state is unchanged', () => {
+    expect(initialDirectorState.role).toBe('player');
   });
 });
