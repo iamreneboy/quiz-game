@@ -213,17 +213,21 @@ function fit(group: readonly MarkerAnchor[], padding: number, input: FramingInpu
   return clampCamera({ centerX, span }, metrics);
 }
 
+export interface OffscreenPlayer {
+  playerId: string;
+  direction: 'left' | 'right' | 'top' | 'bottom';
+}
+
 /**
- * Players the camera can't include — the readout flags these as off screen.
- *
- * Membership only, no direction: a player can fall out on either axis (see
- * below), so `TrackReadout` renders a non-directional marker rather than
- * asserting a side this list does not carry.
+ * Players the camera can't include — the readout flags these as off screen,
+ * with which side they fell off so the marker can point that way.
  *
  * Both axes, deliberately. The camera is fitted on x alone, so for a long time
  * this only tested x — and a field bunched on one segment stacks UPWARD, which
  * meant row-stacked avatars could be drawn entirely above the canvas with the
- * readout reporting nobody missing.
+ * readout reporting nobody missing. x is checked first: a player can in
+ * principle fall out on both axes at once, and the horizontal edge is the one
+ * the camera actually chases, so it wins ties.
  *
  * y needs the rig's vertical extent to be meaningful, and `framing.ts` must not
  * import renderer code, so it takes RIG_TOP/RIG_BOTTOM through `geometry.ts` —
@@ -237,14 +241,27 @@ export function offscreenPlayerIds(
   anchors: readonly MarkerAnchor[],
   camera: CameraState,
   viewport: Viewport,
-): string[] {
+): OffscreenPlayer[] {
   const scale = worldScale(camera, viewport);
-  return anchors
-    .filter(a => {
-      const x = worldXToScreen(a.x, camera, viewport);
-      if (x < 0 || x > viewport.width) return true;
-      const y = worldYToScreen(a.y, camera, viewport);
-      return y + RIG_TOP * scale > viewport.height || y + RIG_BOTTOM * scale < 0;
-    })
-    .map(a => a.playerId);
+  const result: OffscreenPlayer[] = [];
+  for (const a of anchors) {
+    const x = worldXToScreen(a.x, camera, viewport);
+    if (x < 0) {
+      result.push({ playerId: a.playerId, direction: 'left' });
+      continue;
+    }
+    if (x > viewport.width) {
+      result.push({ playerId: a.playerId, direction: 'right' });
+      continue;
+    }
+    const y = worldYToScreen(a.y, camera, viewport);
+    if (y + RIG_TOP * scale > viewport.height) {
+      result.push({ playerId: a.playerId, direction: 'bottom' });
+      continue;
+    }
+    if (y + RIG_BOTTOM * scale < 0) {
+      result.push({ playerId: a.playerId, direction: 'top' });
+    }
+  }
+  return result;
 }

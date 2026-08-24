@@ -149,30 +149,37 @@ describe('offscreenPlayerIds', () => {
     expect(offscreenPlayerIds(anchors, camera, viewport)).toEqual([]);
   });
 
-  it('reports players outside the visible span', () => {
+  it('reports players outside the visible span, with which side', () => {
     const anchors = anchorsFor([['tail', 0], ['leader', 30]], 32);
     const camera = frameTarget('pack', input(anchors, 32, { localPlayerId: 'leader' }));
-    expect(offscreenPlayerIds(anchors, camera, viewport)).toContain('tail');
+    expect(offscreenPlayerIds(anchors, camera, viewport)).toContainEqual({
+      playerId: 'tail',
+      direction: 'left',
+    });
   });
 
   // C1: the camera is fitted on x alone, so a bunched field stacks UPWARD out of
   // frame at a perfectly normal x. Testing x only reported nobody missing.
-  it('reports a player stacked above the canvas', () => {
+  it('reports a player stacked above the canvas as top', () => {
     const stacked: MarkerAnchor[] = [
       { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, rank: 0, side: 0, segment: 4 },
       { playerId: 'orbit', x: 4 * SEGMENT_WIDTH, y: -2000, row: 9, rank: 0, side: 0, segment: 4 },
     ];
     const camera = frameTarget('pack', input(stacked, 12));
-    expect(offscreenPlayerIds(stacked, camera, viewport)).toEqual(['orbit']);
+    expect(offscreenPlayerIds(stacked, camera, viewport)).toEqual([
+      { playerId: 'orbit', direction: 'top' },
+    ]);
   });
 
-  it('reports a player stacked below the canvas', () => {
+  it('reports a player stacked below the canvas as bottom', () => {
     const sunk: MarkerAnchor[] = [
       { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, rank: 0, side: 0, segment: 4 },
       { playerId: 'basement', x: 4 * SEGMENT_WIDTH, y: 2000, row: 0, rank: 0, side: 0, segment: 4 },
     ];
     const camera = frameTarget('pack', input(sunk, 12));
-    expect(offscreenPlayerIds(sunk, camera, viewport)).toEqual(['basement']);
+    expect(offscreenPlayerIds(sunk, camera, viewport)).toEqual([
+      { playerId: 'basement', direction: 'bottom' },
+    ]);
   });
 
   it('reports nobody for eight players tied on one segment', () => {

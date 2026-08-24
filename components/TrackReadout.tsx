@@ -7,6 +7,7 @@ import { useStaging } from '@/lib/staging/useStaging';
 import LowerThird from './LowerThird';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
+const OFFSCREEN_ARROW = { left: '◀', right: '▶', top: '▲', bottom: '▼' } as const;
 
 /**
  * The accessible half of the track (spec §8). Pixi draws the world; this
@@ -34,6 +35,7 @@ export default function TrackReadout({ code }: { code: string }) {
         <ol className="flex gap-2 overflow-x-auto sm:justify-center">
           {standings.map((s, rank) => {
             const gained = deltas.find(d => d.playerId === s.player_id)?.placesGained ?? 0;
+            const off = offscreen.find(o => o.playerId === s.player_id);
             return (
               <li
                 key={s.player_id}
@@ -63,9 +65,12 @@ export default function TrackReadout({ code }: { code: string }) {
                     🔥×{s.current_streak}
                   </span>
                 )}
-                {offscreen.includes(s.player_id) && (
-                  <span className="text-xs text-warning" title="Outside the current camera shot">
-                    ◦
+                {off && (
+                  <span
+                    className="text-xs text-warning"
+                    title={`Outside the current camera shot (${off.direction})`}
+                  >
+                    {OFFSCREEN_ARROW[off.direction]}
                   </span>
                 )}
               </li>
