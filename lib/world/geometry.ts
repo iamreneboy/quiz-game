@@ -53,8 +53,10 @@ export const MARKER_ROW_HEIGHT = AVATAR_HEIGHT * 0.5;
  * named by `offscreenPlayerIds` and flagged in the readout.
  *
  * Worth knowing: at MARKER_ROW_HEIGHT the rise only fits three rows at full
- * pitch, so a four-way tie is already compressing. That is intended — the
- * pitch is a soft preference, the rise is the hard cap.
+ * pitch. Ties pair two-per-row (markerAnchors), so that is four rows' worth
+ * of headcount before compression starts — a seven-way tie is already
+ * compressing. That is intended — the pitch is a soft preference, the rise
+ * is the hard cap.
  */
 export const MAX_STACK_RISE = AVATAR_HEIGHT * 1.4;
 
@@ -99,12 +101,16 @@ export interface AnchorStanding {
 
 export interface MarkerAnchor {
   playerId: string;
-  /** World x of the segment this player occupies. */
+  /** World x of the segment this player occupies, offset by `side` if paired. */
   x: number;
   /** World y; 0 is the ground row, negative values stack upward. */
   y: number;
-  /** 0 == edge-holder (highest speed points on this segment). */
+  /** Vertical tier within the segment's stack; a tier holds up to 2 players. */
   row: number;
+  /** 0-indexed rank by speed points within the segment's tie group; 0 == edge-holder (flair.ts). */
+  rank: number;
+  /** Which half of the row: -1 left, 1 right, 0 unpaired/centered. */
+  side: -1 | 0 | 1;
   segment: number;
 }
 
@@ -147,9 +153,12 @@ export function stackPitch(rowCount: number, riseLimit: number = MAX_STACK_RISE)
 }
 
 /**
- * Marker placement. Players tied on a segment stack vertically, ordered by
- * speed points so row 0 holds the edge — PRD §6's tiebreak rule made visible.
- * (P2 puts the turbo-flame on row 0; P1 only establishes the ordering.)
+ * Marker placement. Players tied on a segment pair up two-per-row, ordered
+ * by speed points — PRD §6's tiebreak rule made visible — offset left/right
+ * in x rather than stacked one-per-row, so a tie reads as a pack instead of
+ * a ladder. `rank` is the unique ordering within the tie (rank 0 holds the
+ * edge; P2 puts the turbo-flame there via `flairFor`). An odd leftover
+ * (or a lone occupant) sits centered, alone in its row.
  */
 export function markerAnchors(
   standings: readonly AnchorStanding[],
@@ -164,16 +173,23 @@ export function markerAnchors(
     bySegment.set(segment, group);
   }
 
+  const ranks = new Map<string, number>();
   const rows = new Map<string, number>();
+  const sides = new Map<string, -1 | 0 | 1>();
   // Each segment's stack compresses independently: a two-way tie keeps the full
   // pitch even when another segment is holding six.
   const pitches = new Map<string, number>();
   for (const group of bySegment.values()) {
     // Stable: equal speed points keep standings order, which is already ranked.
     const ordered = [...group].sort((a, b) => b.speed_points - a.speed_points);
-    const pitch = stackPitch(ordered.length, riseLimit);
+    const rowCount = Math.ceil(ordered.length / 2);
+    const pitch = stackPitch(rowCount, riseLimit);
+    const lastOdd = ordered.length % 2 === 1 ? ordered.length - 1 : -1;
     ordered.forEach((s, index) => {
-      rows.set(s.player_id, index);
+      const side: -1 | 0 | 1 = index === lastOdd ? 0 : index % 2 === 0 ? -1 : 1;
+      ranks.set(s.player_id, index);
+      rows.set(s.player_id, Math.floor(index / 2));
+      sides.set(s.player_id, side);
       pitches.set(s.player_id, pitch);
     });
   }
@@ -181,11 +197,14 @@ export function markerAnchors(
   return standings.map(s => {
     const segment = Math.min(Math.max(0, s.correct), metrics.segments);
     const row = rows.get(s.player_id) ?? 0;
+    const side = sides.get(s.player_id) ?? 0;
     return {
       playerId: s.player_id,
-      x: segmentToWorldX(segment),
+      x: segmentToWorldX(segment) + side * RIG_HALF_WIDTH,
       y: row > 0 ? -row * (pitches.get(s.player_id) ?? MARKER_ROW_HEIGHT) : 0,
       row,
+      rank: ranks.get(s.player_id) ?? 0,
+      side,
       segment,
     };
   });
@@ -284,6 +303,10 @@ export function gridAnchors(
       x: Math.max(rearmost, -GRID_LEAD_IN - column * spacing),
       y: row > 0 ? -row * pitch : 0,
       row,
+      // Grid order, not a tie group — rank/side are unused here (no flairFor
+      // or x-offset pairing in the lobby), but MarkerAnchor requires them.
+      rank: index,
+      side: 0,
       segment: 0,
     };
   });

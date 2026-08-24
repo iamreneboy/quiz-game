@@ -159,8 +159,8 @@ describe('offscreenPlayerIds', () => {
   // frame at a perfectly normal x. Testing x only reported nobody missing.
   it('reports a player stacked above the canvas', () => {
     const stacked: MarkerAnchor[] = [
-      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, segment: 4 },
-      { playerId: 'orbit', x: 4 * SEGMENT_WIDTH, y: -2000, row: 9, segment: 4 },
+      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, rank: 0, side: 0, segment: 4 },
+      { playerId: 'orbit', x: 4 * SEGMENT_WIDTH, y: -2000, row: 9, rank: 0, side: 0, segment: 4 },
     ];
     const camera = frameTarget('pack', input(stacked, 12));
     expect(offscreenPlayerIds(stacked, camera, viewport)).toEqual(['orbit']);
@@ -168,8 +168,8 @@ describe('offscreenPlayerIds', () => {
 
   it('reports a player stacked below the canvas', () => {
     const sunk: MarkerAnchor[] = [
-      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, segment: 4 },
-      { playerId: 'basement', x: 4 * SEGMENT_WIDTH, y: 2000, row: 0, segment: 4 },
+      { playerId: 'ground', x: 4 * SEGMENT_WIDTH, y: 0, row: 0, rank: 0, side: 0, segment: 4 },
+      { playerId: 'basement', x: 4 * SEGMENT_WIDTH, y: 2000, row: 0, rank: 0, side: 0, segment: 4 },
     ];
     const camera = frameTarget('pack', input(sunk, 12));
     expect(offscreenPlayerIds(sunk, camera, viewport)).toEqual(['basement']);
@@ -270,7 +270,7 @@ describe('podium framing', () => {
       localPlayerId: null, emphasisIds: [],
     });
     const full = frameTarget('podium', {
-      anchors: [{ playerId: 'p1', x: 0, y: 0, row: 0, segment: 0 }],
+      anchors: [{ playerId: 'p1', x: 0, y: 0, row: 0, rank: 0, side: 0, segment: 0 }],
       metrics, viewport: { width: 1920, height: 1080 },
       localPlayerId: 'p1', emphasisIds: [],
     });

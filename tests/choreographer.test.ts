@@ -343,12 +343,18 @@ describe('the overtake accent', () => {
   });
 
   it('falls back to mid-travel when the pair never cross — a same-segment tie', () => {
-    // 'a' and 'b' both sit on segment 1, so the pass exists only in the
-    // standings order: there is no x crossing to sample.
-    let state = bufferCue(initialChoreographerState, overtook, anchorsBefore);
-    state = beginSequence(state, anchorsAfter, 0, 'high');
+    // 'a' and 'b' stay tied on segment 1 all beat (nothing advances), paired
+    // side by side by markerAnchors: b ranks ahead on speed points, so b sits
+    // left (side -1) and a sits right (side +1), a fixed 2*RIG_HALF_WIDTH
+    // apart the whole time. Neither position moves, so there is no crossing
+    // to sample — unlike a tie that breaks apart (see the crossing test
+    // above, where the pass exists in the standings AND the geometry).
+    const tiedStill: FlairStanding[] = [s('a', 1, 0), s('b', 1, 10)];
+    const tiedAnchors = markerAnchors(tiedStill, metrics);
+    let state = bufferCue(initialChoreographerState, overtook, tiedAnchors);
+    state = beginSequence(state, tiedAnchors, 0, 'high');
 
-    const at = firesAt(state, anchorsAfter);
+    const at = firesAt(state, tiedAnchors);
     expect(at).not.toBeNull();
     expect(at!).toBeCloseTo(60 + ANTICIPATE_MS + TRAVEL_MS * 0.6, -1);
   });

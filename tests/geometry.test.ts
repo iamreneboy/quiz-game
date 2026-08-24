@@ -120,7 +120,7 @@ describe('markerAnchors', () => {
     expect(anchors[0].x).toBe(3 * SEGMENT_WIDTH);
   });
 
-  it('stacks players tied on a segment, highest speed points on the edge', () => {
+  it('pairs the top two ranks into row 0, offset in x, edge-holder on the left', () => {
     const anchors = markerAnchors(
       [
         { player_id: 'slow', correct: 2, speed_points: 40 },
@@ -130,9 +130,40 @@ describe('markerAnchors', () => {
       metrics,
     );
     expect(anchors.map(a => a.playerId)).toEqual(['slow', 'fast', 'mid']);
-    const rows = Object.fromEntries(anchors.map(a => [a.playerId, a.row]));
-    expect(rows).toEqual({ fast: 0, mid: 1, slow: 2 });
-    expect(anchors.find(a => a.playerId === 'mid')!.y).toBe(-MARKER_ROW_HEIGHT);
+    const ranks = Object.fromEntries(anchors.map(a => [a.playerId, a.rank]));
+    expect(ranks).toEqual({ fast: 0, mid: 1, slow: 2 });
+
+    const fast = anchors.find(a => a.playerId === 'fast')!;
+    const mid = anchors.find(a => a.playerId === 'mid')!;
+    const slow = anchors.find(a => a.playerId === 'slow')!;
+
+    // Ranks 0 and 1 share row 0, offset left/right instead of stacked.
+    expect(fast.row).toBe(0);
+    expect(mid.row).toBe(0);
+    expect(fast.y).toBe(0);
+    expect(mid.y).toBe(0);
+    expect(fast.side).toBe(-1);
+    expect(mid.side).toBe(1);
+    expect(mid.x - fast.x).toBe(2 * RIG_HALF_WIDTH);
+
+    // Rank 2 is the odd one out: alone in row 1, centered.
+    expect(slow.row).toBe(1);
+    expect(slow.side).toBe(0);
+    expect(slow.y).toBe(-MARKER_ROW_HEIGHT);
+    expect(slow.x).toBe(2 * SEGMENT_WIDTH);
+  });
+
+  it('keeps a two-way tie at full pitch — pairing removes the need to stack it at all', () => {
+    const anchors = markerAnchors(
+      [
+        { player_id: 'a', correct: 2, speed_points: 90 },
+        { player_id: 'b', correct: 2, speed_points: 40 },
+      ],
+      metrics,
+    );
+    expect(anchors.every(a => a.row === 0)).toBe(true);
+    expect(anchors.every(a => a.y === 0)).toBe(true);
+    expect(anchors.map(a => a.side).sort()).toEqual([-1, 1]);
   });
 
   it('keeps players on different segments in their own stacks', () => {
@@ -144,6 +175,7 @@ describe('markerAnchors', () => {
       metrics,
     );
     expect(anchors.every(a => a.row === 0)).toBe(true);
+    expect(anchors.every(a => a.side === 0)).toBe(true);
   });
 
   it('clamps a correct count beyond the finish line onto the last segment', () => {
@@ -165,29 +197,31 @@ describe('markerAnchors', () => {
     }));
     const anchors = markerAnchors(tied, metrics);
 
-    // Ordering survives compression: one row each, ranked by speed points.
-    expect(anchors.map(a => a.row)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-    expect(new Set(anchors.map(a => a.y)).size).toBe(8);
-    for (let i = 1; i < anchors.length; i++) {
-      expect(anchors[i].y).toBeLessThan(anchors[i - 1].y);
-    }
+    // Ordering survives compression: paired two-per-row, ranked by speed points.
+    expect(anchors.map(a => a.rank)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(anchors.map(a => a.row)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
+    // 4 distinct y tiers, not 8 — half the rise of one-player-per-row.
+    expect(new Set(anchors.map(a => a.y)).size).toBe(4);
 
     const top = Math.min(...anchors.map(a => a.y));
     expect(-top).toBeLessThanOrEqual(MAX_STACK_RISE + 1e-9);
-    // ...which is strictly tighter than the uncompressed stack would have been.
-    expect(-top).toBeLessThan(7 * MARKER_ROW_HEIGHT);
+    // ...which is strictly tighter than the uncompressed 4-row stack would have been.
+    expect(-top).toBeLessThan(3 * MARKER_ROW_HEIGHT);
   });
 
   it('leaves a shallow stack at full pitch — only deep ties pay', () => {
+    // Three-way, not two: a two-way tie no longer needs a second row at all
+    // (both pair into row 0), so this needs an odd leftover to exercise row 1.
     const anchors = markerAnchors(
       [
         { player_id: 'a', correct: 2, speed_points: 90 },
-        { player_id: 'b', correct: 2, speed_points: 40 },
-        { player_id: 'c', correct: 5, speed_points: 10 },
+        { player_id: 'b', correct: 2, speed_points: 65 },
+        { player_id: 'c', correct: 2, speed_points: 40 },
+        { player_id: 'd', correct: 5, speed_points: 10 },
       ],
       metrics,
     );
-    expect(anchors.find(a => a.playerId === 'b')!.y).toBe(-MARKER_ROW_HEIGHT);
+    expect(anchors.find(a => a.playerId === 'c')!.y).toBe(-MARKER_ROW_HEIGHT);
   });
 
   it('compresses each segment independently', () => {
@@ -195,13 +229,16 @@ describe('markerAnchors', () => {
       player_id: `crowd${i}`, correct: 3, speed_points: 100 - i,
     }));
     const anchors = markerAnchors(
-      [...crowd, { player_id: 'pair', correct: 6, speed_points: 5 },
-        { player_id: 'pair2', correct: 6, speed_points: 4 }],
+      [...crowd,
+        { player_id: 'pair', correct: 6, speed_points: 6 },
+        { player_id: 'pair2', correct: 6, speed_points: 5 },
+        { player_id: 'pair3', correct: 6, speed_points: 4 }],
       metrics,
     );
-    // The two-way tie keeps the full pitch even though another segment holds 8.
-    expect(anchors.find(a => a.playerId === 'pair2')!.y).toBe(-MARKER_ROW_HEIGHT);
-    expect(anchors.find(a => a.playerId === 'crowd1')!.y).toBeGreaterThan(-MARKER_ROW_HEIGHT);
+    // The three-way tie's odd leftover keeps full pitch even though another
+    // segment holds 8.
+    expect(anchors.find(a => a.playerId === 'pair3')!.y).toBe(-MARKER_ROW_HEIGHT);
+    expect(anchors.find(a => a.playerId === 'crowd3')!.y).toBeGreaterThan(-MARKER_ROW_HEIGHT);
   });
 
   it('keeps every rig of a fully tied field inside a 1280x720 frame', () => {
@@ -232,7 +269,8 @@ describe('startLineAnchors', () => {
     const anchors = startLineAnchors(roster, metrics);
     expect(anchors.map(a => a.playerId)).toEqual(['a', 'b', 'c']);
     expect(anchors.every(a => a.segment === 0)).toBe(true);
-    expect(anchors.every(a => a.x === segmentToWorldX(0))).toBe(true);
+    // Paired players sit either side of segment 0's center, not on it.
+    expect(anchors.every(a => Math.abs(a.x - segmentToWorldX(0)) <= RIG_HALF_WIDTH)).toBe(true);
   });
 
   it('lays the field out exactly as markerAnchors does for an all-zero field', () => {
@@ -248,8 +286,9 @@ describe('startLineAnchors', () => {
 
   it('row-stacks the field, since everyone is tied on the line', () => {
     const anchors = startLineAnchors(roster, metrics);
-    expect(anchors.map(a => a.row)).toEqual([0, 1, 2]);
-    expect(anchors.map(a => a.y)).toEqual([0, -MARKER_ROW_HEIGHT, -2 * MARKER_ROW_HEIGHT]);
+    expect(anchors.map(a => a.row)).toEqual([0, 0, 1]);
+    expect(anchors.map(a => a.side)).toEqual([-1, 1, 0]);
+    expect(anchors.map(a => a.y)).toEqual([0, 0, -MARKER_ROW_HEIGHT]);
   });
 
   it('returns an empty list for an empty roster', () => {
