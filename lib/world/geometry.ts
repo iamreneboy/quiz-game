@@ -21,8 +21,8 @@ import {
 /** World units per track segment. One segment == one question. */
 export const SEGMENT_WIDTH = 320;
 
-/** Run-off in world units past the start and finish lines. */
-export const TRACK_MARGIN = 260;
+/* TRACK_MARGIN is declared below GRID_EDGE_MARGIN — it is derived from the
+   grid constants, which are themselves derived from the rig. */
 
 /**
  * Vertical gap between markers stacked on the same segment.
@@ -215,8 +215,15 @@ export interface GridPlayer {
   id: string;
 }
 
-/** Maximum column spacing of the starting grid, in world units; compresses to fit the run-off. */
-export const GRID_COLUMN_WIDTH = 90;
+/**
+ * Maximum column spacing of the starting grid, in world units; compresses to
+ * fit the run-off.
+ *
+ * Exactly one rig width, so adjacent same-row rigs touch and never overlap.
+ * Derived rather than a literal for the same reason MARKER_ROW_HEIGHT is:
+ * change the rig and this follows it.
+ */
+export const GRID_COLUMN_WIDTH = RIG_HALF_WIDTH * 2;
 
 /** Gap between the front row and the start line. */
 export const GRID_LEAD_IN = 40;
@@ -231,6 +238,22 @@ export const GRID_LEAD_IN = 40;
  * 1.5% of the span either way (camera.ts) — about 11 units at the lobby shot.
  */
 export const GRID_EDGE_MARGIN = RIG_HALF_WIDTH * 1.5;
+
+/**
+ * Run-off beyond each end of the track, in world units.
+ *
+ * Sized by what STANDS in it, not by a literal. The lobby grid lives entirely
+ * in the run-off, and P1 sized this against a 52-unit marker puck that P2
+ * replaced with a 90-unit rig — so once GRID_EDGE_MARGIN reserved room to draw
+ * the rearmost rig whole, column spacing compressed from 73 to 51 and adjacent
+ * rigs overlapped by about a third of their rim.
+ *
+ * Four columns is eight players, the shape this is sized for. Twenty players
+ * (PRD §13's maximum) still compresses to 30 units, which a fixed run-off
+ * cannot avoid.
+ */
+export const TRACK_MARGIN =
+  GRID_LEAD_IN + GRID_EDGE_MARGIN + 3 * GRID_COLUMN_WIDTH;
 
 /**
  * The lobby starting grid (spec §7): a staggered two-row race formation in the

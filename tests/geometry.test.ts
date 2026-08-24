@@ -18,6 +18,7 @@ import {
   markerAnchors,
   startLineAnchors,
   gridAnchors,
+  GRID_COLUMN_WIDTH,
   type GridPlayer,
 } from '@/lib/world/geometry';
 import {
@@ -318,5 +319,37 @@ describe('gridAnchors', () => {
   it('stacks its second row on the same derived pitch as a tie', () => {
     const anchors = gridAnchors(players(2), trackMetrics(12));
     expect(anchors[1].y).toBe(-stackPitch(2));
+  });
+});
+
+describe('the lobby grid run-off', () => {
+  const grid = (n: number): GridPlayer[] =>
+    Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
+
+  /** Distinct column x positions, front to back. */
+  function columns(n: number): number[] {
+    return [...new Set(gridAnchors(grid(n), trackMetrics(12)).map(a => a.x))]
+      .sort((a, b) => b - a);
+  }
+
+  it('holds full column spacing for an eight-player grid', () => {
+    const xs = columns(8);
+    expect(xs).toHaveLength(4);
+    for (let i = 1; i < xs.length; i++) {
+      expect(xs[i - 1] - xs[i]).toBeCloseTo(GRID_COLUMN_WIDTH, 6);
+    }
+  });
+
+  it('spaces columns at least a full rig width apart, so rims never overlap', () => {
+    const xs = columns(8);
+    expect(xs[0] - xs[1]).toBeGreaterThanOrEqual(RIG_HALF_WIDTH * 2);
+  });
+
+  it('still compresses at the twenty-player maximum, by design', () => {
+    // PRD §13's ceiling. A fixed run-off cannot hold 10 columns at full
+    // width; this is a narrowed debt entry, not a retired one.
+    const xs = columns(20);
+    expect(xs).toHaveLength(10);
+    expect(xs[0] - xs[1]).toBeCloseTo(30, 6);
   });
 });
