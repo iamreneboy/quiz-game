@@ -122,8 +122,12 @@ export default function StageBroadcast({ code }: { code: string }) {
       </div>
 
       {/*
-        The floor. Height is reserved from READ onward so the reveal can grow
-        into it without reflowing (ADR-0019) — see StageOptions.
+        The floor. Anchored to its BOTTOM edge and ordered reveal-panel-first,
+        so the answer columns stay put and the panel grows the floor upward
+        into empty backdrop. The other order pushed the columns up by the
+        panel's own height at the reveal, which ADR-0019 forbids — the e2e
+        suite measures exactly that. StageOptions reserves its own height for
+        the same reason.
       */}
       <div
         data-testid="stage-floor"
@@ -131,6 +135,9 @@ export default function StageBroadcast({ code }: { code: string }) {
       >
         {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
           <>
+            {beat === 'reveal' && reveal && (
+              <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
+            )}
             <AnimatePresence initial={false}>
               {steps.options && (
                 <StageOptions
@@ -142,9 +149,6 @@ export default function StageBroadcast({ code }: { code: string }) {
                 />
               )}
             </AnimatePresence>
-            {beat === 'reveal' && reveal && (
-              <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
-            )}
           </>
         )}
       </div>

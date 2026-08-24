@@ -33,7 +33,13 @@ export default function StageOptions({
 }) {
   return (
     <motion.div
-      className="grid grid-cols-1 gap-4 md:grid-cols-2"
+      /*
+        Height is RESERVED, not grown. The distribution fills each column
+        bottom-up at the reveal, and a row that resized then would move the
+        answers at the most dramatic moment of the beat — exactly what
+        ADR-0019 forbids.
+      */
+      className="grid h-[26cqh] grid-cols-4 gap-4"
       initial="hidden"
       animate="shown"
       variants={{ shown: { transition: { staggerChildren: READ_OPTION_STAGGER / 1000 } } }}
@@ -46,6 +52,7 @@ export default function StageOptions({
         // red, no ✗ — tone is carried by treatment. Before the reveal, ANSWER
         // is full strength and READ is dimmed.
         const targetOpacity = result ? (isCorrect ? 1 : 0.62) : mode === 'live' ? 1 : 0.55;
+        const share = revealSteps?.rows ? (result?.share ?? 0) : 0;
 
         return (
           <motion.div
@@ -53,10 +60,11 @@ export default function StageOptions({
             data-testid="stage-option"
             data-index={i}
             data-correct={isCorrect ? 'true' : undefined}
+            data-share={result ? Math.round((result.share ?? 0) * 100) : undefined}
             variants={{ hidden: { opacity: 0, y: 14 }, shown: { opacity: targetOpacity, y: 0 } }}
-            className={`relative flex items-center gap-4 overflow-hidden rounded-panel border
-              border-white/10 border-l-4 bg-night/60 p-5 text-left font-semibold text-ink
-              backdrop-blur-md transition-[opacity,border-color] duration-(--dur-cut) ease-snap`}
+            className={`relative flex flex-col justify-end overflow-hidden rounded-panel
+              border border-white/10 border-l-4 bg-night/60 p-4 text-left font-semibold
+              text-ink backdrop-blur-md transition-[border-color] duration-(--dur-cut) ease-snap`}
             style={{
               borderLeftColor: accent,
               backgroundColor: isCorrect
@@ -64,38 +72,46 @@ export default function StageOptions({
                 : undefined,
             }}
           >
+            {/*
+              The share as COLUMN HEIGHT. A room reads relative heights across a
+              room faster than it reads four numbers.
+            */}
             {result && (
               <span
                 aria-hidden="true"
-                className="absolute inset-y-0 left-0 -z-10 transition-[width] duration-(--dur-beat) ease-snap"
+                className="absolute inset-x-0 bottom-0 -z-10 transition-[height] duration-(--dur-beat) ease-snap"
                 style={{
-                  width: `${(revealSteps?.rows ? result.share : 0) * 100}%`,
-                  backgroundColor: `color-mix(in oklab, ${isCorrect ? 'var(--color-correct)' : accent} 12%, transparent)`,
+                  height: `${share * 100}%`,
+                  backgroundColor: `color-mix(in oklab, ${isCorrect ? 'var(--color-correct)' : accent} 16%, transparent)`,
                 }}
               />
             )}
-            <span
-              aria-hidden="true"
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-control text-xl"
-              style={{
-                backgroundColor: `color-mix(in oklab, ${accent} 14%, transparent)`,
-                color: accent,
-              }}
-            >
-              {glyph}
-            </span>
-            <span className="min-w-0 flex-1 text-2xl leading-tight">{opt}</span>
+
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-control text-xl"
+                style={{
+                  backgroundColor: `color-mix(in oklab, ${accent} 14%, transparent)`,
+                  color: accent,
+                }}
+              >
+                {glyph}
+              </span>
+              <span className="min-w-0 flex-1 text-2xl leading-tight">{opt}</span>
+            </div>
+
             {result && (
-              <>
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <AvatarStack
                   avatars={result.avatars}
                   overflow={result.overflow}
                   show={revealSteps?.stacks ?? false}
                 />
-                <span className="shrink-0 font-display text-2xl font-black tabular-nums text-ink-dim">
+                <span className="shrink-0 font-display text-3xl font-black tabular-nums text-ink-dim">
                   {result.count}
                 </span>
-              </>
+              </div>
             )}
           </motion.div>
         );

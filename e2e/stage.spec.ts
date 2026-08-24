@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Create a one-question room and return its code. Mirrors the preamble in
@@ -18,6 +18,25 @@ async function createRoom(host: Page, nickname: string): Promise<string> {
   await host.getByRole('button', { name: /create room/i }).click();
   await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
   return host.url().split('/').pop()!;
+}
+
+/**
+ * An element's box once it stops moving — two consecutive reads agreeing.
+ * `motion` entrance variants animate transform, so a box read the instant an
+ * element appears is a frame of the animation, not its resting position.
+ */
+async function settledBox(locator: Locator) {
+  let last: number | null = null;
+  await expect
+    .poll(async () => {
+      const box = await locator.boundingBox();
+      if (!box) return false;
+      const stable = last !== null && Math.abs(box.y - last) < 0.5;
+      last = box.y;
+      return stable;
+    }, { timeout: 5_000 })
+    .toBe(true);
+  return (await locator.boundingBox())!;
 }
 
 test('the stage view follows a live game without a session', async ({ page, browser }) => {
@@ -78,11 +97,25 @@ test('the stage view follows a live game without a session', async ({ page, brow
   const headerBox = await header.boundingBox();
   expect(headerBox!.x).toBeGreaterThanOrEqual(stageViewport.width * 0.04);
 
+  // ADR-0019: the options transform IN PLACE. Capture the row's geometry
+  // during ANSWER and assert it is unchanged once the distribution is drawn.
+  // Measured AFTER the staggered entrance settles — the variant's own y: 14
+  // offset is a mount-in, not a layout position, and reading through it would
+  // compare a moving element against a settled one.
+  const optionBefore = await settledBox(stage.getByTestId('stage-option').first());
+
   await joiner.getByTestId('answer-option').first().click();
 
   // REVEAL: the options grid becomes the distribution in place.
   await expect(broadcast).toHaveAttribute('data-beat', 'reveal', { timeout: 20_000 });
   await expect(stage.locator('[data-testid="stage-option"][data-correct="true"]')).toHaveCount(1);
+
+  const revealed = stage.getByTestId('stage-option').first();
+  await expect(revealed).toHaveAttribute('data-share', /\d+/);
+  const optionAfter = await settledBox(revealed);
+  expect(optionAfter!.x).toBeCloseTo(optionBefore!.x, 0);
+  expect(optionAfter!.y).toBeCloseTo(optionBefore!.y, 0);
+  expect(optionAfter!.height).toBeCloseTo(optionBefore!.height, 0);
 
   // TRACK, then the ceremony.
   await expect(broadcast).toHaveAttribute('data-beat', 'track', { timeout: 20_000 });
