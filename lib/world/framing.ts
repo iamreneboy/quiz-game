@@ -21,9 +21,18 @@ import {
   type Viewport,
 } from './geometry';
 import { MIN_SPAN_SEGMENTS, clampCamera, spanLimits } from './camera';
-import { BLOCK_WIDTH, podiumX } from './podium';
+import { BLOCK_HEIGHTS, BLOCK_WIDTH, podiumX } from './podium';
+import { AVATAR_HEIGHT } from './content/roster';
 
-export type FramingMode = 'startLine' | 'establishing' | 'pack' | 'emphasis' | 'podium';
+export type FramingMode =
+  | 'startLine'
+  | 'establishing'
+  | 'pack'
+  | 'packTight'
+  | 'packWide'
+  | 'emphasis'
+  | 'podium'
+  | 'podiumRoom';
 
 export interface FramingInput {
   anchors: readonly MarkerAnchor[];
@@ -38,6 +47,12 @@ export interface FramingInput {
 const PACK_PADDING = SEGMENT_WIDTH * 0.9;
 const EMPHASIS_PADDING = SEGMENT_WIDTH * 0.6;
 const START_LINE_SEGMENTS = 5;
+
+/** The stage's establishing-width pack shot: the world is the whole backdrop there. */
+const STAGE_PACK_PADDING = SEGMENT_WIDTH * 1.8;
+
+/** Breathing room above the winner's head in the podium shot. */
+export const PODIUM_TOP_PAD = AVATAR_HEIGHT * 0.15;
 
 /**
  * The ceremony shot: three block widths plus breathing room on each side.
@@ -90,6 +105,23 @@ export function stackRiseLimit(viewport: Viewport): number {
   return Math.min(MAX_STACK_RISE, Math.max(STACK_RISE_FLOOR, available));
 }
 
+/**
+ * The podium's span, widened if the canvas is too SHORT to hold the winner.
+ *
+ * The podium has no compression lever — the block heights ARE the ceremony —
+ * so where a stack compresses, this widens: a wider span means a smaller
+ * scale, which means more world fits above the ground line.
+ *
+ * Only a short canvas triggers it. At a full-height 16:9 viewport the required
+ * span is 649.4 against PODIUM_SPAN's 921.6, so the shot is untouched; it is
+ * the 50vh results retreat (1280x360 and friends) that forces the widen.
+ */
+function podiumSpanFor(viewport: Viewport): number {
+  const needed = BLOCK_HEIGHTS[1] + Math.abs(RIG_TOP) + PODIUM_TOP_PAD;
+  const required = (needed * viewport.width) / (viewport.height * HORIZON_FRACTION);
+  return Math.max(PODIUM_SPAN, required);
+}
+
 export function frameTarget(mode: FramingMode, input: FramingInput): CameraState {
   const { metrics } = input;
 
@@ -119,7 +151,31 @@ export function frameTarget(mode: FramingMode, input: FramingInput): CameraState
       // Frames a PLACE, not a group: the podium is at a known world x, so this
       // shot needs no anchors and cannot be thrown off by a straggler still
       // standing back at segment 2.
-      return clampCamera({ centerX: podiumX(metrics), span: PODIUM_SPAN }, metrics);
+      return clampCamera(
+        { centerX: podiumX(metrics), span: podiumSpanFor(input.viewport) },
+        metrics,
+      );
+
+    case 'podiumRoom': {
+      // The ceremony shot for a room: the winner AND the field that did not
+      // medal, who stand at markerAnchors near the finish line — which is where
+      // the podium is, so this is a genuine fit rather than a wider constant.
+      const half = (BLOCK_WIDTH * 3) / 2;
+      const centre = podiumX(metrics);
+      const xs = [centre - half, centre + half, ...input.anchors.map(a => a.x)];
+      const lo = Math.min(...xs);
+      const hi = Math.max(...xs);
+      const span = Math.max(hi - lo + PACK_PADDING * 2, podiumSpanFor(input.viewport));
+      return clampCamera({ centerX: (lo + hi) / 2, span }, metrics);
+    }
+
+    case 'packTight':
+      if (input.anchors.length === 0) return frameTarget('establishing', input);
+      return fit(input.anchors, EMPHASIS_PADDING, input);
+
+    case 'packWide':
+      if (input.anchors.length === 0) return frameTarget('establishing', input);
+      return fit(input.anchors, STAGE_PACK_PADDING, input);
 
     case 'pack':
     default: {

@@ -23,7 +23,7 @@ import {
   stackRiseLimit,
   type FramingInput,
 } from '@/lib/world/framing';
-import { BLOCK_WIDTH, blockX } from '@/lib/world/podium';
+import { BLOCK_HEIGHTS, BLOCK_WIDTH, blockX } from '@/lib/world/podium';
 
 const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
 
@@ -375,5 +375,58 @@ describe('the vertical framing contract holds at every aspect', () => {
         expect(topmost).toBeGreaterThan(-(RIG_BOTTOM - RIG_TOP) * scale * 0.05);
       }
     }
+  });
+});
+
+describe('the podium shot fits vertically', () => {
+  const metrics = trackMetrics(12);
+
+  it('is EXACTLY PODIUM_SPAN on a healthy full-height 16:9 canvas', () => {
+    const target = frameTarget('podium', {
+      anchors: [], metrics, viewport: { width: 1920, height: 1080 },
+      localPlayerId: null, emphasisIds: [],
+    });
+    expect(target.span).toBe(921.6);
+  });
+
+  it('widens on the retreated band that was clipping the winner', () => {
+    // CURRENT.md measured the winner's rig top at screen y = -79 on 1280x360.
+    const target = frameTarget('podium', {
+      anchors: [], metrics, viewport: { width: 1280, height: 360 },
+      localPlayerId: null, emphasisIds: [],
+    });
+    expect(target.span).toBeCloseTo(1298.765, 3);
+  });
+
+  it('keeps the winner on canvas at every aspect, full height and retreated', () => {
+    for (const view of ASPECT_SWEEP) {
+      const camera = frameTarget('podium', {
+        anchors: [], metrics, viewport: view, localPlayerId: null, emphasisIds: [],
+      });
+      const scale = worldScale(camera, view);
+      // The winner stands on top of block 1; the rig reaches RIG_TOP above that.
+      const winnerTop =
+        worldYToScreen(-BLOCK_HEIGHTS[1], camera, view) + RIG_TOP * scale;
+      expect(winnerTop).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('podiumRoom', () => {
+  const metrics = trackMetrics(12);
+
+  it('widens past the podium to hold the field that did not medal', () => {
+    const anchors = anchorsFor(
+      [['a', 12], ['b', 12], ['c', 11], ['d', 4]], 12,
+    );
+    const view = { width: 1920, height: 1080 };
+    const room = frameTarget('podiumRoom', {
+      anchors, metrics, viewport: view, localPlayerId: null, emphasisIds: [],
+    });
+    const tight = frameTarget('podium', {
+      anchors, metrics, viewport: view, localPlayerId: null, emphasisIds: [],
+    });
+    expect(room.span).toBeGreaterThan(tight.span);
+    expect(offscreenPlayerIds(anchors, room, view)).toEqual([]);
   });
 });
