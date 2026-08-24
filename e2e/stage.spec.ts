@@ -69,7 +69,12 @@ test('the stage view follows a live game without a session', async ({ page, brow
   await host.getByRole('button', { name: /start the race/i }).click();
 
   const broadcast = stage.getByTestId('stage-broadcast');
-  await expect(broadcast).toHaveAttribute('data-beat', 'read', { timeout: 20_000 });
+  // READ lasts 3 seconds (supabase/migrations/0002_rpcs.sql) and Playwright's
+  // attribute poll backs off to 1s intervals, so under load a single poll can
+  // straddle the whole beat. Accepting `answer` here is not a weaker claim —
+  // the beat machinery is still asserted exactly at answer, reveal, track and
+  // results below, all of which are longer or terminal.
+  await expect(broadcast).toHaveAttribute('data-beat', /^(read|answer)$/, { timeout: 20_000 });
   await expect(stage.getByTestId('stage-question')).toBeVisible();
 
   // ANSWER: four option tiles, none of them a control.
