@@ -12,6 +12,12 @@ export function useHostDriver(code: string, channel: RealtimeChannel | null): { 
   const applyPhaseEvent = useGameStore(s => s.applyPhaseEvent);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards against a second advance_phase call landing while the first is
+  // still in flight: an unrelated room update can rerun the scheduling
+  // effect and re-arm a near-zero-delay timer before the pending RPC
+  // resolves, and the redundant call can 400 if the first already moved the
+  // room past a phase with no further transition (e.g. into 'results').
+  const advancing = useRef(false);
   const session = typeof window !== 'undefined' ? loadSession(code) : null;
   const hostKey = session?.hostKey ?? null;
 
@@ -21,12 +27,17 @@ export function useHostDriver(code: string, channel: RealtimeChannel | null): { 
   }, [channel, applyPhaseEvent]);
 
   const advance = useCallback(async () => {
-    if (!hostKey || !room) return;
-    const { data, error: err } = await supabase.rpc('advance_phase', {
-      p_room_id: room.id, p_host_key: hostKey,
-    });
-    if (err) { setError(err.message); return; }
-    broadcastAndApply(data as PhaseEvent);
+    if (!hostKey || !room || advancing.current) return;
+    advancing.current = true;
+    try {
+      const { data, error: err } = await supabase.rpc('advance_phase', {
+        p_room_id: room.id, p_host_key: hostKey,
+      });
+      if (err) { setError(err.message); return; }
+      broadcastAndApply(data as PhaseEvent);
+    } finally {
+      advancing.current = false;
+    }
   }, [hostKey, room, broadcastAndApply]);
 
   // Schedule the next transition whenever the phase changes.
