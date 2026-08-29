@@ -493,3 +493,32 @@ assert.equal(shrunk.questions.some(q => q.is_custom), false);
 assert.deepEqual(shrunk.questions.map(q => q.round), [1, 2, 3, 4]);
 
 console.log('✅ P1 draw-review smoke passed');
+
+// ---- P2a: the tiebreak ----
+// The ceremony's deadline is FLAT (ADR-0044): it always reserves the
+// photo-finish prelude, whether or not one is staged. The client mirrors this
+// number in lib/ceremony/beats.ts's CEREMONY_MS, and a disagreement puts the
+// podium at elapsed 0 for the difference — which is why it is asserted here.
+const CEREMONY_MS = 12_400;
+
+const cer = await rpc('create_room', {
+  p_timer_seconds: 20, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: cer.code, p_nickname: 'Clock', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: cer.host_key,
+});
+await rpc('join_room', {
+  p_code: cer.code, p_nickname: 'Watch', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('start_game', { p_room_id: cer.room_id, p_host_key: cer.host_key });
+for (let i = 0; i < 4; i += 1) {
+  await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key });
+}
+const cerEnd = await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key });
+assert.equal(cerEnd.phase, 'results');
+const cerMs = new Date(cerEnd.ends_at) - new Date(cerEnd.server_now);
+assert.ok(Math.abs(cerMs - CEREMONY_MS) < 500,
+  `the ceremony deadline should be ${CEREMONY_MS}ms, got ${cerMs}`);
+
+console.log('✅ P2a ceremony-deadline smoke passed');

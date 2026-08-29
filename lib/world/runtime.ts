@@ -85,7 +85,12 @@ const SUBSCRIBED: CueType[] = [
 function ceremonySteps(state: ReturnType<typeof useGameStore.getState>): CeremonySteps {
   const room = state.room;
   if (room?.phase !== 'results') return NO_CEREMONY;
-  return ceremonyStepsAt(elapsedIn(CEREMONY_MS, room.ends_at ? msUntil(room.ends_at) : null));
+  // Task 3 replaces this literal with photoFinishFor(state) — one derivation,
+  // read by both the DOM ticker and the renderer, so they cannot disagree.
+  return ceremonyStepsAt(
+    elapsedIn(CEREMONY_MS, room.ends_at ? msUntil(room.ends_at) : null),
+    false,
+  );
 }
 
 /**

@@ -32,7 +32,9 @@ export function startCeremonyRuntime(): () => void {
     // null deadline — a pre-0004 database — means "beat over", so the podium
     // renders settled rather than failing.
     const remainingMs = room.ends_at ? msUntil(room.ends_at) : null;
-    publish(ceremonyStepsAt(elapsedIn(CEREMONY_MS, remainingMs)));
+    // Task 3 replaces this literal with photoFinishFor(state) — one derivation,
+    // read by both the DOM ticker and the renderer, so they cannot disagree.
+    publish(ceremonyStepsAt(elapsedIn(CEREMONY_MS, remainingMs), false));
   };
 
   frame = requestAnimationFrame(tick);
