@@ -33,7 +33,7 @@ function standing(id: string, correct: number, speed = 0, streak = 0): Standing 
 function source(over: Partial<CueSource> & { phase?: Phase; round?: number } = {}): CueSource {
   const { phase = 'lobby', round = 0, ...rest } = over;
   return {
-    room: { phase, round, total_rounds: 3, ends_at: null },
+    room: { phase, round, total_rounds: 3, ends_at: null, status: 'playing' },
     players: [player(A), player(B)],
     question: null,
     reveal: null,
@@ -434,7 +434,7 @@ describe('final-question fires on the run-up beat', () => {
   it('falls back to the countdown when the game is a single round', () => {
     const one = (phase: Phase, round: number) => ({
       ...source({ phase, round }),
-      room: { phase, round, total_rounds: 1, ends_at: null },
+      room: { phase, round, total_rounds: 1, ends_at: null, status: 'playing' as const },
     });
     const cues = flatCues([one('lobby', 0), one('countdown', 1)]);
     expect(finalOf(cues)).toHaveLength(1);
@@ -527,5 +527,70 @@ describe('answer-resolved', () => {
       ['phase-reveal', 'answer-resolved', 'player-advanced'],
       ['phase-track'],
     ]);
+  });
+});
+
+describe('pause and resume', () => {
+  it('announces a pause when the status changes, with no beat change', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1 }),
+      source({ phase: 'answer', round: 1, room: { phase: 'answer', round: 1, total_rounds: 3, ends_at: null, status: 'paused' } }),
+    ]);
+    expect(types(batches[1])).toEqual(['game-paused']);
+  });
+
+  it('announces a resume and still replays no beat', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1, room: { phase: 'answer', round: 1, total_rounds: 3, ends_at: null, status: 'paused' } }),
+      source({ phase: 'answer', round: 1 }),
+    ]);
+    expect(types(batches[1])).toEqual(['game-resumed']);
+  });
+
+  it('seeds a client that loads straight into a paused room', () => {
+    const { batches } = run([
+      source({ phase: 'answer', round: 1, room: { phase: 'answer', round: 1, total_rounds: 3, ends_at: null, status: 'paused' } }),
+    ]);
+    expect(types(batches[0])).toContain('game-paused');
+    // The beat cue still leads, so the bed is right before the duck lands.
+    expect(types(batches[0])[0]).toBe('phase-answer');
+  });
+
+  it('does not re-announce a pause that has not changed', () => {
+    const pausedSource = source({
+      phase: 'answer', round: 1,
+      room: { phase: 'answer', round: 1, total_rounds: 3, ends_at: null, status: 'paused' },
+    });
+    const { batches } = run([pausedSource, pausedSource, pausedSource]);
+    expect(types(batches[1])).toEqual([]);
+    expect(types(batches[2])).toEqual([]);
+  });
+});
+
+describe('a skipped round', () => {
+  it('re-fires the beat when total_rounds shrinks under an unchanged phase and round', () => {
+    const { batches } = run([
+      source({ phase: 'read', round: 1 }),
+      source({
+        phase: 'read', round: 1,
+        room: { phase: 'read', round: 1, total_rounds: 2, ends_at: null, status: 'playing' },
+      }),
+    ]);
+    expect(types(batches[1])).toEqual(['phase-read']);
+  });
+
+  it('resumes and re-fires the beat in one step when a paused room is skipped', () => {
+    const { batches } = run([
+      source({
+        phase: 'answer', round: 1,
+        room: { phase: 'answer', round: 1, total_rounds: 3, ends_at: null, status: 'paused' },
+      }),
+      source({
+        phase: 'read', round: 1,
+        room: { phase: 'read', round: 1, total_rounds: 2, ends_at: null, status: 'playing' },
+      }),
+    ]);
+    // The resume leads so the bed un-ducks before the new question's slam.
+    expect(types(batches[1])).toEqual(['game-resumed', 'phase-read']);
   });
 });

@@ -1,4 +1,4 @@
-import type { Phase, QuestionPublic, RevealPayload, Standing } from '@/lib/types';
+import type { Phase, QuestionPublic, RevealPayload, RoomStatus, Standing } from '@/lib/types';
 import type { Cue } from './cues';
 
 /**
@@ -14,6 +14,7 @@ export interface CueRoom {
   round: number;
   total_rounds: number;
   ends_at: string | null;
+  status: RoomStatus;
 }
 
 /** Structural subset of PlayerPublic this deriver needs. */
@@ -42,6 +43,10 @@ export interface DerivationState {
   seeded: boolean;
   phase: Phase | null;
   round: number;
+  /** Last seen room status; a change in it is what announces a pause. */
+  status: RoomStatus | null;
+  /** Last seen track length. `skip_question` shortens it mid-game (ADR-0038). */
+  totalRounds: number;
   playerIds: string[];
   /** Standings order as of the last processed reveal. */
   order: string[];
@@ -55,6 +60,8 @@ export const initialDerivationState: DerivationState = {
   seeded: false,
   phase: null,
   round: 0,
+  status: null,
+  totalRounds: 0,
   playerIds: [],
   order: [],
   correct: {},
@@ -90,12 +97,20 @@ export function deriveCues(
       seedCues.unshift({ type: 'final-question', tier: 'finalQuestion', round: room.round });
     }
 
+    // A client reloading into a paused room never saw the pause. Pushed AFTER
+    // the beat cues so the bed is established before the duck lands on it.
+    if (room.status === 'paused') {
+      seedCues.push({ type: 'game-paused', tier: 'routine' });
+    }
+
     return {
       cues: seedCues,
       nextState: {
         seeded: true,
         phase: room.phase,
         round: room.round,
+        status: room.status,
+        totalRounds: room.total_rounds,
         playerIds: next.players.map(p => p.id),
         order: (next.standings ?? []).map(s => s.player_id),
         correct: correctMap(next.standings),
@@ -126,19 +141,36 @@ export function deriveCues(
     cues.push({ type: 'answer-locked', tier: 'routine', choiceIndex: next.myAnswer });
   }
 
-  const phaseChanged = room.phase !== s.phase || room.round !== s.round;
+  // A pause changes neither phase nor round, so it has to be derived from
+  // status on its own. Emitted BEFORE the beat cues below, because a skip on a
+  // paused room resumes and re-reads in one event, and the bed must un-duck
+  // before the new question's slam lands on it.
+  if (room.status !== s.status) {
+    if (room.status === 'paused') {
+      cues.push({ type: 'game-paused', tier: 'routine' });
+    } else if (s.status === 'paused' && room.status === 'playing') {
+      cues.push({ type: 'game-resumed', tier: 'routine' });
+    }
+    s = { ...s, status: room.status };
+  }
+
+  // `total_rounds` is in this comparison because skip_question reuses the round
+  // NUMBER (ADR-0038): a skip during READ changes neither phase nor round, and
+  // without this term the new question would arrive with no beat cue at all —
+  // the world would never re-hold its anchors and the callout would never
+  // clear. It is the only thing that changes total_rounds mid-game.
+  const phaseChanged =
+    room.phase !== s.phase || room.round !== s.round || room.total_rounds !== s.totalRounds;
   if (phaseChanged) {
     cues.push(...phaseCues(room, next));
 
-    // Standings only genuinely change at the reveal; track and results repeat
-    // them, so deriving drama anywhere else would double-celebrate.
     if (room.phase === 'reveal') {
       const drama = standingsCues(s, next.standings);
       cues.push(...drama.cues);
       s = drama.nextState;
     }
 
-    s = { ...s, phase: room.phase, round: room.round };
+    s = { ...s, phase: room.phase, round: room.round, totalRounds: room.total_rounds };
   }
 
   return { cues, nextState: s };

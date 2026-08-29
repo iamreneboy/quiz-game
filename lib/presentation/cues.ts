@@ -148,6 +148,23 @@ export interface PodiumCue {
   top: PodiumPlace[];
 }
 
+/* ── Host authority ──────────────────────────────────────────────────────── */
+
+/**
+ * The host stopped the show. `routine` on purpose: a pause is not a
+ * celebration, and M3's roadmap (decision 6) reserves the one new rung on the
+ * hierarchy for P2's sudden death.
+ */
+export interface GamePausedCue {
+  type: 'game-paused';
+  tier: 'routine';
+}
+
+export interface GameResumedCue {
+  type: 'game-resumed';
+  tier: 'routine';
+}
+
 /* ── Union ───────────────────────────────────────────────────────────────── */
 
 export type Cue =
@@ -166,7 +183,9 @@ export type Cue =
   | AnswerLockedCue
   | AnswerResolvedCue
   | PlayerJoinedCue
-  | PodiumCue;
+  | PodiumCue
+  | GamePausedCue
+  | GameResumedCue;
 
 export type CueType = Cue['type'];
 
