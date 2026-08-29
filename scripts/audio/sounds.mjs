@@ -7,9 +7,9 @@
  */
 import { buffer, noise, normalize, renderLoop, reverb, seed, tone } from './dsp.mjs';
 
-const A2 = 110, D3 = 146.83, E3 = 164.81, G3 = 196;
-const A3 = 220, C4 = 261.63, D4 = 293.66, E4 = 329.63, G4 = 392;
-const A4 = 440, C5 = 523.25, E5 = 659.25, A5 = 880;
+const A2 = 110, C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196;
+const A3 = 220, B3 = 246.94, C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392;
+const A4 = 440, B4 = 493.88, C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99, A5 = 880, C6 = 1046.5;
 const BEAT = 0.5;
 
 /* ── Stings ──────────────────────────────────────────────────────────────── */
@@ -170,6 +170,24 @@ const kick = (b, at, gain = 0.5) =>
 const hat = (b, at, gain = 0.16) =>
   noise(b, { start: at, dur: 0.07, gain, cutoff: 8000, env: { a: 0.001, d: 0.04, r: 0.02 } });
 
+/** A hand clap: short bright noise burst, two flams thick. */
+const clap = (b, at, gain = 0.3) => {
+  noise(b, { start: at, dur: 0.05, gain: gain * 0.6, cutoff: 3600, env: { a: 0.001, d: 0.02, r: 0.02 } });
+  noise(b, { start: at + 0.012, dur: 0.18, gain, cutoff: 2800, env: { a: 0.001, d: 0.07, r: 0.09 } });
+};
+
+/**
+ * One heartbeat — the lub-dub pair the game-show tension cue is built on.
+ * Both hits are sub-100 Hz sines bending downward (the "thud"), skinned with
+ * a very dark noise transient so they read as a chest thump, not a kick drum.
+ */
+const heartbeat = (b, at, gain = 0.5) => {
+  tone(b, { freq: 78, start: at, dur: 0.2, gain, wave: 'sine', bend: 0.55, env: { a: 0.004, d: 0.1, r: 0.08 } });
+  noise(b, { start: at, dur: 0.14, gain: gain * 0.35, cutoff: 260, env: { a: 0.003, d: 0.07, r: 0.06 } });
+  tone(b, { freq: 70, start: at + 0.17, dur: 0.24, gain: gain * 0.66, wave: 'sine', bend: 0.5, env: { a: 0.006, d: 0.13, r: 0.09 } });
+  noise(b, { start: at + 0.17, dur: 0.16, gain: gain * 0.22, cutoff: 220, env: { a: 0.004, d: 0.08, r: 0.06 } });
+};
+
 export const BEDS = {
   // 4 bars, laid back — plays under the join gate and the lobby.
   'lobby-groove': () =>
@@ -240,32 +258,76 @@ export const BEDS = {
   // 2 bars. Silent unless the final-question escalation is active, in which
   // case it plays alongside all three other round stems — the worst-case
   // concurrency the headroom note above BEDS budgets for.
+  //
+  // The game-show tension cue: a lub-dub heartbeat on every beat (120 BPM —
+  // a pulse already running hot), over a low drone and a pair of detuned
+  // strings whose slow beating never quite settles.
   'round-dread': () =>
     normalize(
       renderLoop(4, 0.8, b => {
-        tone(b, { freq: A2 / 2, dur: 4, gain: 0.34, wave: 'saw', env: { a: 0.6, d: 1, s: 0.8, r: 0.8 } });
-        tone(b, { freq: D3, start: 0, dur: 4, gain: 0.12, wave: 'sine', bend: 1.06, env: { a: 1.2, d: 1, s: 0.7, r: 1 } });
-        noise(b, { dur: 4, gain: 0.1, cutoff: 900, env: { a: 1, d: 1, s: 0.7, r: 1 } });
-        reverb(b, { timeS: 0.3, mix: 0.4 });
+        for (let beat = 0; beat < 8; beat++) {
+          // Swells across the loop, so each pass through pushes a little harder.
+          heartbeat(b, beat * BEAT, 0.38 + beat * 0.026);
+        }
+        tone(b, { freq: A2 / 2, dur: 4, gain: 0.2, wave: 'saw', env: { a: 0.6, d: 1, s: 0.85, r: 0.8 } });
+        // Detuned unison: the ~1.7 Hz beating between them is the anxiety.
+        tone(b, { freq: E4, dur: 4, gain: 0.075, wave: 'tri', env: { a: 1.2, d: 1.4, s: 0.8, r: 1.2 } });
+        tone(b, { freq: E4 * 1.005, dur: 4, gain: 0.075, wave: 'tri', env: { a: 1.2, d: 1.4, s: 0.8, r: 1.2 } });
+        noise(b, { dur: 4, gain: 0.07, cutoff: 900, env: { a: 1, d: 1, s: 0.7, r: 1 } });
+        reverb(b, { timeS: 0.26, mix: 0.24 });
       }),
-      0.41,
+      0.44,
     ),
 
-  // 4 bars, brighter — the ceremony.
+  // 4 bars, the ceremony — and the one place the palette leaves A minor.
+  // C major: I–IV–V–I with clapped backbeats and a bell hook climbing to the
+  // top of the loop. This is the lap of honour, so it plays outright happy.
   'ceremony-bed': () =>
     normalize(
       renderLoop(8, 1, b => {
-        const chord = [[A3, C4, E4], [G3, C4, E4], [D4 / 2, D4, G4], [A3, C4, E4]];
+        const chords = [
+          { bass: C3, notes: [C4, E4, G4] }, // I
+          { bass: F3, notes: [C4, F4, A4] }, // IV
+          { bass: G3, notes: [B3, D4, G4] }, // V
+          { bass: C3, notes: [C4, E4, G4] }, // I
+        ];
         for (let bar = 0; bar < 4; bar++) {
-          for (const f of chord[bar]) {
-            tone(b, { freq: f, start: bar * 2, dur: 1.9, gain: 0.16, wave: 'tri', env: { a: 0.08, d: 0.7, s: 0.5, r: 0.3 } });
+          const { bass, notes } = chords[bar];
+          const t0 = bar * 2;
+
+          // Pad, plus an off-beat stab of the same chord — the bounce.
+          for (const f of notes) {
+            tone(b, { freq: f, start: t0, dur: 1.9, gain: 0.13, wave: 'tri', env: { a: 0.06, d: 0.6, s: 0.5, r: 0.3 } });
+            tone(b, { freq: f, start: t0 + 0.75, dur: 0.22, gain: 0.1, wave: 'square', env: { a: 0.004, d: 0.12, r: 0.07 } });
+            tone(b, { freq: f, start: t0 + 1.75, dur: 0.22, gain: 0.1, wave: 'square', env: { a: 0.004, d: 0.12, r: 0.07 } });
           }
-          kick(b, bar * 2, 0.4);
-          kick(b, bar * 2 + 1, 0.3);
-          hat(b, bar * 2 + 0.5, 0.12);
-          hat(b, bar * 2 + 1.5, 0.12);
+          // Walking bass: root, root, fifth-above-the-root octave lift.
+          tone(b, { freq: bass, start: t0, dur: 0.85, gain: 0.24, wave: 'saw', env: { a: 0.008, d: 0.3, s: 0.45, r: 0.12 } });
+          tone(b, { freq: bass, start: t0 + 1, dur: 0.4, gain: 0.2, wave: 'saw', env: { a: 0.008, d: 0.22, s: 0.35, r: 0.1 } });
+          tone(b, { freq: bass * 1.5, start: t0 + 1.5, dur: 0.4, gain: 0.18, wave: 'saw', env: { a: 0.008, d: 0.22, s: 0.35, r: 0.1 } });
+
+          kick(b, t0, 0.42);
+          kick(b, t0 + 1, 0.34);
+          clap(b, t0 + 0.5, 0.3);
+          clap(b, t0 + 1.5, 0.3);
+          for (let eighth = 0; eighth < 4; eighth++) {
+            hat(b, t0 + 0.25 + eighth * 0.5, eighth % 2 === 0 ? 0.13 : 0.09);
+          }
         }
-        reverb(b, { timeS: 0.26, mix: 0.35 });
+
+        // Bell hook: a bright rising figure that lands on the top C each pass.
+        const hook = [
+          [0.0, G4], [0.5, C5], [1.0, E5], [1.5, G5],
+          [2.0, A4], [2.5, C5], [3.0, F4 * 2], [3.5, A4 * 2],
+          [4.0, B4], [4.5, D5], [5.0, G5], [5.5, D5],
+          [6.0, C5], [6.5, E5], [7.0, G5], [7.5, C6],
+        ];
+        for (const [at, f] of hook) {
+          tone(b, { freq: f, start: at, dur: 0.42, gain: 0.11, wave: 'sine', env: { a: 0.004, d: 0.2, r: 0.16 } });
+          tone(b, { freq: f * 2, start: at, dur: 0.2, gain: 0.035, wave: 'sine', env: { a: 0.003, d: 0.09, r: 0.07 } });
+        }
+
+        reverb(b, { timeS: 0.22, mix: 0.32 });
       }),
       0.6,
     ),
