@@ -119,3 +119,65 @@ describe('the P3b payload fields', () => {
     expect(useGameStore.getState().reveal!.picks).toBeUndefined();
   });
 });
+
+describe('the P0 pause fields', () => {
+  it('takes status from the event rather than inferring it from the phase', () => {
+    useGameStore.setState({ room: { ...baseRoom, phase: 'answer' } });
+
+    useGameStore.getState().applyPhaseEvent({
+      phase: 'answer', round: 1, ends_at: null, server_now: new Date().toISOString(),
+      status: 'paused', paused_remaining_ms: 7400, total_rounds: 3,
+      payload: { category: 'fuel', tier: 1, prompt: 'Q?', options: ['a', 'b', 'c', 'd'] },
+    });
+
+    const room = useGameStore.getState().room!;
+    expect(room.status).toBe('paused');
+    expect(room.paused_remaining_ms).toBe(7400);
+    expect(room.phase).toBe('answer');
+  });
+
+  it('clears the remainder and returns to playing on resume', () => {
+    useGameStore.setState({
+      room: { ...baseRoom, phase: 'answer', status: 'paused', paused_remaining_ms: 7400 },
+    });
+
+    useGameStore.getState().applyPhaseEvent({
+      phase: 'answer', round: 1, ends_at: '2026-08-29T10:00:07.400Z',
+      server_now: '2026-08-29T10:00:00.000Z',
+      status: 'playing', paused_remaining_ms: null, total_rounds: 3,
+      payload: { category: 'fuel', tier: 1, prompt: 'Q?', options: ['a', 'b', 'c', 'd'] },
+    });
+
+    const room = useGameStore.getState().room!;
+    expect(room.status).toBe('playing');
+    expect(room.paused_remaining_ms).toBeNull();
+    expect(room.ends_at).toBe('2026-08-29T10:00:07.400Z');
+  });
+
+  it('carries a shortened track through a skip', () => {
+    useGameStore.setState({ room: { ...baseRoom, phase: 'answer', round: 1, total_rounds: 3 } });
+
+    useGameStore.getState().applyPhaseEvent({
+      phase: 'read', round: 1, ends_at: null, server_now: new Date().toISOString(),
+      status: 'playing', paused_remaining_ms: null, total_rounds: 2,
+      payload: { category: 'fuel', tier: 1, prompt: 'Next?', options: ['a', 'b', 'c', 'd'] },
+    });
+
+    expect(useGameStore.getState().room!.total_rounds).toBe(2);
+  });
+
+  it('falls back to the old inference on a pre-0005 payload', () => {
+    useGameStore.setState({ room: { ...baseRoom, phase: 'track', total_rounds: 3 } });
+
+    // Deliberately shaped like the OLD server: no status, no remainder, no
+    // total_rounds.
+    useGameStore.getState().applyPhaseEvent({
+      phase: 'results', round: 3, ends_at: null,
+      server_now: new Date().toISOString(), payload: [],
+    });
+
+    const room = useGameStore.getState().room!;
+    expect(room.status).toBe('finished');
+    expect(room.total_rounds).toBe(3);
+  });
+});

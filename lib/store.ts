@@ -42,7 +42,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       room: {
         ...room, phase: e.phase, round: e.round, ends_at: e.ends_at,
         server_now: e.server_now,
-        status: e.phase === 'results' ? 'finished' : 'playing',
+        // Status arrives on the wire from 0005 onward. A paused room keeps its
+        // phase, so the old `phase === 'results' ? 'finished' : 'playing'`
+        // inference cannot see a pause at all — it survives only as the
+        // pre-0005 fallback (ADR-0037).
+        status: e.status ?? (e.phase === 'results' ? 'finished' : 'playing'),
+        paused_remaining_ms: e.paused_remaining_ms ?? null,
+        // skip_question shortens the track mid-game, so this is no longer fixed
+        // at room creation (ADR-0038).
+        total_rounds: e.total_rounds ?? room.total_rounds,
       },
     };
     if (e.phase === 'read') {
