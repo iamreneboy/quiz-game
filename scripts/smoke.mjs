@@ -378,4 +378,87 @@ await rpcFails('swap_question',
 await rpcFails('remove_question',
   { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 1 }, /locked/i);
 
+// -- a custom question joins the draw at the end of its own tier block
+const customRoom = await rpc('create_room', {
+  p_timer_seconds: 10, p_categories: ['fuel', 'ai-tech'], p_tier_counts: [2, 1, 0, 0],
+});
+await rpc('join_room', {
+  p_code: customRoom.code, p_nickname: 'Author', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: customRoom.host_key, p_is_playing: false,
+});
+const customArgs = {
+  p_room_id: customRoom.room_id, p_host_key: customRoom.host_key,
+  p_category: 'fuel', p_tier: 1,
+  p_prompt: 'Which mug on the third shelf is haunted?',
+  p_options: ['The chipped one', 'The tall one', 'The novelty one', 'None of them'],
+  p_correct_index: 2, p_fun_fact: 'It plays a jingle at 3pm and nobody knows why.',
+};
+const added = await rpc('add_custom_question', customArgs);
+assert.equal(added.total_rounds, 4, 'the draw grew by one');
+assert.deepEqual(added.questions.map(q => q.round), [1, 2, 3, 4]);
+assert.deepEqual(
+  [...added.questions.map(q => q.tier)].sort((a, b) => a - b),
+  added.questions.map(q => q.tier),
+  'the draw still runs easy -> hard');
+const mine = added.questions.find(q => q.is_custom);
+assert.ok(mine, 'the custom question is marked as the host\'s own');
+assert.equal(mine.round, 3, 'placed at the end of the tier-1 block, before tier 2');
+assert.equal(mine.prompt, customArgs.p_prompt);
+assert.equal(mine.correct_index, 2);
+assert.deepEqual(mine.options, customArgs.p_options);
+
+// -- ADR-0039's whole point: one room's custom question is invisible to the
+//    bank. 'fuel' tier 1 holds exactly 2 seeded questions, and the custom one
+//    above is a third fuel tier-1 row -- if it leaked into the pool, this
+//    would succeed. (P4 raises the bank and must revisit this assertion.)
+await rpcFails('create_room',
+  { p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [3, 0, 0, 0] },
+  /not enough questions/i);
+
+// -- validation, one message per rule
+await rpcFails('add_custom_question', { ...customArgs, p_prompt: '   ' },
+  /prompt must be/i);
+await rpcFails('add_custom_question',
+  { ...customArgs, p_prompt: 'A', p_options: ['a', 'b', 'c'] },
+  /exactly 4 options/i);
+await rpcFails('add_custom_question',
+  { ...customArgs, p_prompt: 'B', p_options: ['a', 'b', 'c', ' '] },
+  /each option must be/i);
+await rpcFails('add_custom_question',
+  { ...customArgs, p_prompt: 'C', p_options: ['same', 'SAME', 'c', 'd'] },
+  /must be different/i);
+await rpcFails('add_custom_question', { ...customArgs, p_prompt: 'D', p_correct_index: 4 },
+  /correct_index/i);
+await rpcFails('add_custom_question', { ...customArgs, p_prompt: 'E', p_tier: 9 },
+  /tier must be/i);
+await rpcFails('add_custom_question', { ...customArgs, p_prompt: 'F', p_category: 'rewind' },
+  /not in this room/i);
+await rpcFails('add_custom_question', customArgs, /already has that question/i);
+await rpcFails('add_custom_question',
+  { ...customArgs, p_host_key: customRoom.room_id, p_prompt: 'G' },
+  /invalid host key/i);
+
+// -- swapping a custom question out replaces it with a bank draw and takes the
+//    room-local row with it
+const unswapped = await rpc('swap_question', {
+  p_room_id: customRoom.room_id, p_host_key: customRoom.host_key, p_round: 3,
+});
+assert.equal(unswapped.total_rounds, 4, 'a swap still does not change the length');
+assert.equal(unswapped.questions.some(q => q.is_custom), false,
+  'the custom question is gone from the draw');
+assert.equal(unswapped.questions.some(q => q.prompt === customArgs.p_prompt), false);
+// The room-local row is gone too, so the same prompt can be written again.
+await rpc('add_custom_question', customArgs);
+
+// -- removing a custom question shortens the draw and deletes the row
+const shrunk = await rpc('remove_question', {
+  p_room_id: customRoom.room_id, p_host_key: customRoom.host_key,
+  p_round: (await rpc('get_room_draw', {
+    p_room_id: customRoom.room_id, p_host_key: customRoom.host_key,
+  })).questions.find(q => q.is_custom).round,
+});
+assert.equal(shrunk.total_rounds, 4, 'back to the 3 bank rounds plus the swap-in');
+assert.equal(shrunk.questions.some(q => q.is_custom), false);
+assert.deepEqual(shrunk.questions.map(q => q.round), [1, 2, 3, 4]);
+
 console.log('✅ P1 draw-review smoke passed');

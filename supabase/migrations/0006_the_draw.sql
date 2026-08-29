@@ -301,4 +301,93 @@ begin
   return draw_public(p_room_id, host_sees_answers(p_room_id));
 end $$;
 
+-- ============ add_custom_question ============
+-- PRD §5.1 step 5 and §7. The question is a `questions` row with this room's id
+-- (ADR-0039), so it is merged into the draw by the same foreign key every bank
+-- question uses, and it dies with the room by cascade.
+--
+-- Validation is server-side because that is where authority lives (roadmap
+-- decision 2). lib/draw.ts mirrors these rules so the form can answer without a
+-- round trip; if the two ever disagree, this one is right.
+create or replace function add_custom_question(
+  p_room_id uuid, p_host_key uuid,
+  p_category text, p_tier int, p_prompt text, p_options jsonb,
+  p_correct_index int, p_fun_fact text default null
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_prompt text := trim(coalesce(p_prompt, ''));
+  v_fact text := nullif(trim(coalesce(p_fun_fact, '')), '');
+  v_opts jsonb := '[]'::jsonb;
+  v_opt text;
+  v_qid uuid;
+  v_at int;
+  i int;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'the draw is locked once the race starts'; end if;
+
+  if p_tier is null or p_tier < 1 or p_tier > 4 then
+    raise exception 'tier must be 1-4';
+  end if;
+  if not (p_category = any(v_room.categories)) then
+    raise exception 'that category is not in this room';
+  end if;
+  if length(v_prompt) < 1 or length(v_prompt) > 200 then
+    raise exception 'prompt must be 1-200 characters';
+  end if;
+  if jsonb_typeof(p_options) is distinct from 'array'
+     or jsonb_array_length(p_options) <> 4 then
+    raise exception 'exactly 4 options are required';
+  end if;
+  for i in 0..3 loop
+    v_opt := trim(coalesce(p_options->>i, ''));
+    if length(v_opt) < 1 or length(v_opt) > 80 then
+      raise exception 'each option must be 1-80 characters';
+    end if;
+    v_opts := v_opts || to_jsonb(v_opt);
+  end loop;
+  if (select count(distinct lower(o)) from jsonb_array_elements_text(v_opts) o) < 4 then
+    raise exception 'the four options must be different';
+  end if;
+  if p_correct_index is null or p_correct_index < 0 or p_correct_index > 3 then
+    raise exception 'correct_index must be 0-3';
+  end if;
+  if length(coalesce(v_fact, '')) > 240 then
+    raise exception 'fun fact must be 240 characters or fewer';
+  end if;
+
+  begin
+    insert into questions (category, tier, prompt, options, correct_index, fun_fact, room_id)
+    values (p_category, p_tier, v_prompt, v_opts, p_correct_index, v_fact, p_room_id)
+    returning id into v_qid;
+  exception when unique_violation then
+    raise exception 'this room already has that question';
+  end;
+
+  -- Placement: the last slot of its own tier block, so the draw stays ordered
+  -- easy -> hard exactly as create_room laid it out. `max(round) where tier <=
+  -- p_tier` over an empty set coalesces to 0, which puts a question of a tier
+  -- nothing else shares at the front — still correct.
+  select coalesce(max(rq.round), 0) + 1 into v_at
+  from room_questions rq join questions q on q.id = rq.question_id
+  where rq.room_id = p_room_id and q.tier <= p_tier;
+
+  -- Shift the tail UP one, through the negative round space, for the same
+  -- reason remove_question shifts down through it: the (room_id, round)
+  -- primary key is not deferrable and the update order is not guaranteed.
+  update room_questions set round = -round
+    where room_id = p_room_id and round >= v_at;
+  update room_questions set round = (-round) + 1
+    where room_id = p_room_id and round < 0;
+
+  insert into room_questions (room_id, round, question_id)
+  values (p_room_id, v_at, v_qid);
+  update rooms set total_rounds = total_rounds + 1 where id = p_room_id;
+
+  return draw_public(p_room_id, host_sees_answers(p_room_id));
+end $$;
+
 grant execute on all functions in schema public to anon, authenticated;
