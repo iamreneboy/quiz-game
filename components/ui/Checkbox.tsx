@@ -15,7 +15,7 @@ export default function Checkbox({ label, className = '', id, ...rest }: Checkbo
         type="checkbox"
         id={inputId}
         className={
-          'h-4 w-4 shrink-0 cursor-pointer rounded-[0.25rem] border border-haze/80 bg-abyss/80 ' +
+          'h-4 w-4 shrink-0 cursor-pointer rounded-sm border border-haze/80 bg-abyss/80 ' +
           'accent-neon-cyan focus-visible:outline-2 focus-visible:outline-offset-2 ' +
           'focus-visible:outline-neon-cyan ' +
           className

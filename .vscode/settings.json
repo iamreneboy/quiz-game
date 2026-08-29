@@ -1,0 +1,10 @@
+{
+  // Tailwind IntelliSense scans markdown code fences too, so plan and progress
+  // docs report class-shorthand hints for example JSX that is only a record.
+  "tailwindCSS.files.exclude": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "docs/**"
+  ]
+}

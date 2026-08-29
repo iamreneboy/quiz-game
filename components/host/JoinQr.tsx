@@ -49,7 +49,7 @@ export default function JoinQr({
           <path d={symbol.d} fill="currentColor" />
         </svg>
       ) : (
-        <div aria-hidden className="h-full w-full rounded-[0.5rem] bg-void/10" />
+        <div aria-hidden className="h-full w-full rounded-lg bg-void/10" />
       )}
     </div>
   );
