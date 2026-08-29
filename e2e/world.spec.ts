@@ -10,6 +10,8 @@ test.describe('the world band in portrait', () => {
     await page.goto('/host/new');
     await page.getByPlaceholder('Your nickname').fill('Bandy');
     await page.getByRole('button', { name: /create room/i }).click();
+    await expect(page).toHaveURL(/\/host\/[A-Z0-9]{5}\/review$/);
+    await page.getByRole('button', { name: /open the lobby/i }).click();
     await expect(page).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
 
     const stage = page.locator('[data-testid="pixi-stage"]');
@@ -43,6 +45,8 @@ test.describe('the world band in portrait', () => {
 
     await host.getByPlaceholder('Your nickname').fill('Hosty');
     await host.getByRole('button', { name: /create room/i }).click();
+    await expect(host).toHaveURL(/\/host\/[A-Z0-9]{5}\/review$/);
+    await host.getByRole('button', { name: /open the lobby/i }).click();
     await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
     const code = host.url().split('/').pop()!;
 
@@ -91,6 +95,8 @@ test.describe('the lobby roster strip', () => {
     await host.goto('/host/new');
     await host.getByPlaceholder('Your nickname').fill('Hosty');
     await host.getByRole('button', { name: /create room/i }).click();
+    await expect(host).toHaveURL(/\/host\/[A-Z0-9]{5}\/review$/);
+    await host.getByRole('button', { name: /open the lobby/i }).click();
     await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
     const code = host.url().split('/').pop()!;
 

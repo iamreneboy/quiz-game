@@ -26,6 +26,8 @@ test('two players play a full round from lobby to results', async ({ page, brows
   await host.getByPlaceholder('Your nickname').fill('Hosty');
   await host.getByRole('button', { name: /create room/i }).click();
 
+  await expect(host).toHaveURL(/\/host\/[A-Z0-9]{5}\/review$/);
+  await host.getByRole('button', { name: /open the lobby/i }).click();
   await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
   const code = host.url().split('/').pop()!;
 
