@@ -66,6 +66,7 @@ export default function QuestionCard({
         {steps.question && (
           <motion.h2
             key={`${round}:${question.prompt}`}
+            data-testid="question-prompt"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.46, ease: EASE.snap } }}
             exit={{ opacity: 0 }}

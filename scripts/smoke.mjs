@@ -200,6 +200,11 @@ await rpc('submit_answer', { p_room_id: c.room_id, p_player_key: cp.player_key, 
 e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // reveal
 assert.equal(e.payload.counts.reduce((a, b) => a + b, 0), 1,
   'exactly one answer for the reused round number');
+// The reused round's question is drawn randomly from a category+tier pool that
+// is NOT all correct_index 0 (unlike the fuel-only pair the game-flow smoke
+// above relies on), so whether Pat's choice_index 0 was actually right has to
+// be read off the reveal rather than assumed.
+const patWasCorrect = e.payload.correct_index === 0;
 
 // -- end_game reaches the ceremony from mid-round with resolved standings only
 e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // track (round 1 resolved)
@@ -214,7 +219,7 @@ assert.ok(ended.ends_at, 'the ceremony gets its 9s deadline');
 assert.equal(ended.round, 1, 'the in-flight round is discarded, not counted');
 const pat = ended.payload.find(s => s.nickname === 'Pat');
 const chief = ended.payload.find(s => s.nickname === 'Chief');
-assert.equal(pat.correct, 1, 'the resolved round counts');
+assert.equal(pat.correct, patWasCorrect ? 1 : 0, 'the resolved round counts');
 assert.equal(chief.correct, 0, "the in-flight round's answer was discarded");
 
 // -- a finished game takes no more commands
