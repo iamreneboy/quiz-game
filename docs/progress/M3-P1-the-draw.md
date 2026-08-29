@@ -1,6 +1,6 @@
 # M3 P1 — The draw
 
-- **Status:** Implementation complete; all local gates green. Cloud migration apply and cloud re-verification deliberately deferred (see "Live-verification findings" below).
+- **Status:** Complete. All local gates green, final whole-branch review's fix wave applied and re-reviewed clean, migration 0006 applied to the cloud project and re-verified live (see "Live-verification findings" below).
 - **Completed:** 2026-08-29
 - **Spec:** `docs/superpowers/specs/2026-08-29-m3-host-power-polish-roadmap.md` (§3 "P1 — The draw")
 - **Plan:** `docs/superpowers/plans/2026-08-29-m3-p1-the-draw.md`
@@ -69,8 +69,31 @@ returned to any client).
    (committing the plan file and pushing) were out of scope for this
    dispatch**, per explicit instruction from the controlling session — both
    touch shared, external state (the live cloud Supabase project; the shared
-   git remote) and are handled separately after explicit human confirmation.
-   See "Live-verification findings" below.
+   git remote) and were handled separately, after explicit human
+   confirmation, by the controlling session itself. See "Live-verification
+   findings" below.
+4. **The final whole-branch review (opus, range `63ba396..2982aab`) found two
+   Important, plan-inherited bugs in `app/host/[code]/review/page.tsx`**: a
+   single `error` state served both the fatal mount-time load failure and
+   every non-fatal mutation failure (a failed swap destroyed the whole page
+   instead of rendering inline), and a synchronous `typeof window ===
+   'undefined' ? null : loadSession(code)` gated the top-level render branch,
+   causing an SSR/hydration mismatch for every host. Both were fixed in a
+   consolidated fix wave (commit `20b1a17`), independently re-reviewed and
+   verdicted ADDRESSED with no new breakage. The straightforward fix for the
+   second bug — snapshotting the whole session object through
+   `useSyncExternalStore` — turned out to violate the hook's
+   reference-stability contract (`loadSession` re-parses JSON every call) and
+   produced a genuine infinite render loop, caught live by
+   `e2e/host-draw.spec.ts`; the corrected fix mirrors `app/room/[code]/page.tsx`'s
+   existing primitive-boolean-snapshot pattern instead. Five bundled Minor
+   findings were fixed in the same wave (dead-code `tierCounts` wired in, an
+   ADR-0041 consequence note, a pluralization fix, three added
+   `scripts/smoke.mjs` redaction assertions, and an `aria-live` re-announce
+   fix); three further Minor findings were parked with a ruling as low-risk
+   or already-adequately-handled. See
+   `.superpowers/sdd/2026-08-29-m3-p1-the-draw/progress.md` for the full
+   findings list and every ruling's reasoning.
 
 ## Verification
 
@@ -95,14 +118,35 @@ flake rather than a regression; no product code was touched to work around it.
 
 ## Live-verification findings
 
-Step 4 of this task (applying migration 0006 to the linked cloud project
-`niznfbabmixesfvxlypi`, re-pointing `.env.local` at it, and repeating Task 7
-Step 7's manual walkthrough against the cloud stack) was **deliberately
-deferred to the controlling session**, pending explicit human confirmation
-before any write touches the live cloud database. No cloud-verification
-results were produced or fabricated by this dispatch. `.env.local` was not
-modified and still points at the local stack; the migration was not applied
-to any cloud project.
+Step 4 was completed by the controlling session after explicit human
+confirmation:
+
+- Linked this worktree to the cloud project (`supabase link --project-ref
+  niznfbabmixesfvxlypi`) and checked `supabase migration list --linked`
+  first. **Finding: migration `0005_host_authority.sql` (M3 P0) had also
+  never been applied to this cloud project** — a pre-existing gap unrelated
+  to this phase, out of scope to fix here. Confirmed `0006_the_draw.sql`
+  does not depend on any column or function `0005` introduces (no shared
+  identifiers), so applying `0006` alone was safe.
+- Applied `0006_the_draw.sql` via `supabase db query --linked --file` (the
+  project doesn't use CLI-tracked migration history; this project was
+  already on that convention before this phase). Verified all seven new
+  routines exist in `information_schema.routines`
+  (`create_room`, `get_room_draw`, `swap_question`, `remove_question`,
+  `add_custom_question`, `draw_public`, `host_sees_answers`), and that the
+  cloud project's `questions` bank seed matches the local stack's exactly
+  (2 rows per category per tier, all four categories).
+- Repeated Task 7 Step 7's items 1–5 against the cloud stack by re-pointing
+  `.env.local` at it and running `npm run test:e2e -- --workers=2
+  e2e/host-draw.spec.ts` (the automated equivalent, per the standing ruling
+  that substitutes e2e coverage for a manual headed-browser walkthrough
+  where the two overlap) — **3/3 passed live against the cloud project**,
+  covering redaction for a racing host, full visibility for an MC-only host,
+  and the swap/add/remove mutations.
+- Restored `.env.local` to the local block immediately after, and confirmed
+  `node scripts/smoke.mjs` still passes clean against the local stack.
+- **Not verified**: the physical phone QR scan, which needs a human with a
+  camera and remains the one manual-only item this session cannot perform.
 
 ## Decisions this phase resolved
 
