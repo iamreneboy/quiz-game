@@ -247,3 +247,28 @@ describe('sudden-death', () => {
     expect(state.transient?.tier).toBe('suddenDeath');
   });
 });
+
+describe('game-reset', () => {
+  const reset: Cue = { type: 'game-reset', tier: 'routine' };
+
+  it('returns the camera to the start line and drops the final question grade', () => {
+    // `final-question` is what escalates, not `phase-read`'s isFinal flag —
+    // that arm deliberately PRESERVES escalation (lib/world/director.ts). Both
+    // arrive in the same batch on the real run-up.
+    let state = reduceCue(initialDirectorState, read(3, true), 0);
+    state = reduceCue(state, { type: 'final-question', tier: 'finalQuestion', round: 3 }, 0);
+    state = reduceCue(state, { type: 'phase-results', tier: 'routine' }, 0);
+    expect(activeIntent(state).mode).toBe('podium');
+    expect(state.escalation).toBe(1);
+
+    state = reduceCue(state, reset, 0);
+    expect(activeIntent(state).mode).toBe('startLine');
+    expect(state.escalation).toBe(0);
+    expect(state.transient).toBeNull();
+  });
+
+  it("uses the reset client's own shot book", () => {
+    const stage = reduceCue(seedDirector('results', 'stage'), reset, 0);
+    expect(stage.base).toEqual(SHOT_BOOKS.stage.base.lobby);
+  });
+});

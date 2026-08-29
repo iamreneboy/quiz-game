@@ -702,3 +702,218 @@ for (const row of bailEnded.payload) {
 }
 
 console.log('✅ P2a tiebreak-boundaries smoke passed');
+
+// ---- P2b: the awards projection ----
+// A three-racer, two-question room built so that every award has a DIFFERENT
+// winner and Late Surge has something real to reconstruct.
+//
+// The scoring rule that shapes this: `speed_points` is a SUM over a racer's
+// correct answers (0002_rpcs.sql), not a per-question best. So the only way
+// Fastest Gun can be anyone but the racer with the most correct answers is for
+// that racer to answer everything LATE and for the gun to answer their one
+// question instantly. Which is exactly what the sleeps below buy:
+//   round 1: Gun answers wrong; Brain answers at ~3.6s of 6s (~40 points);
+//            Surge answers at ~4.8s (~20 points)
+//   round 2: Gun answers instantly (~99 points); Brain answers late again
+//            (~40); Surge answers wrong
+// So Brain takes correct count (2) and the streak (2) on 80-ish points; Gun
+// takes speed on 99 from a single answer. And the placings move: Brain leads
+// wire to wire, while Gun climbs 3rd → 2nd and Surge falls 2nd → 3rd, which
+// makes Gun the late surge by one place.
+const aw = await rpc('create_room', {
+  p_timer_seconds: 6, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
+});
+const awBrain = await rpc('join_room', {
+  p_code: aw.code, p_nickname: 'Brain', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: aw.host_key,
+});
+const awGun = await rpc('join_room', {
+  p_code: aw.code, p_nickname: 'Gun', p_avatar: 'duck', p_color: '#38bdf8',
+});
+const awSurge = await rpc('join_room', {
+  p_code: aw.code, p_nickname: 'Surge', p_avatar: 'cat', p_color: '#a78bfa',
+});
+await rpc('start_game', { p_room_id: aw.room_id, p_host_key: aw.host_key });
+
+// Both seeded tier-1 'fuel' questions are correct_index 0; the game-flow
+// section above already depends on that.
+const awAdvance = () => rpc('advance_phase', { p_room_id: aw.room_id, p_host_key: aw.host_key });
+const awAnswer = (player, round, choice) => rpc('submit_answer', {
+  p_room_id: aw.room_id, p_player_key: player.player_key,
+  p_round: round, p_choice_index: choice,
+});
+
+await awAdvance();                       // read 1
+await awAdvance();                       // answer 1
+await awAnswer(awGun, 1, 1);             // wrong
+await sleep(3600);
+await awAnswer(awBrain, 1, 0);           // late, but ahead of Surge
+await sleep(1200);
+await awAnswer(awSurge, 1, 0);           // later still
+await awAdvance();                       // reveal 1
+await awAdvance();                       // track 1
+await awAdvance();                       // read 2
+await awAdvance();                       // answer 2
+await awAnswer(awGun, 2, 0);             // instant
+await sleep(3600);
+await awAnswer(awBrain, 2, 0);           // late again
+await awAnswer(awSurge, 2, 1);           // wrong
+await awAdvance();                       // reveal 2
+await awAdvance();                       // track 2
+const awFinal = await awAdvance();       // results
+assert.equal(awFinal.phase, 'results');
+
+const awards = await rpc('awards', { p_room_id: aw.room_id });
+const byKey = Object.fromEntries(awards.map(a => [a.key, a]));
+const namesOf = key => (byKey[key]?.winners ?? []).map(w => w.nickname);
+
+assert.deepEqual(awards.map(a => a.key),
+  ['big-brain', 'fastest-gun', 'hot-streak', 'late-surge'],
+  'awards come back in PRD §5.4.4 order');
+assert.deepEqual(namesOf('big-brain'), ['Brain']);
+assert.equal(byKey['big-brain'].value, 2);
+assert.deepEqual(namesOf('fastest-gun'), ['Gun']);
+assert.deepEqual(namesOf('hot-streak'), ['Brain']);
+assert.equal(byKey['hot-streak'].value, 2);
+assert.deepEqual(namesOf('late-surge'), ['Gun'], 'the climb from 3rd to 2nd');
+assert.equal(byKey['late-surge'].value, 1);
+for (const a of awards) {
+  assert.ok(a.winners.length >= 1, `${a.key} has a winner`);
+  for (const w of a.winners) {
+    assert.ok(w.player_id && w.nickname && w.avatar && w.color, `${a.key} winner is complete`);
+  }
+}
+
+// -- an award nobody scored on is ABSENT, never a zero
+const awNil = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: awNil.code, p_nickname: 'Nil1', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: awNil.host_key,
+});
+await rpc('join_room', {
+  p_code: awNil.code, p_nickname: 'Nil2', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('start_game', { p_room_id: awNil.room_id, p_host_key: awNil.host_key });
+await rpc('end_game', { p_room_id: awNil.room_id, p_host_key: awNil.host_key });
+assert.deepEqual(await rpc('awards', { p_room_id: awNil.room_id }), [],
+  'a race nobody scored in hands out nothing');
+
+console.log('✅ P2b awards smoke passed');
+
+// ---- P2b: rematch ----
+// Two racers, one question, played out — then run back. The seed holds exactly
+// two tier-1 'fuel' questions, which makes "no repeated questions" provable
+// rather than probable: race 2 MUST draw the other one, and race 3 has nothing
+// left to draw.
+const rm = await rpc('create_room', {
+  p_timer_seconds: 8, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+const rmHost = await rpc('join_room', {
+  p_code: rm.code, p_nickname: 'Again', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: rm.host_key,
+});
+const rmP2 = await rpc('join_room', {
+  p_code: rm.code, p_nickname: 'Encore', p_avatar: 'duck', p_color: '#38bdf8',
+});
+
+await rpcFails('rematch', { p_room_id: rm.room_id, p_host_key: rm.host_key },
+  /the race has not finished/i);
+
+await rpc('start_game', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // read
+const rmRead1 = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+const rmPrompt1 = rmRead1.payload.prompt;
+await rpc('submit_answer', {
+  p_room_id: rm.room_id, p_player_key: rmHost.player_key, p_round: 1, p_choice_index: 0,
+});
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // reveal
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // track
+const rmDone = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+assert.equal(rmDone.status, 'finished');
+
+await rpcFails('rematch', { p_room_id: rm.room_id, p_host_key: rmHost.player_key },
+  /invalid host key/i);
+
+// -- the reset itself
+const rmEvt = await rpc('rematch', {
+  p_room_id: rm.room_id, p_host_key: rm.host_key,
+  p_timer_seconds: 12, p_categories: null, p_tier_counts: null,
+});
+assert.equal(rmEvt.phase, 'lobby');
+assert.equal(rmEvt.status, 'lobby');
+assert.equal(rmEvt.round, 0);
+assert.equal(rmEvt.total_rounds, 1, 'the same shape of race, by default');
+assert.equal(rmEvt.sudden_death, null, 'the tiebreak state is cleared');
+assert.equal(rmEvt.payload, null);
+
+const rmState = await rpc('get_room_state', { p_code: rm.code });
+assert.equal(rmState.room.code, rm.code, 'the SAME room code — nobody re-joins');
+assert.equal(rmState.room.timer_seconds, 12, 'the tweaked timer took');
+assert.equal(rmState.players.length, 2, 'the same players are still in the room');
+assert.deepEqual(rmState.players.map(p => p.nickname).sort(), ['Again', 'Encore']);
+assert.equal(rmState.standings, null, 'the old standings are gone');
+
+// -- the draw is new, and excludes what the room has already asked
+const rmDraw = await rpc('get_room_draw', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+assert.equal(rmDraw.questions.length, 1);
+assert.notEqual(rmDraw.questions[0].prompt, rmPrompt1,
+  'a rematch never repeats a question the room has already asked');
+
+// -- and it plays
+await rpc('start_game', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // read
+const rmRead2 = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+assert.notEqual(rmRead2.payload.prompt, rmPrompt1);
+await rpc('submit_answer', {
+  p_room_id: rm.room_id, p_player_key: rmP2.player_key, p_round: 1, p_choice_index: 0,
+});
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // reveal
+await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // track
+const rmDone2 = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
+assert.equal(rmDone2.status, 'finished');
+assert.equal(rmDone2.payload.find(s => s.nickname === 'Again').correct, 0,
+  'race 2 starts everybody at zero');
+
+// -- an exhausted pool refuses rather than repeating
+await rpcFails('rematch', { p_room_id: rm.room_id, p_host_key: rm.host_key },
+  /not enough (unused )?questions/i);
+
+// -- a custom question is spent with its race
+// TWO categories, because the histogram default is what makes this room ask
+// for two tier-1 questions on the rematch (one bank + one custom) and the seed
+// holds only two tier-1 rows per category — one of which this race just spent.
+const rmc = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['ai-tech', 'online'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: rmc.code, p_nickname: 'Cust1', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: rmc.host_key, p_is_playing: false,
+});
+await rpc('join_room', {
+  p_code: rmc.code, p_nickname: 'Cust2', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('join_room', {
+  p_code: rmc.code, p_nickname: 'Cust3', p_avatar: 'cat', p_color: '#a78bfa',
+});
+await rpc('add_custom_question', {
+  p_room_id: rmc.room_id, p_host_key: rmc.host_key,
+  p_category: 'ai-tech', p_tier: 1, p_prompt: 'Whose room is this?',
+  p_options: ['Mine', 'Yours', 'Theirs', 'Ours'], p_correct_index: 0,
+});
+await rpc('start_game', { p_room_id: rmc.room_id, p_host_key: rmc.host_key });
+await rpc('end_game', { p_room_id: rmc.room_id, p_host_key: rmc.host_key });
+const rmcEvt = await rpc('rematch', {
+  p_room_id: rmc.room_id, p_host_key: rmc.host_key,
+  p_timer_seconds: null, p_categories: null, p_tier_counts: null,
+});
+assert.equal(rmcEvt.total_rounds, 2, 'the tier histogram of the race just played');
+const rmcDraw = await rpc('get_room_draw', {
+  p_room_id: rmc.room_id, p_host_key: rmc.host_key,
+});
+assert.equal(rmcDraw.questions.filter(q => q.is_custom).length, 0,
+  'a custom question does not survive its own race');
+assert.equal(rmcDraw.questions.filter(q => q.prompt === 'Whose room is this?').length, 0);
+
+console.log('✅ P2b rematch smoke passed');

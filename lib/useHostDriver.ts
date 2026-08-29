@@ -18,6 +18,8 @@ export interface HostDriver {
   resume(): Promise<void>;
   skip(): Promise<void>;
   end(): Promise<void>;
+  /** PRD §5.4.6 — the same room, reset. `timerSeconds` omitted keeps the current one. */
+  rematch(timerSeconds?: number): Promise<void>;
   error: string | null;
 }
 
@@ -111,10 +113,39 @@ export function useHostDriver(code: string, channel: RealtimeChannel | null): Ho
     broadcastAndApply(data as PhaseEvent);
   }, [hostKey, room, broadcastAndApply]);
 
+  /**
+   * Not routed through `command` above: that helper exists precisely because
+   * the four control-strip RPCs share one `(room_id, host_key)` signature, and
+   * `rematch` takes a config. It shares the `commanding` ref, which is the part
+   * that matters — a double-tap must be inert, and a rematch landing while a
+   * pause is in flight would reset a room the other call is still writing.
+   *
+   * All five arguments are named, nulls included, so PostgREST resolves the
+   * overload unambiguously rather than by argument count.
+   */
+  const rematch = useCallback(async (timerSeconds?: number) => {
+    if (!hostKey || !room || commanding.current) return;
+    commanding.current = true;
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.rpc('rematch', {
+        p_room_id: room.id,
+        p_host_key: hostKey,
+        p_timer_seconds: timerSeconds ?? null,
+        p_categories: null,
+        p_tier_counts: null,
+      });
+      if (err) { setError(err.message); return; }
+      broadcastAndApply(data as PhaseEvent);
+    } finally {
+      commanding.current = false;
+    }
+  }, [hostKey, room, broadcastAndApply]);
+
   const pause = useCallback(() => command('pause_game'), [command]);
   const resume = useCallback(() => command('resume_game'), [command]);
   const skip = useCallback(() => command('skip_question'), [command]);
   const end = useCallback(() => command('end_game'), [command]);
 
-  return { isHost: hostKey !== null, start, pause, resume, skip, end, error };
+  return { isHost: hostKey !== null, start, pause, resume, skip, end, rematch, error };
 }

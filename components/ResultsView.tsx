@@ -6,17 +6,23 @@ import { useGameStore } from '@/lib/store';
 import { loadSession } from '@/lib/session';
 import { msUntil } from '@/lib/serverTime';
 import { elapsedIn } from '@/lib/staging/beats';
-import { BOARD_AT, CEREMONY_MS, PHOTO_TALLY_AT } from '@/lib/ceremony/beats';
+import { AWARDS_AT, BOARD_AT, CEREMONY_MS, PHOTO_TALLY_AT } from '@/lib/ceremony/beats';
 import { useCeremony } from '@/lib/ceremony/useCeremony';
+import { useAwards } from '@/lib/useAwards';
+import type { HostDriver } from '@/lib/useHostDriver';
+import AwardsCard from './AwardsCard';
+import RematchCard from './RematchCard';
 import PhotoFinish from './PhotoFinish';
 import ResultsTable from './ResultsTable';
 import WinnerCard from './WinnerCard';
 
-export default function ResultsView({ code }: { code: string }) {
+export default function ResultsView({ code, driver }: { code: string; driver: HostDriver }) {
   const room = useGameStore(s => s.room);
   const standings = useGameStore(s => s.standings);
   const board = useCeremony(s => s.steps.board);
   const photo = useCeremony(s => s.steps.photo);
+  const awardsShown = useCeremony(s => s.steps.awards);
+  const awards = useAwards(room?.id ?? null, room?.status === 'finished');
   const endsAt = room?.ends_at ?? null;
 
   /**
@@ -62,6 +68,21 @@ export default function ResultsView({ code }: { code: string }) {
     () => elapsedIn(CEREMONY_MS, endsAt ? msUntil(endsAt) : null) >= PHOTO_TALLY_AT,
   );
 
+  /**
+   * "Was the awards beat already over when this component mounted?"
+   *
+   * The same ONE-SHOT as `settled` above, against this card's own threshold
+   * (ADR-0030). It is read here rather than inside AwardsCard on purpose: the
+   * question is whether THIS CLIENT witnessed the beat, and the card can mount
+   * a moment later than the screen does, when the awards fetch lands. Deriving
+   * it at the card's own mount would suppress a legitimate entrance for anyone
+   * whose round trip happened to straddle AWARDS_AT.
+   */
+  const [awardsSettled] = useState(
+    () => elapsedIn(CEREMONY_MS, endsAt ? msUntil(endsAt) : null) >= AWARDS_AT,
+  );
+
+
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   if (!room || !standings || standings.length === 0) return null;
 
@@ -104,12 +125,20 @@ export default function ResultsView({ code }: { code: string }) {
 
       <ResultsTable standings={standings} myId={myId} show={show} instant={settled} />
 
+      <AwardsCard
+        awards={awards}
+        show={awardsShown || awardsSettled}
+        instant={awardsSettled}
+      />
+
       {/*
         Spec decision 5 — ADR-0016's "staging never gates input", applied to the
-        last screen. Deliberately OUTSIDE every fading wrapper: an exit that is
-        focusable but invisible is worse than one that is simply there, so this
-        never carries the board's staged opacity.
+        last screen. Both of these sit deliberately OUTSIDE every fading
+        wrapper: a control that is focusable but invisible is worse than one
+        that is simply there, so neither carries the board's staged opacity.
       */}
+      <RematchCard driver={driver} />
+
       <Link
         href="/"
         className="mx-auto rounded-control border border-haze/50 bg-abyss/70 px-5 py-2.5

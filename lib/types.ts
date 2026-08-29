@@ -86,3 +86,27 @@ export interface RoomDraw {
   answers_visible: boolean;
   questions: DrawQuestion[];
 }
+
+/**
+ * The four awards (PRD §5.4.4), as `awards(room_id)` returns them.
+ *
+ * Deliberately NOT on `PhaseEvent`. Three of the four are already derivable
+ * from `Standing`; only Late Surge needs history the client does not hold, and
+ * one projection read is cheaper than a fifth wire opening (ADR-0045).
+ */
+export type AwardKey = 'big-brain' | 'fastest-gun' | 'hot-streak' | 'late-surge';
+
+export interface AwardWinner {
+  player_id: string;
+  nickname: string;
+  avatar: string;
+  color: string;
+}
+
+export interface Award {
+  key: AwardKey;
+  /** The winning score, in the award's own unit. Never 0 — the server omits those. */
+  value: number;
+  /** Always at least one. More than one means the award is shared. */
+  winners: AwardWinner[];
+}

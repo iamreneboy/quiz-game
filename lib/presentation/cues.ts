@@ -180,6 +180,24 @@ export interface GameResumedCue {
   tier: 'routine';
 }
 
+/**
+ * The room went BACKWARDS: a rematch reset it to the lobby (M3 P2b, ADR-0047).
+ *
+ * `routine` — a reset is a transition, not a celebration, and M3's one allowed
+ * new rung was spent on `suddenDeath` (roadmap decision 6).
+ *
+ * It exists because every other cue in this vocabulary moves the show FORWARD,
+ * so three consumers hold state that nothing else clears: the camera is parked
+ * on a podium at the final question's grade, the audio bed is on `ceremony`,
+ * and the cue deriver's own standings baseline is the last race's finishing
+ * order. Semantic, like everything else here: it names what happened to the
+ * game, never what any surface should do about it.
+ */
+export interface GameResetCue {
+  type: 'game-reset';
+  tier: 'routine';
+}
+
 /* ── Union ───────────────────────────────────────────────────────────────── */
 
 export type Cue =
@@ -201,7 +219,8 @@ export type Cue =
   | PlayerJoinedCue
   | PodiumCue
   | GamePausedCue
-  | GameResumedCue;
+  | GameResumedCue
+  | GameResetCue;
 
 export type CueType = Cue['type'];
 

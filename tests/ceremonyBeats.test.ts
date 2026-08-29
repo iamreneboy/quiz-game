@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { elapsedIn } from '@/lib/staging/beats';
 import {
-  BOARD_AT, BRONZE_AT, CEREMONY_MS, CONFETTI_AT, GOLD_AT, NO_CEREMONY, NO_PHOTO,
+  AWARDS_AT, BOARD_AT, BRONZE_AT, CEREMONY_MS, CONFETTI_AT, GOLD_AT, NO_CEREMONY, NO_PHOTO,
   PHOTO_MS, PHOTO_RESOLVE_AT, PHOTO_TALLY_AT, PHOTO_TALLY_MS,
   RISE_MS, SILVER_AT, SPOTLIGHT_AT, ceremonyStepsAt, sameSteps,
 } from '@/lib/ceremony/beats';
@@ -54,7 +54,7 @@ describe('ceremonyStepsAt — no photo finish', () => {
   it('is fully settled at the end of the beat and stays there', () => {
     const settled = {
       rise: { 1: 1, 2: 1, 3: 1 },
-      spotlight: true, confetti: true, board: true, photo: NO_PHOTO,
+      spotlight: true, confetti: true, board: true, awards: true, photo: NO_PHOTO,
     };
     expect(ceremonyStepsAt(CEREMONY_MS)).toEqual(settled);
     expect(ceremonyStepsAt(CEREMONY_MS * 10)).toEqual(settled);
@@ -68,6 +68,12 @@ describe('ceremonyStepsAt — no photo finish', () => {
   it('lands every block well before the beat ends, leaving a settled tail', () => {
     expect(GOLD_AT + RISE_MS).toBeLessThan(BOARD_AT);
     expect(BOARD_AT).toBeLessThan(CEREMONY_MS);
+  });
+
+  it('hands the awards their own beat, after the board', () => {
+    expect(ceremonyStepsAt(AWARDS_AT - 1).awards).toBe(false);
+    expect(ceremonyStepsAt(AWARDS_AT).awards).toBe(true);
+    expect(BOARD_AT).toBeLessThan(AWARDS_AT);
   });
 });
 
@@ -121,6 +127,15 @@ describe('ceremonyStepsAt — with a photo finish', () => {
     expect(PHOTO_MS + BOARD_AT).toBeLessThan(CEREMONY_MS);
   });
 
+  it('shifts the awards beat by PHOTO_MS like every other podium beat', () => {
+    expect(at(PHOTO_MS + AWARDS_AT - 1).awards).toBe(false);
+    expect(at(PHOTO_MS + AWARDS_AT).awards).toBe(true);
+  });
+
+  it('still fits the awards inside one ceremony, prelude and all', () => {
+    expect(PHOTO_MS + AWARDS_AT).toBeLessThan(CEREMONY_MS);
+  });
+
   it('lands settled when the deadline is unknown', () => {
     const settled = ceremonyStepsAt(elapsedIn(CEREMONY_MS, null), true);
     expect(settled.board).toBe(true);
@@ -141,5 +156,9 @@ describe('sameSteps', () => {
     expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, photo: { ...NO_PHOTO, open: true } })).toBe(false);
     expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, photo: { ...NO_PHOTO, tally: 0.5 } })).toBe(false);
     expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, photo: { ...NO_PHOTO, resolved: true } })).toBe(false);
+  });
+
+  it('notices the awards beat landing, or the card would never appear', () => {
+    expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, awards: true })).toBe(false);
   });
 });

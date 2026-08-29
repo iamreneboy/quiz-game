@@ -70,6 +70,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       next.standings = r.standings;
     } else if (e.phase === 'track' || e.phase === 'results') {
       next.standings = e.payload as Standing[];
+    } else if (e.phase === 'lobby') {
+      // A rematch (ADR-0046). Everything below belongs to the race that just
+      // ended, and nothing else clears it: `read` clears the reveal and the
+      // answer but not the standings, and no arm has ever had to unwind a
+      // whole game before.
+      next.question = null;
+      next.reveal = null;
+      next.standings = null;
+      next.myAnswer = null;
     }
     set(next);
   },

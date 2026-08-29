@@ -195,6 +195,14 @@ export function reduceCue(state: DirectorState, cue: Cue, now: number): Director
         escalation: state.escalation,
       };
 
+    case 'game-reset':
+      // The only cue in the vocabulary that moves the show BACKWARDS
+      // (ADR-0047). Both halves are needed: `phase-results` set the podium
+      // shot, and it DELIBERATELY preserved `escalation` at 1 so the ceremony
+      // could keep the final question's grade — which would otherwise light
+      // the new lobby as if a race were about to end.
+      return { ...state, base: shots.base.lobby, transient: null, escalation: 0 };
+
     // `phase-reveal` deliberately holds the current shot. Everything else in
     // the P0 vocabulary belongs to a later phase (spec §5).
     default:

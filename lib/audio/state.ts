@@ -26,7 +26,7 @@ const DRAMA: ReadonlySet<CueType> = new Set(DRAMA_TYPES);
 export const AUDIO_CUE_TYPES: readonly CueType[] = [
   'phase-countdown', 'phase-read', 'phase-answer', 'phase-reveal', 'phase-track', 'phase-results',
   'answer-locked', 'answer-resolved', 'player-joined', 'podium',
-  'game-paused', 'game-resumed', 'sudden-death',
+  'game-paused', 'game-resumed', 'game-reset', 'sudden-death',
   ...DRAMA_TYPES,
 ];
 
@@ -72,6 +72,14 @@ export function applyCue(state: AudioState, cue: Cue): AudioStep {
       break;
     case 'phase-results':
       next = { ...next, bed: 'ceremony', pending: [] };
+      break;
+    case 'game-reset':
+      // Back to the lobby bed, and back to a clean machine: a rematch can
+      // reach here from a paused ceremony or with drama still buffered that
+      // will now never find its TRACK beat. `stingFor` has no arm for this cue,
+      // so it is silent by construction — which is right, because nothing has
+      // happened yet.
+      next = { ...next, bed: 'lobby', escalated: false, pending: [], paused: false };
       break;
     default:
       break;

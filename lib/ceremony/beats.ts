@@ -67,6 +67,23 @@ export const CONFETTI_AT = 4100;
 export const BOARD_AT = 6000;
 
 /**
+ * When the awards join the board (PRD §5.4.4, M3 P2b).
+ *
+ * After BOARD_AT on purpose: the awards are a coda to the standings, not a
+ * competitor for them, and the board's own rows need ~1.2s to finish
+ * staggering in (components/ResultsTable.tsx) before anything else asks for
+ * attention.
+ *
+ * It costs the ceremony NOTHING. `PHOTO_MS + AWARDS_AT` is 10600 against a flat
+ * CEREMONY_MS of 12400, so neither this constant nor migration 0007's
+ * `ceremony_ms()` moves — the settled tail ADR-0044 left behind is exactly what
+ * this beat is spent on. `tests/ceremonyBeats.test.ts` pins the inequality so a
+ * later change to any of the three fails a test rather than truncating the
+ * awards' entrance.
+ */
+export const AWARDS_AT = 7200;
+
+/**
  * How long a block takes to rise once its own moment starts.
  *
  * 460ms mirrors lib/presentation/tokens.ts's DURATION.settle — the same
@@ -98,13 +115,15 @@ export interface CeremonySteps {
   confetti: boolean;
   /** The band retreats and the results board rises (P5b consumes this). */
   board: boolean;
+  /** The awards card joins the board (M3 P2b). */
+  awards: boolean;
   /** The photo-finish prelude (M3 P2a). `NO_PHOTO` whenever none is staged. */
   photo: PhotoSteps;
 }
 
 export const NO_CEREMONY: CeremonySteps = {
   rise: { 1: 0, 2: 0, 3: 0 },
-  spotlight: false, confetti: false, board: false, photo: NO_PHOTO,
+  spotlight: false, confetti: false, board: false, awards: false, photo: NO_PHOTO,
 };
 
 function riseAt(elapsedMs: number, startAt: number): number {
@@ -142,6 +161,7 @@ export function ceremonyStepsAt(elapsedMs: number, photoFinish = false): Ceremon
     spotlight: podium >= SPOTLIGHT_AT,
     confetti: podium >= CONFETTI_AT,
     board: podium >= BOARD_AT,
+    awards: podium >= AWARDS_AT,
     photo: photoFinish ? photoAt(elapsedMs) : NO_PHOTO,
   };
 }
@@ -155,6 +175,7 @@ export function sameSteps(a: CeremonySteps, b: CeremonySteps): boolean {
     a.spotlight === b.spotlight &&
     a.confetti === b.confetti &&
     a.board === b.board &&
+    a.awards === b.awards &&
     a.photo.open === b.photo.open &&
     a.photo.tally === b.photo.tally &&
     a.photo.resolved === b.photo.resolved
