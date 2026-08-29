@@ -6,7 +6,7 @@
  * that is (beats.ts, tension.ts, staging.ts).
  */
 import { on } from '@/lib/presentation/cueBus';
-import { msUntil } from '@/lib/serverTime';
+import { beatRemainingMs, isPaused } from '@/lib/pause';
 import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
 import { viewerPlayerId, type ViewerRole } from '@/lib/viewer';
@@ -99,7 +99,9 @@ export function startStagingRuntime(code: string, role: ViewerRole): () => void 
 
   const computeAndPublishDiscrete = () => {
     const { room, myAnswer } = useGameStore.getState();
-    const remainingMs = room?.ends_at ? msUntil(room.ends_at) : null;
+    // The FROZEN remainder while paused, the live deadline otherwise — one
+    // helper so the ring, the vignette and the audio ramp cannot disagree.
+    const remainingMs = beatRemainingMs(room);
     const timerSeconds = room?.timer_seconds ?? 0;
     publish(
       stagingAt({
@@ -109,6 +111,7 @@ export function startStagingRuntime(code: string, role: ViewerRole): () => void 
         timerSeconds,
         myAnswer,
         isPlaying: isLocalPlayerPlaying(),
+        paused: isPaused(room),
       }),
     );
     return { room, myAnswer, remainingMs, timerSeconds };

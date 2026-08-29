@@ -10,7 +10,7 @@ import { createMixer } from './mixer';
 import { applyCue, AUDIO_CUE_TYPES, endCatchUp, initialAudioState, type AudioState } from './state';
 import { DUCK_RELEASE_MS } from './design';
 import { tierRank } from '@/lib/presentation/celebration';
-import { msUntil } from '@/lib/serverTime';
+import { beatRemainingMs } from '@/lib/pause';
 import { useGameStore } from '@/lib/store';
 import { useSettings } from '@/lib/useSettings';
 import { tensionAt, tensionStep } from '@/lib/staging/tension';
@@ -85,7 +85,9 @@ export function startAudioRuntime(): () => void {
     if (myAnswer !== null) return;
 
     const totalMs = room.timer_seconds * 1000;
-    const raw = tensionAt(room.ends_at ? msUntil(room.ends_at) : null, totalMs);
+    // Same frozen-or-live remainder the vignette uses, so a paused room holds
+    // its stems exactly where the picture holds its ramp.
+    const raw = tensionAt(beatRemainingMs(room), totalMs);
 
     if (useSettings.getState().profile === 'reduced') {
       // Three discrete levels, written only when the step changes: a

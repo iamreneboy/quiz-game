@@ -33,6 +33,8 @@ export interface StagingInput {
   myAnswer: number | null;
   /** False for a spectator or a non-playing MC host. */
   isPlaying: boolean;
+  /** True while the host has the room paused. */
+  paused: boolean;
 }
 
 export interface StagingState {
@@ -65,10 +67,21 @@ export function stagingAt(input: StagingInput): StagingState {
   const elapsed = elapsedIn(totalMs, input.remainingMs);
   const isAnswer = beat === 'answer';
 
+  // A paused room accepts no answers (submit_answer's status guard), so the
+  // options must leave 'live'. This is not staging gating input (ADR-0016): it
+  // is the SERVER's authority reaching the surface, and it has to reach it
+  // here — AnswerButtons' 1-4 shortcut is a `window` keydown listener, which no
+  // overlay or backdrop can intercept.
+  const steps = stepsAt(beat, elapsed);
+  const staged =
+    input.paused && steps.optionsMode === 'live'
+      ? { ...steps, optionsMode: 'dim' as const }
+      : steps;
+
   return {
     beat,
     round: input.round,
-    steps: stepsAt(beat, elapsed),
+    steps: staged,
     reveal: beat === 'reveal' ? revealStepsAt(elapsed) : NO_REVEAL,
     tensionStep: isAnswer ? tensionStep(tensionAt(input.remainingMs, totalMs)) : 0,
     secondsLeft:

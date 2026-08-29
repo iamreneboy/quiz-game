@@ -13,6 +13,7 @@ const base: StagingInput = {
   timerSeconds: 20,
   myAnswer: null,
   isPlaying: true,
+  paused: false,
 };
 
 const at = (over: Partial<StagingInput> = {}) => stagingAt({ ...base, ...over });
@@ -95,7 +96,7 @@ describe('stagingAt — the reveal beat', () => {
   it('derives reveal sub-steps from the deadline, so a reload does not replay', () => {
     const midway = stagingAt({
       phase: 'reveal', round: 2, remainingMs: 3000, timerSeconds: 20,
-      myAnswer: 1, isPlaying: true,
+      myAnswer: 1, isPlaying: true, paused: false,
     });
     // 5000 nominal - 3000 remaining = 2000 elapsed: everything has landed.
     expect(midway.reveal).toEqual({ rows: true, stacks: true, fastest: true, fact: true });
@@ -105,7 +106,7 @@ describe('stagingAt — the reveal beat', () => {
   it('opens the reveal with the rows alone at the top of the beat', () => {
     const fresh = stagingAt({
       phase: 'reveal', round: 2, remainingMs: 5000, timerSeconds: 20,
-      myAnswer: 1, isPlaying: true,
+      myAnswer: 1, isPlaying: true, paused: false,
     });
     expect(fresh.reveal.rows).toBe(true);
     expect(fresh.reveal.stacks).toBe(false);
@@ -114,14 +115,34 @@ describe('stagingAt — the reveal beat', () => {
   it('closes the reveal steps on every other beat', () => {
     const answering = stagingAt({
       phase: 'answer', round: 2, remainingMs: 8000, timerSeconds: 20,
-      myAnswer: null, isPlaying: true,
+      myAnswer: null, isPlaying: true, paused: false,
     });
     expect(answering.reveal).toEqual({ rows: false, stacks: false, fastest: false, fact: false });
   });
 
   it('treats a change of reveal step as a change worth publishing', () => {
-    const a = stagingAt({ phase: 'reveal', round: 1, remainingMs: 5000, timerSeconds: 20, myAnswer: 0, isPlaying: true });
-    const b = stagingAt({ phase: 'reveal', round: 1, remainingMs: 4500, timerSeconds: 20, myAnswer: 0, isPlaying: true });
+    const a = stagingAt({ phase: 'reveal', round: 1, remainingMs: 5000, timerSeconds: 20, myAnswer: 0, isPlaying: true, paused: false });
+    const b = stagingAt({ phase: 'reveal', round: 1, remainingMs: 4500, timerSeconds: 20, myAnswer: 0, isPlaying: true, paused: false });
     expect(sameStaging(a, b)).toBe(false);
+  });
+});
+
+describe('a paused beat', () => {
+  it('holds the ANSWER stagger at the frozen remainder', () => {
+    const live = at({ remainingMs: 6_000 });
+    const frozen = at({ remainingMs: 6_000, paused: true });
+    expect(frozen.secondsLeft).toBe(live.secondsLeft);
+    expect(frozen.tensionStep).toBe(live.tensionStep);
+  });
+
+  it('takes the options out of live mode, which is what disables the 1-4 shortcut', () => {
+    expect(at({ remainingMs: 6_000 }).steps.optionsMode).toBe('live');
+    expect(at({ remainingMs: 6_000, paused: true }).steps.optionsMode).toBe('dim');
+  });
+
+  it('leaves every other beat alone — REVEAL has no input to gate', () => {
+    const frozen = at({ phase: 'reveal', remainingMs: 2_000, paused: true });
+    expect(frozen.steps.optionsMode).toBe('result');
+    expect(frozen.reveal.rows).toBe(true);
   });
 });
