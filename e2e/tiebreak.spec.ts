@@ -120,3 +120,93 @@ test('a clean finish goes straight to the podium', async ({ page, browser }) => 
   test.skip(tied, 'both racers happened to miss; that is a tie, not a clean finish');
   await expect(joiner.getByTestId('photo-finish')).toHaveCount(0);
 });
+
+/**
+ * The perfect first-place tie is built WITHOUT TIMING LUCK.
+ *
+ * A one-question race that nobody answers leaves every racer on 0 correct,
+ * 0 speed points and a 0 streak — level on every Fairness Law key above sudden
+ * death, by construction. Every other route to a perfect tie needs two
+ * `submit_answer` calls to land in the same 200ms speed-point bucket, which is
+ * a race, not a fact; this one cannot flake.
+ */
+test('a perfect first-place tie goes to sudden death and the winner takes the board',
+  async ({ page, browser }) => {
+    test.setTimeout(150_000);
+    const host = page;
+    // A 20s timer, not a short one: nobody answers the first question either
+    // way, and the tiebreak'''s own ANSWER phase has to stay open long enough
+    // for the reload and the skip-refusal below to happen inside it.
+    const code = await createRoom(host, 1, 20);
+
+    const joinerContext = await browser.newContext();
+    const joiner = await joinerContext.newPage();
+    await join(joiner, code, 'Joiner');
+
+    const stageContext = await browser.newContext();
+    const stage = await stageContext.newPage();
+    await stage.goto(`/stage/${code}`);
+
+    await expect(host.getByText('Starting grid — 2 joined')).toBeVisible();
+    await host.getByRole('button', { name: /start the race/i }).click();
+
+    // Nobody answers. The race reaches its finish line dead level.
+    await expect(joiner.getByTestId('answer-option').first()).toBeEnabled({ timeout: 20_000 });
+
+    // The tiebreak opens instead of the ceremony.
+    await expect(joiner.getByTestId('sudden-death')).toBeVisible({ timeout: 60_000 });
+
+    // A reload lands IN the tiebreak rather than replaying its entrance or
+    // falling back to an ordinary round.
+    //
+    // Done FIRST, the instant the banner lands, so the reload sits well inside
+    // the tiebreak's 3s READ. A reload that straddles the READ -> ANSWER
+    // boundary can resubscribe after the phase broadcast has already gone out
+    // and then sit on a dim grid until the reveal — a pre-existing realtime
+    // race, not a tiebreak one, and not what this test is here to measure.
+    await joiner.reload();
+    await expect(joiner.getByTestId('sudden-death')).toBeVisible({ timeout: 20_000 });
+
+    // Every surface says so, the reloaded one included.
+    await expect(host.getByTestId('sudden-death')).toBeVisible();
+    await expect(stage.getByTestId('sudden-death')).toBeVisible();
+    await expect(joiner.getByTestId('sudden-death-contender')).toHaveCount(2);
+
+    // The round counter is replaced, not merely wrong: the tiebreak sits past a
+    // track that deliberately did not grow (ADR-0043).
+    await expect(joiner.getByTestId('sudden-death-badge')).toBeVisible();
+    await expect(joiner.getByText('Q2/1')).toHaveCount(0);
+
+    // The tiebreak cannot be skipped; the host is told so rather than silently
+    // losing the round.
+    await host.getByTestId('host-skip').click();
+    await expect(host.getByTestId('host-strip-error')).toContainText(/tiebreak/i);
+
+    // Answer it. The draw is random, so which option is right is unknowable
+    // here — click through all four in turn is impossible (one lock per round),
+    // so assert on the SHAPE of the outcome rather than on who wins.
+    await expect(joiner.getByTestId('answer-option').first()).toBeEnabled({ timeout: 20_000 });
+    await joiner.getByTestId('answer-option').nth(0).click();
+    await expect(joiner.getByTestId('answer-option').nth(0)).toHaveAttribute('data-locked', 'true');
+
+    // The tiebreak's reveal ends the game — there is no track beat.
+    await expect(joiner.getByTestId('results-board')).toBeAttached({ timeout: 40_000 });
+    await expect(joiner.getByTestId('results-row')).toHaveCount(2);
+
+    // No photo finish restages the tie the room just watched resolve; and when
+    // the tiebreak found no winner (both wrong), the card DOES stage the
+    // still-standing tie. Exactly one of the two is true.
+    const wonIt = await joiner.getByTestId('winner-sudden-death').count();
+    if (wonIt > 0) {
+      await expect(joiner.getByTestId('photo-finish')).toHaveCount(0);
+    } else {
+      await expect(joiner.getByTestId('photo-finish')).toBeVisible();
+      await expect(joiner.getByTestId('photo-finish')).toHaveAttribute('data-resolved', 'false');
+    }
+
+    // The strip retires with the race, on the tiebreak's ending as on any other.
+    await expect(host.getByTestId('host-strip')).toHaveCount(0);
+
+    await stageContext.close();
+    await joinerContext.close();
+  });
