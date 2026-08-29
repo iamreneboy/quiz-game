@@ -84,7 +84,8 @@ Two items outside PRD §12's list that M3 also owns:
 6. **The celebration hierarchy extends by exactly one rung.** Sudden death is
    staged above *final question* and below *victory* on P0's ordinal scale.
    Nothing else in M3 may claim a new rung.
-7. **No new runtime dependencies without an argument in the phase spec.**
+7. **No new runtime dependencies without a written argument** — in the phase's
+   spec, or in its plan where §6 says it writes no spec.
    `qrcode` is already installed and unused — that is the one to spend.
 
 ## 3. Phase roadmap
@@ -258,7 +259,8 @@ coverage for the drop and reclaim paths.
   AI assistance, then a human pass for taste and factual accuracy — reading for
   judgement, not hunting for structure.
 - Delivery: the cloud project already holds the 48, so an additive migration is
-  likely correct rather than a rewritten `seed.sql`. The phase spec confirms.
+  likely correct rather than a rewritten `seed.sql`. The plan confirms — this
+  phase writes no spec (§6).
 
 **Exit criteria:** the validator passes a ≥240 bank and fails on each seeded
 defect class, with one unit test per rule; the cloud project holds the full
@@ -333,15 +335,44 @@ explicitly accepted in writing.
 
 ## 6. Drill-down process
 
-For each phase:
+**Not every phase gets its own spec.** M2 wrote ten and they earned their keep —
+the roadmap declared seven phases and the spec stage discovered that three of
+them were mis-sized, splitting P3, P5 and P6 before a plan was ever written
+against the wrong scope. But that value comes from *design uncertainty*, and two
+M3 phases have almost none.
 
-1. Brainstorm the phase against this roadmap (superpowers:brainstorming) — the
-   phase's scope block above is the starting requirement set, and its named
-   "decision the phase spec owns" must be resolved there, not deferred.
-2. Write the phase spec to `docs/superpowers/specs/` as
+The diagnostic is the **"decision the phase spec owns"** line in §3. A phase
+that has one, or that carries several distinct features liable to split, gets a
+spec. A phase that is a list of known work does not.
+
+| Phase | Spec? | Why |
+|---|---|---|
+| P0 Host authority | **Yes** | Owns the skip-semantics decision; pause touches every `ends_at` consumer |
+| P1 The draw | **Yes** | Owns the playing-host conflict *and* the custom-question storage fork |
+| P2 The finish | **Yes** | Four distinct features — the exact shape that split three M2 phases; the spec is where P2a/P2b gets decided |
+| P3 Continuity | **Yes** | Owns the hardest question in M3 (who pauses a vanished host) |
+| P4 The bank | **No** | A validator with enumerable rules plus authoring; its one decision is a line, not a document |
+| P5 Polish & launch | **No** | List-shaped: one restyle, one transition, an audit, four measurements |
+
+For a phase **with** a spec:
+
+1. Brainstorm it against this roadmap (superpowers:brainstorming) — the phase's
+   scope block above is the starting requirement set, and its named "decision
+   the phase spec owns" must be resolved there, not deferred.
+2. Write the spec to `docs/superpowers/specs/` as
    `YYYY-MM-DD-m3-p<N>-<name>-design.md`.
 3. Create its implementation plan (superpowers:writing-plans), implement, verify
    exit criteria, and confirm the regression floor before the next phase starts.
+
+For a phase **without** one, go straight to superpowers:writing-plans using the
+§3 scope block as the requirement set — that is what the block is for.
+
+**This is a floor, not a ceiling.** If drill-down surfaces hidden complexity in
+P4 or P5, that ratchets the path up: stop and write the spec. Two candidates are
+already visible — P5's accessibility audit is exactly the kind of item that
+looks like a checklist and turns out to be a phase, and its lobby→countdown
+choreography is real design work that may deserve a small spec of its own. The
+ratchet is one-way; nothing downgrades mid-phase.
 
 P1→P2 and P3 are parallel-safe branches once P0 merges (e.g. separate
 worktrees — note `.env.local` is gitignored and must be hand-copied into each
