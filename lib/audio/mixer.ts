@@ -25,6 +25,8 @@ export interface Mixer {
   setStemGain(stem: SoundId, gain: number, fadeMs?: number): void;
   play(id: SoundId): void;
   duck(ms: number): void;
+  /** A duck with no known end — held until released. Independent of `duck(ms)`. */
+  setSustainedDuck(on: boolean): void;
   setMuted(muted: boolean): void;
   destroy(): void;
 }
@@ -36,7 +38,7 @@ export interface Mixer {
 const DEAD: Mixer = {
   dead: true,
   unlock() {}, setBed() {}, setStemGain() {}, play() {},
-  duck() {}, setMuted() {}, destroy() {},
+  duck() {}, setSustainedDuck() {}, setMuted() {}, destroy() {},
 };
 
 export function createMixer(): Mixer {
@@ -49,8 +51,13 @@ export function createMixer(): Mixer {
   let unlocked = false;
   let bed: MusicBed | null = null;
   let escalated = false;
-  let duckMultiplier = 1;
+  // Two independent reasons to duck: a timed dip under a sting, and a
+  // sustained hold while the room is paused. Either one is enough, and
+  // releasing one must not lift the other.
+  let timedDuck = false;
+  let sustainedDuck = false;
   let duckTimer: ReturnType<typeof setTimeout> | null = null;
+  const duckMultiplier = () => (timedDuck || sustainedDuck ? DUCK_GAIN : 1);
   const stopTimers = new Set<ReturnType<typeof setTimeout>>();
 
   const howlFor = (id: SoundId): Howl | null => {
@@ -75,7 +82,7 @@ export function createMixer(): Mixer {
   const applyStem = (id: SoundId, fadeMs: number): void => {
     const howl = howlFor(id);
     if (!howl) return;
-    const target = (targets.get(id) ?? 0) * duckMultiplier;
+    const target = (targets.get(id) ?? 0) * duckMultiplier();
     if (!unlocked) {
       howl.volume(target);
       return;
@@ -151,14 +158,20 @@ export function createMixer(): Mixer {
     },
 
     duck(ms) {
-      duckMultiplier = DUCK_GAIN;
+      timedDuck = true;
       applyBedStems(DUCK_ATTACK_MS);
       if (duckTimer) clearTimeout(duckTimer);
       duckTimer = setTimeout(() => {
-        duckMultiplier = 1;
+        timedDuck = false;
         applyBedStems(DUCK_RELEASE_MS);
         duckTimer = null;
       }, Math.max(0, ms));
+    },
+
+    setSustainedDuck(on) {
+      if (sustainedDuck === on) return;
+      sustainedDuck = on;
+      applyBedStems(on ? DUCK_ATTACK_MS : DUCK_RELEASE_MS);
     },
 
     setMuted(muted) {

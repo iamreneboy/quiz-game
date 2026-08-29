@@ -21,7 +21,10 @@ export function startAudioRuntime(): () => void {
   let state: AudioState = initialAudioState;
   let catchUpScheduled = false;
 
-  const syncBed = () => mixer.setBed(state.bed, state.escalated);
+  const syncBed = () => {
+    mixer.setBed(state.bed, state.escalated);
+    mixer.setSustainedDuck(state.paused);
+  };
   syncBed(); // the lobby bed is the initial state, and has no cue of its own
 
   // Muting silences Howler globally but the state machine keeps running, so

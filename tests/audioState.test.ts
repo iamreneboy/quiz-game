@@ -136,3 +136,35 @@ describe('one-shot stings', () => {
     expect(run([podium]).stings).toEqual(['fanfare']);
   });
 });
+
+const gamePaused: Cue = { type: 'game-paused', tier: 'routine' };
+const gameResumed: Cue = { type: 'game-resumed', tier: 'routine' };
+
+describe('pause', () => {
+  it('starts un-paused', () => {
+    expect(initialAudioState.paused).toBe(false);
+  });
+
+  it('holds and releases the duck', () => {
+    const held = run([answer, gamePaused]);
+    expect(held.state.paused).toBe(true);
+    expect(run([answer, gamePaused, gameResumed]).state.paused).toBe(false);
+  });
+
+  it('is set on SIGHT, so a seed batch into a paused room still ducks', () => {
+    // catchUp true is the reload path: stings are suppressed, state is not.
+    const { state, stings } = run([answer, gamePaused], { ...initialAudioState });
+    expect(state.paused).toBe(true);
+    expect(stings).toEqual([]);
+  });
+
+  it('makes no sound of its own — a pause is silence, not a sting', () => {
+    expect(run([answer, gamePaused, gameResumed]).stings).toEqual(['answer-open']);
+  });
+
+  it('leaves the bed and the pending drama queue untouched', () => {
+    const { state } = run([read, answer, reveal, overtake, gamePaused]);
+    expect(state.bed).toBe('round');
+    expect(state.pending.map(c => c.type)).toEqual(['overtake']);
+  });
+});

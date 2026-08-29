@@ -25,6 +25,7 @@ const DRAMA: ReadonlySet<CueType> = new Set(DRAMA_TYPES);
 export const AUDIO_CUE_TYPES: readonly CueType[] = [
   'phase-countdown', 'phase-read', 'phase-answer', 'phase-reveal', 'phase-track', 'phase-results',
   'answer-locked', 'answer-resolved', 'player-joined', 'podium',
+  'game-paused', 'game-resumed',
   ...DRAMA_TYPES,
 ];
 
@@ -35,6 +36,8 @@ export interface AudioState {
   pending: DramaCue[];
   /** True until the runtime has seen a full emission tick; suppresses stings. */
   catchUp: boolean;
+  /** True while the host has the room paused; the bed holds a sustained duck. */
+  paused: boolean;
 }
 
 export const initialAudioState: AudioState = {
@@ -42,6 +45,7 @@ export const initialAudioState: AudioState = {
   escalated: false,
   pending: [],
   catchUp: true,
+  paused: false,
 };
 
 export interface AudioStep {
@@ -76,6 +80,12 @@ export function applyCue(state: AudioState, cue: Cue): AudioStep {
   // seed this cue directly into the final round's READ, ANSWER or REVEAL, none
   // of which reach the arbitration below (ADR-0021).
   if (cue.type === 'final-question') next = { ...next, escalated: true };
+
+  // Set on SIGHT, for the same reason `escalated` is (ADR-0021, ADR-0024): a
+  // reload seeds `game-paused` in the catch-up batch, where stings are
+  // suppressed but bed state still has to land.
+  if (cue.type === 'game-paused') next = { ...next, paused: true };
+  else if (cue.type === 'game-resumed') next = { ...next, paused: false };
 
   if (DRAMA.has(cue.type)) {
     next = { ...next, pending: [...next.pending, cue as DramaCue] };
