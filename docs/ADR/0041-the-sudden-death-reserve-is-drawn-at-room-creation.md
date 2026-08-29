@@ -50,3 +50,8 @@ returned by `draw_public`, `get_room_state` or `phase_event`.
 - **A room created before this migration has `reserve_question_id = null`.** P2
   must treat a null reserve as "sudden death is unavailable; the tie stands and
   the position is shared", which is PRD §6's rule for lower places anyway.
+- **`create_room` now hard-requires a non-empty tier-4 bank, full stop.** Even a
+  room that draws no tier-4 questions itself (`p_tier_counts[4] = 0`) still
+  needs a reserve, so an empty tier-4 bank blocks room creation entirely —
+  this is a new precondition the seed/bank data must satisfy that did not
+  exist before this migration.

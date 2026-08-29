@@ -108,7 +108,7 @@ test('a custom question is added, replaces the draw, and plays', async ({ page, 
   const bank = host.getByTestId('draw-card').filter({ hasNot: host.getByTestId('draw-custom-badge') });
   await bank.getByTestId('draw-remove').click();
   await expect(host.getByTestId('draw-card')).toHaveCount(1);
-  await expect(host.getByTestId('draw-total')).toContainText('1 questions');
+  await expect(host.getByTestId('draw-total')).toContainText('1 question ·');
   await expect(host.getByTestId('draw-custom-badge')).toHaveCount(1);
 
   await host.getByTestId('draw-open-lobby').click();

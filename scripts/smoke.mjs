@@ -294,6 +294,37 @@ assert.equal(
   JSON.stringify(playDraw).includes('correct_index'), false,
   'no correct_index anywhere in the payload a racing host receives');
 
+// -- redaction holds on every mutation's response too, not just the initial
+//    draw: a racing host must never see the answer from a swap, a remove, or
+//    even the question they just wrote themselves.
+const playSwapped = await rpc('swap_question', {
+  p_room_id: playRoom.room_id, p_host_key: playRoom.host_key, p_round: 1,
+});
+assert.equal(JSON.stringify(playSwapped).includes('correct_index'), false,
+  'a swap must not leak the answer to a racing host');
+assert.equal(JSON.stringify(playSwapped).includes('fun_fact'), false,
+  'a swap must not leak the fun fact to a racing host');
+
+const playAdded = await rpc('add_custom_question', {
+  p_room_id: playRoom.room_id, p_host_key: playRoom.host_key,
+  p_category: 'fuel', p_tier: 1,
+  p_prompt: 'Which vending machine button never works?',
+  p_options: ['B4', 'C2', 'A1', 'D6'],
+  p_correct_index: 0, p_fun_fact: 'Maintenance has known for three years.',
+});
+assert.equal(JSON.stringify(playAdded).includes('correct_index'), false,
+  'a racing host does not even see the answer to their own custom question');
+assert.equal(JSON.stringify(playAdded).includes('fun_fact'), false,
+  'a racing host does not even see the fun fact for their own custom question');
+
+const playRemoved = await rpc('remove_question', {
+  p_room_id: playRoom.room_id, p_host_key: playRoom.host_key, p_round: 1,
+});
+assert.equal(JSON.stringify(playRemoved).includes('correct_index'), false,
+  'a remove must not leak the answer to a racing host');
+assert.equal(JSON.stringify(playRemoved).includes('fun_fact'), false,
+  'a remove must not leak the fun fact to a racing host');
+
 // -- host authority is server-enforced
 await rpcFails('get_room_draw',
   { p_room_id: playRoom.room_id, p_host_key: playHost.player_key },

@@ -1,15 +1,15 @@
 'use client';
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { supabase } from '@/lib/supabaseClient';
-import { loadSession } from '@/lib/session';
-import { estimateDurationSeconds } from '@/lib/rank';
+import { loadSession, subscribeSession } from '@/lib/session';
+import { estimateDurationSeconds, TIER_NAMES } from '@/lib/rank';
 import { joinUrl } from '@/lib/qr';
 import { useOrigin } from '@/lib/useOrigin';
 import { DURATION, EASE } from '@/lib/presentation/tokens';
-import type { CustomQuestionDraft } from '@/lib/draw';
-import type { RoomDraw } from '@/lib/types';
+import { tierCounts, type CustomQuestionDraft } from '@/lib/draw';
+import type { RoomDraw, Tier } from '@/lib/types';
 import Panel from '@/components/ui/Panel';
 import Button from '@/components/ui/Button';
 import JoinQr from '@/components/host/JoinQr';
@@ -41,11 +41,42 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
   const origin = useOrigin();
 
   const [draw, setDraw] = useState<RoomDraw | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
 
+  /**
+   * A screen reader will not re-announce `aria-live` text that reads
+   * identically to what's already there — swapping round 1 twice in a row
+   * both produce "Question 1 swapped." Appending a zero-width space when the
+   * new message matches the last one gives the region new text to announce
+   * without changing what's read aloud.
+   */
+  const announceStatus = (message: string) => {
+    setStatus(prev => (prev === message ? `${message}​` : message));
+  };
+
+  /**
+   * "Does this browser hold a session for this room?" — mirrors
+   * `app/room/[code]/page.tsx` exactly, snapshot and all: `null` is the
+   * server snapshot and means NOT KNOWN YET, so the branch below renders
+   * nothing until hydration resolves it, which is what keeps server and
+   * client markup identical. The snapshot has to be a primitive boolean, not
+   * the session object itself — `loadSession` re-parses JSON on every call,
+   * so returning its result directly from `getSnapshot` hands back a new
+   * reference each render and `useSyncExternalStore` reads that as "the
+   * store changed," which loops forever.
+   */
+  const hasSession = useSyncExternalStore(
+    subscribeSession,
+    useCallback(() => !!loadSession(code), [code]),
+    () => null,
+  );
+  // Safe to call directly (not through useSyncExternalStore) once `hasSession`
+  // has resolved: this only runs post-hydration, same as `isHost` on the room
+  // page, and roomId/hostKey are primitives so effect deps compare correctly.
   const session = typeof window === 'undefined' ? null : loadSession(code);
   const roomId = session?.roomId ?? null;
   const hostKey = session?.hostKey ?? null;
@@ -58,7 +89,7 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
         p_room_id: roomId, p_host_key: hostKey,
       });
       if (!live) return;
-      if (err) setError(err.message);
+      if (err) setLoadError(err.message);
       else setDraw(data as RoomDraw);
     })();
     return () => { live = false; };
@@ -84,12 +115,16 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
       });
       if (err) return err.message;
       setDraw(data as RoomDraw);
-      setStatus(announce);
+      announceStatus(announce);
       return null;
     } finally {
       setBusy(false);
     }
   };
+
+  if (hasSession === null) {
+    return null;
+  }
 
   if (!hostKey) {
     return (
@@ -100,10 +135,10 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <main className="mx-auto max-w-2xl space-y-4 px-6 py-16 text-center">
-        <p className="text-wrong">{error}</p>
+        <p className="text-wrong">{loadError}</p>
         <a href={`/room/${code}`} className="text-neon-cyan underline">Go to the room</a>
       </main>
     );
@@ -135,7 +170,12 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
             </p>
             <p className="mt-2 truncate text-sm text-ink-dim">{join ?? ' '}</p>
             <p data-testid="draw-total" className="mt-1 text-sm text-ink-mute">
-              {draw.total_rounds} questions · about {minutes} min
+              {draw.total_rounds} question{draw.total_rounds === 1 ? '' : 's'} · about {minutes} min
+            </p>
+            <p className="mt-1 text-xs text-ink-dim">
+              {tierCounts(draw.questions)
+                .map((n, i) => `${n} ${TIER_NAMES[(i + 1) as Tier]}`)
+                .join(' · ')}
             </p>
           </div>
           <JoinQr url={join} className="h-32 w-32" />
@@ -167,17 +207,17 @@ export default function ReviewPage({ params }: { params: Promise<{ code: string 
               onSwap={() => void mutate(
                 'swap_question', { p_round: question.round },
                 `Question ${question.round} swapped.`,
-              ).then(setError)}
+              ).then(setActionError)}
               onRemove={() => void mutate(
                 'remove_question', { p_round: question.round },
                 `Question ${question.round} removed.`,
-              ).then(setError)}
+              ).then(setActionError)}
             />
           ))}
         </AnimatePresence>
       </motion.ul>
 
-      {error && <p className="text-wrong">{error}</p>}
+      {actionError && <p className="text-wrong">{actionError}</p>}
 
       {adding ? (
         <CustomQuestionForm
