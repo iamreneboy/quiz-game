@@ -6,6 +6,7 @@ import { useStaging } from '@/lib/staging/useStaging';
 import { msUntil } from '@/lib/serverTime';
 import { CATEGORIES, TIER_NAMES } from '@/lib/rank';
 import { distributionRows } from '@/lib/staging/distribution';
+import PauseCard from '@/components/PauseCard';
 import LowerThird from '@/components/LowerThird';
 import TimerRing from '@/components/TimerRing';
 import RevealPanel from '@/components/RevealPanel';
@@ -72,6 +73,14 @@ export default function StageBroadcast({ code }: { code: string }) {
       data-surface="stage"
       className="pointer-events-none fixed inset-0 z-10 p-[5%]"
     >
+      {/*
+        Inside the stage surface on purpose: every size in PauseCard resolves
+        through a theme variable this scope overrides, so the TV gets a
+        television-sized card with no variant prop (ADR-0035). The results
+        branch above needs none — a finished room cannot be paused.
+      */}
+      <PauseCard />
+
       <header className="flex items-start justify-between gap-6">
         <div className="flex items-center gap-3 font-display text-sm font-bold uppercase tracking-[0.14em]">
           {room && room.status !== 'lobby' && (

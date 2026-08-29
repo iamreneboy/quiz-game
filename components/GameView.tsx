@@ -45,9 +45,15 @@ export default function GameView({ code }: { code: string }) {
     if (stored !== null) setMyAnswer(stored);
   }, [code, phase, round, myAnswer, setMyAnswer]);
 
-  // A new READ means a new round: drop the previous round's key.
+  // A new READ means a new question. Clear the CURRENT round's key as well as
+  // the previous one: skip_question reuses the round NUMBER (ADR-0038), so
+  // without this the lock committed against the discarded question is restored
+  // over its replacement. Always safe — a READ for round N always precedes any
+  // answer for round N.
   useEffect(() => {
-    if (phase === 'read' && round > 1) clearAnswerLock(code, round - 1);
+    if (phase !== 'read') return;
+    clearAnswerLock(code, round);
+    if (round > 1) clearAnswerLock(code, round - 1);
   }, [code, phase, round]);
 
   if (!room) return null;

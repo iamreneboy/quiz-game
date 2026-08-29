@@ -15,6 +15,8 @@ import SettingsControl from '@/components/SettingsControl';
 import PixiStage from '@/components/PixiStage';
 import PerfOverlay from '@/components/PerfOverlay';
 import TensionFrame from '@/components/TensionFrame';
+import HostControlStrip from '@/components/HostControlStrip';
+import PauseCard from '@/components/PauseCard';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -39,7 +41,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const room = useGameStore(s => s.room);
   const applyState = useGameStore(s => s.applyState);
   const channel = useRoomChannel(code);
-  const { start, error: hostError } = useHostDriver(code, channel);
+  const driver = useHostDriver(code, channel);
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
 
   useRoomRuntimes(code, 'player');
@@ -64,7 +66,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   } else if (!room) {
     content = <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>;
   } else if (room.status === 'lobby') {
-    content = <LobbyView code={code} isHost={isHost} onStart={start} startError={hostError} />;
+    content = <LobbyView code={code} isHost={isHost} onStart={driver.start} startError={driver.error} />;
   } else if (room.status === 'finished') {
     content = <ResultsView code={code} />;
   } else {
@@ -80,7 +82,16 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       <Suspense fallback={null}>
         <PerfOverlay />
       </Suspense>
-      <div className="relative z-10">{content}</div>
+      {/*
+        The strip reserves its own height at the bottom of the readable column
+        so a fixed bar can never sit on top of the answer grid. z-order is
+        content (10) < pause card (20) < strip (30): the host must still be able
+        to reach Resume through the card that is telling everyone why they are
+        waiting.
+      */}
+      <div className={`relative z-10 ${isHost ? 'pb-16' : ''}`}>{content}</div>
+      <PauseCard />
+      {isHost && <HostControlStrip driver={driver} />}
     </div>
   );
 }
