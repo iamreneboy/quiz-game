@@ -299,4 +299,83 @@ await rpcFails('get_room_draw',
   { p_room_id: playRoom.room_id, p_host_key: playHost.player_key },
   /invalid host key/i);
 
+// -- swap redraws one round from the same tier and category pool
+const before = mcDraw.questions[0];
+const swapped = await rpc('swap_question', {
+  p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 1,
+});
+const after = swapped.questions[0];
+assert.equal(swapped.total_rounds, 3, 'a swap does not change the track length');
+assert.equal(after.round, 1);
+assert.equal(after.tier, before.tier, 'a swap keeps the tier, so the draw stays easy -> hard');
+assert.notEqual(after.prompt, before.prompt, 'a swap draws a DIFFERENT question');
+assert.ok(drawArgs.p_categories.includes(after.category), 'and stays in the chosen pool');
+assert.deepEqual(swapped.questions.map(q => q.round), [1, 2, 3]);
+
+// -- a swap never repeats a question already in the room
+const prompts = swapped.questions.map(q => q.prompt);
+assert.equal(new Set(prompts).size, prompts.length, 'no duplicate prompts in the draw');
+
+// -- a swap with nothing left to draw says so rather than silently doing nothing.
+//    'fuel' tier 1 holds exactly 2 seeded questions; a room that takes both has
+//    no third to swap in. (P4 raises the bank to >=10 per tier per category and
+//    must revisit this assertion — the game-flow section above already carries
+//    the same seed dependency.)
+const tight = await rpc('create_room', {
+  p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: tight.code, p_nickname: 'Tight', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: tight.host_key, p_is_playing: false,
+});
+await rpcFails('swap_question',
+  { p_room_id: tight.room_id, p_host_key: tight.host_key, p_round: 1 },
+  /no other question/i);
+
+// -- remove drops a round, renumbers the tail down, and shortens the track
+const removed = await rpc('remove_question', {
+  p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 1,
+});
+assert.equal(removed.total_rounds, 2, 'the track is one question shorter');
+assert.deepEqual(removed.questions.map(q => q.round), [1, 2], 'the tail renumbered down');
+assert.equal(removed.questions[0].prompt, swapped.questions[1].prompt,
+  'round 2 became round 1');
+
+// -- the last question cannot be removed
+const lone = await rpc('create_room', {
+  p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: lone.code, p_nickname: 'Lone', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: lone.host_key, p_is_playing: false,
+});
+await rpcFails('remove_question',
+  { p_room_id: lone.room_id, p_host_key: lone.host_key, p_round: 1 },
+  /at least one question/i);
+
+// -- host authority, and the lock once the race starts
+await rpcFails('swap_question',
+  { p_room_id: mcRoom.room_id, p_host_key: mc.player_key, p_round: 1 },
+  /invalid host key/i);
+await rpcFails('remove_question',
+  { p_room_id: mcRoom.room_id, p_host_key: mc.player_key, p_round: 1 },
+  /invalid host key/i);
+await rpcFails('swap_question',
+  { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 99 },
+  /no question at round/i);
+
+await rpc('join_room', {
+  p_code: mcRoom.code, p_nickname: 'Pair1', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('join_room', {
+  p_code: mcRoom.code, p_nickname: 'Pair2', p_avatar: 'cat', p_color: '#a78bfa',
+});
+await rpc('start_game', { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key });
+await rpcFails('get_room_draw',
+  { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key }, /locked/i);
+await rpcFails('swap_question',
+  { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 1 }, /locked/i);
+await rpcFails('remove_question',
+  { p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key, p_round: 1 }, /locked/i);
+
 console.log('✅ P1 draw-review smoke passed');

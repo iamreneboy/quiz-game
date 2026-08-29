@@ -199,4 +199,106 @@ begin
   return draw_public(p_room_id, host_sees_answers(p_room_id));
 end $$;
 
+-- ============ swap_question ============
+-- Veto is swap (roadmap §3, P1). Same round, same tier — which is what keeps
+-- the draw's easy -> hard ordering intact — same category pool, and excluding
+-- everything already in the room AND the held-out reserve. A swap that pulled
+-- the reserve into the race would let sudden death repeat a question the room
+-- has already been asked (ADR-0041).
+create or replace function swap_question(
+  p_room_id uuid, p_host_key uuid, p_round int
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_old_id uuid;
+  v_old_room uuid;
+  v_tier int;
+  v_new uuid;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'the draw is locked once the race starts'; end if;
+
+  select q.id, q.room_id, q.tier into v_old_id, v_old_room, v_tier
+  from room_questions rq join questions q on q.id = rq.question_id
+  where rq.room_id = p_room_id and rq.round = p_round;
+  if not found then raise exception 'no question at round %', p_round; end if;
+
+  select q.id into v_new
+  from questions q
+  where q.room_id is null
+    and q.tier = v_tier
+    and q.category = any(v_room.categories)
+    and (v_room.reserve_question_id is null or q.id <> v_room.reserve_question_id)
+    and not exists (
+      select 1 from room_questions rq
+      where rq.room_id = p_room_id and rq.question_id = q.id)
+  order by random()
+  limit 1;
+  if v_new is null then
+    raise exception 'no other question left at this difficulty in the chosen categories';
+  end if;
+
+  update room_questions set question_id = v_new
+  where room_id = p_room_id and round = p_round;
+
+  -- A custom question that has just been swapped out belongs to nobody. This
+  -- is also how a host undoes a custom question's CONTENT; remove_question is
+  -- how they undo its existence.
+  if v_old_room is not null then
+    delete from questions where id = v_old_id and room_id = p_room_id;
+  end if;
+
+  return draw_public(p_room_id, host_sees_answers(p_room_id));
+end $$;
+
+-- ============ remove_question ============
+-- add_custom_question grows the draw, so something has to shrink it; without
+-- this, a host who adds one by mistake is stuck with a 13-question race and no
+-- recovery short of recreating the room.
+--
+-- LOBBY ONLY, and that boundary matters: once the race is running,
+-- skip_question (0005) is the instrument and it has entirely different
+-- consequences — it discards answers, resumes a paused room, and can end the
+-- game. This one only edits a draw nobody has seen played.
+create or replace function remove_question(
+  p_room_id uuid, p_host_key uuid, p_round int
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_qid uuid;
+  v_qroom uuid;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'the draw is locked once the race starts'; end if;
+  if v_room.total_rounds <= 1 then raise exception 'a race needs at least one question'; end if;
+
+  select q.id, q.room_id into v_qid, v_qroom
+  from room_questions rq join questions q on q.id = rq.question_id
+  where rq.room_id = p_room_id and rq.round = p_round;
+  if not found then raise exception 'no question at round %', p_round; end if;
+
+  delete from room_questions where room_id = p_room_id and round = p_round;
+  if v_qroom is not null then
+    delete from questions where id = v_qid and room_id = p_room_id;
+  end if;
+
+  -- Renumber the tail down one THROUGH THE NEGATIVE ROUND SPACE. The
+  -- (room_id, round) primary key is not deferrable, so a single
+  -- `round = round - 1` can transiently collide with a row the statement has
+  -- not reached yet — the update order is not guaranteed. This is ADR-0038's
+  -- reasoning, applied before the race rather than during it.
+  update room_questions set round = -round
+    where room_id = p_room_id and round > p_round;
+  update room_questions set round = (-round) - 1
+    where room_id = p_room_id and round < 0;
+
+  update rooms set total_rounds = total_rounds - 1 where id = p_room_id;
+
+  return draw_public(p_room_id, host_sees_answers(p_room_id));
+end $$;
+
 grant execute on all functions in schema public to anon, authenticated;
