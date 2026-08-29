@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hasPhotoFinish, tallyValue, tieGroups } from '@/lib/ceremony/photoFinish';
+import { hasPhotoFinish, photoFinishFor, tallyValue, tieGroups } from '@/lib/ceremony/photoFinish';
 import type { Standing } from '@/lib/types';
 
 /**
@@ -160,5 +160,16 @@ describe('tallyValue', () => {
 
   it('handles a zero target without producing -0', () => {
     expect(Object.is(tallyValue(0, 0.5), 0)).toBe(true);
+  });
+});
+
+describe('photoFinishFor', () => {
+  it('is false before any standings exist', () => {
+    expect(photoFinishFor({ standings: null })).toBe(false);
+  });
+
+  it('is false for a clean finish and true for a tied one', () => {
+    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 2, 80)] })).toBe(false);
+    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 3, 80)] })).toBe(true);
   });
 });

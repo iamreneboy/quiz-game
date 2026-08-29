@@ -58,6 +58,7 @@ import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
 import { allowanceFor, initialBudgetFor, stepBudget, type BudgetState } from './vfxBudget';
 import { gradeState, quantizeZoneWeights, zoneWeights } from './zones';
+import { photoFinishFor } from '@/lib/ceremony/photoFinish';
 
 /** Cue types the world acts on. P1 owned the camera set; P2 adds the drama set. */
 const SUBSCRIBED: CueType[] = [
@@ -85,11 +86,9 @@ const SUBSCRIBED: CueType[] = [
 function ceremonySteps(state: ReturnType<typeof useGameStore.getState>): CeremonySteps {
   const room = state.room;
   if (room?.phase !== 'results') return NO_CEREMONY;
-  // Task 3 replaces this literal with photoFinishFor(state) — one derivation,
-  // read by both the DOM ticker and the renderer, so they cannot disagree.
   return ceremonyStepsAt(
     elapsedIn(CEREMONY_MS, room.ends_at ? msUntil(room.ends_at) : null),
-    false,
+    photoFinishFor(state),
   );
 }
 

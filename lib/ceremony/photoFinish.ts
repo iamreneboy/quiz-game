@@ -119,3 +119,25 @@ function isPerfectlyTied(players: readonly Standing[]): boolean {
     p => p.speed_points === first.speed_points && p.longest_streak === first.longest_streak,
   );
 }
+
+/**
+ * Structural subset of the game store. `GameState` is assignable to it, which
+ * is what keeps this module free of any store import — the same arrangement
+ * `lib/presentation/deriveCues.ts`'s `CueSource` uses.
+ */
+export interface PhotoFinishSource {
+  standings: readonly Standing[] | null;
+}
+
+/**
+ * "Is a prelude staged for this room?" — asked by the DOM ticker
+ * (lib/ceremony/runtime.ts) and by the renderer (lib/world/runtime.ts), which
+ * is why it lives here rather than in either of them. One question, one answer,
+ * so the podium's rise and the card's timeline cannot fall out of step.
+ *
+ * Task 5 note: this widens to exclude the group sudden death decided, by
+ * reading `sudden_death` off the room. The signature does not change.
+ */
+export function photoFinishFor(source: PhotoFinishSource): boolean {
+  return hasPhotoFinish({ standings: source.standings });
+}
