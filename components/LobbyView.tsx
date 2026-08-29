@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { useGameStore } from '@/lib/store';
 import { avatarEmoji } from '@/lib/avatars';
+import { joinUrl } from '@/lib/qr';
+import { useOrigin } from '@/lib/useOrigin';
+import JoinQr from '@/components/host/JoinQr';
 
 /**
  * The lobby's readable half (spec §7). The Pixi start line carries the
@@ -16,14 +19,19 @@ export default function LobbyView({
 }: { code: string; isHost: boolean; onStart: () => void; startError: string | null }) {
   const players = useGameStore(s => s.players);
   const playing = players.filter(p => p.is_playing);
+  const origin = useOrigin();
+  const join = origin ? joinUrl(origin, code) : null;
 
   return (
     <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col justify-end gap-6 p-6">
-      <header className="text-center">
-        <p className="text-slate-400">
-          Join at <b className="text-slate-200">{typeof window !== 'undefined' ? window.location.host : ''}</b> with code
-        </p>
-        <p className="text-6xl font-black tracking-[0.2em] text-amber-400">{code}</p>
+      <header className="flex items-center justify-center gap-6">
+        <div className="text-center">
+          <p className="text-slate-400">
+            Join at <b className="text-slate-200">{origin ? new URL(origin).host : ''}</b> with code
+          </p>
+          <p className="text-6xl font-black tracking-[0.2em] text-amber-400">{code}</p>
+        </div>
+        <JoinQr url={join} className="h-28 w-28" />
       </header>
 
       <section className="rounded-2xl border border-white/10 bg-abyss/70 p-4 backdrop-blur-sm">
@@ -51,6 +59,18 @@ export default function LobbyView({
           ))}
         </ul>
       </section>
+
+      {isHost && (
+        <a
+          data-testid="lobby-review-link"
+          href={`/host/${code}/review`}
+          className="rounded-2xl border border-white/10 bg-abyss/70 p-4 text-center text-sm
+            font-semibold text-slate-300 hover:border-amber-400/60 hover:text-amber-400
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        >
+          Review the draw — swap a question or add your own
+        </a>
+      )}
 
       {isHost && <StageLink code={code} />}
 

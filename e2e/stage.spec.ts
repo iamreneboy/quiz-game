@@ -16,6 +16,8 @@ async function createRoom(host: Page, nickname: string): Promise<string> {
 
   await host.getByPlaceholder('Your nickname').fill(nickname);
   await host.getByRole('button', { name: /create room/i }).click();
+  await expect(host).toHaveURL(/\/host\/[A-Z0-9]{5}\/review$/);
+  await host.getByRole('button', { name: /open the lobby/i }).click();
   await expect(host).toHaveURL(/\/room\/[A-Z0-9]{5}$/);
   return host.url().split('/').pop()!;
 }

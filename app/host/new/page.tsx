@@ -74,7 +74,7 @@ export default function HostSetup() {
       roomId: room.room_id, playerId: joined.player_id,
       playerKey: joined.player_key, hostKey: room.host_key,
     });
-    router.push(`/room/${room.code}`);
+    router.push(`/host/${room.code}/review`);
   }
 
   return (

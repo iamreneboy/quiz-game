@@ -38,3 +38,32 @@ export interface RoomInfo {
   paused_remaining_ms?: number|null;
 }
 export interface RoomState { room: RoomInfo; players: PlayerPublic[]; question: QuestionPublic|null; reveal: RevealPayload|null; standings: Standing[]|null; }
+
+/**
+ * One round of the host's draw, as `draw_public` returns it.
+ *
+ * `correct_index` and `fun_fact` are OPTIONAL because the server omits the keys
+ * entirely for a host who is also racing — not because they can be null
+ * (ADR-0040). Read them only behind `RoomDraw.answers_visible`.
+ */
+export interface DrawQuestion {
+  round: number;
+  category: string;
+  tier: Tier;
+  prompt: string;
+  options: string[];
+  /** True when the host wrote this one; it lives only in this room (PRD §7). */
+  is_custom: boolean;
+  correct_index?: number;
+  fun_fact?: string | null;
+}
+
+export interface RoomDraw {
+  total_rounds: number;
+  timer_seconds: number;
+  /** The pool the host chose at creation — the only categories a custom question may use. */
+  categories: string[];
+  /** False whenever the host is also a racer. The server decides; the client only reports. */
+  answers_visible: boolean;
+  questions: DrawQuestion[];
+}
