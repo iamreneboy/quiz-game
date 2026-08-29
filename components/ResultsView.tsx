@@ -1,12 +1,14 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence } from 'motion/react';
 import { useGameStore } from '@/lib/store';
 import { loadSession } from '@/lib/session';
 import { msUntil } from '@/lib/serverTime';
 import { elapsedIn } from '@/lib/staging/beats';
-import { BOARD_AT, CEREMONY_MS } from '@/lib/ceremony/beats';
+import { BOARD_AT, CEREMONY_MS, PHOTO_TALLY_AT } from '@/lib/ceremony/beats';
 import { useCeremony } from '@/lib/ceremony/useCeremony';
+import PhotoFinish from './PhotoFinish';
 import ResultsTable from './ResultsTable';
 import WinnerCard from './WinnerCard';
 
@@ -14,6 +16,7 @@ export default function ResultsView({ code }: { code: string }) {
   const room = useGameStore(s => s.room);
   const standings = useGameStore(s => s.standings);
   const board = useCeremony(s => s.steps.board);
+  const photo = useCeremony(s => s.steps.photo);
   const endsAt = room?.ends_at ?? null;
 
   /**
@@ -42,14 +45,44 @@ export default function ResultsView({ code }: { code: string }) {
     () => elapsedIn(CEREMONY_MS, endsAt ? msUntil(endsAt) : null) >= BOARD_AT,
   );
 
+
+  /**
+   * "Was the prelude already running when this component mounted?"
+   *
+   * ONE-SHOT, for exactly the reason `settled` above is: the ceremony runtime
+   * publishes from a requestAnimationFrame tick started in an effect, so a
+   * reload lands one frame before `steps.photo` is real. Without this, a reload
+   * mid-prelude would play the card's entrance again.
+   *
+   * `PHOTO_TALLY_AT` rather than 0 is the threshold on purpose: a mount inside
+   * the first 700ms is a genuine entrance — the card has not started saying
+   * anything yet — and should animate.
+   */
+  const [photoInstant] = useState(
+    () => elapsedIn(CEREMONY_MS, endsAt ? msUntil(endsAt) : null) >= PHOTO_TALLY_AT,
+  );
+
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   if (!room || !standings || standings.length === 0) return null;
+
+  const sd = room?.sudden_death ?? null;
+  const wonOnSuddenDeath = !!sd?.winner_id && sd.winner_id === standings[0].player_id;
 
   const winner = standings[0];
   const show = board || settled;
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:gap-8 sm:p-6">
+      {/*
+        Conditionally mounted on the prelude's own beat, so it retires cleanly
+        when the podium takes over. `initial={false}` is the standing guard
+        against an entrance replaying on a mid-beat mount (CURRENT.md); the
+        `photoInstant` one-shot covers the case AnimatePresence cannot see.
+      */}
+      <AnimatePresence initial={false}>
+        {photo.open && <PhotoFinish key="photo-finish" instant={photoInstant} />}
+      </AnimatePresence>
+
       {/*
         Reserves exactly the height PixiStage is showing, so the board can
         never overlap the podium. The 0px fallback is what a client with no
@@ -61,7 +94,13 @@ export default function ResultsView({ code }: { code: string }) {
         style={{ height: 'var(--ceremony-band, 0px)' }}
       />
 
-      <WinnerCard winner={winner} totalRounds={room.total_rounds} show={show} instant={settled} />
+      <WinnerCard
+        winner={winner}
+        totalRounds={room.total_rounds}
+        show={show}
+        instant={settled}
+        suddenDeath={wonOnSuddenDeath}
+      />
 
       <ResultsTable standings={standings} myId={myId} show={show} instant={settled} />
 

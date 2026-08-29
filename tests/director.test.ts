@@ -221,3 +221,29 @@ describe('the stage shot book', () => {
     expect(initialDirectorState.role).toBe('player');
   });
 });
+
+describe('sudden-death', () => {
+  it('punches in the final-question shot at its own tier and escalates', () => {
+    const state = reduceCue(
+      initialDirectorState,
+      { type: 'sudden-death', tier: 'suddenDeath', round: 2, contenders: ['a'] },
+      0,
+    );
+    expect(state.escalation).toBe(1);
+    expect(state.transient?.tier).toBe('suddenDeath');
+  });
+
+  it('outranks a live overtake transient, which final-question would not', () => {
+    const withOvertake = reduceCue(
+      initialDirectorState,
+      { type: 'overtake', tier: 'overtake', playerId: 'a', passed: ['b'] },
+      0,
+    );
+    const state = reduceCue(
+      withOvertake,
+      { type: 'sudden-death', tier: 'suddenDeath', round: 2, contenders: ['a'] },
+      10,
+    );
+    expect(state.transient?.tier).toBe('suddenDeath');
+  });
+});

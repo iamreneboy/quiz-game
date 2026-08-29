@@ -493,3 +493,212 @@ assert.equal(shrunk.questions.some(q => q.is_custom), false);
 assert.deepEqual(shrunk.questions.map(q => q.round), [1, 2, 3, 4]);
 
 console.log('✅ P1 draw-review smoke passed');
+
+// ---- P2a: the tiebreak ----
+// The ceremony's deadline is FLAT (ADR-0044): it always reserves the
+// photo-finish prelude, whether or not one is staged. The client mirrors this
+// number in lib/ceremony/beats.ts's CEREMONY_MS, and a disagreement puts the
+// podium at elapsed 0 for the difference — which is why it is asserted here.
+const CEREMONY_MS = 12_400;
+
+const cer = await rpc('create_room', {
+  p_timer_seconds: 20, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+const cerHost = await rpc('join_room', {
+  p_code: cer.code, p_nickname: 'Clock', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: cer.host_key,
+});
+await rpc('join_room', {
+  p_code: cer.code, p_nickname: 'Watch', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('start_game', { p_room_id: cer.room_id, p_host_key: cer.host_key });
+await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // read
+await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // answer
+// One racer takes it, so the finish is DECIDED. Without this the room would be
+// a perfect first-place tie and the last track would open a tiebreak round
+// rather than the ceremony (ADR-0043) — this section is about the deadline,
+// not the tiebreak, so it must reach `results` directly.
+await rpc('submit_answer', {
+  p_room_id: cer.room_id, p_player_key: cerHost.player_key, p_round: 1, p_choice_index: 0,
+});
+await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // reveal
+await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // track
+const cerEnd = await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key });
+assert.equal(cerEnd.phase, 'results');
+const cerMs = new Date(cerEnd.ends_at) - new Date(cerEnd.server_now);
+assert.ok(Math.abs(cerMs - CEREMONY_MS) < 500,
+  `the ceremony deadline should be ${CEREMONY_MS}ms, got ${cerMs}`);
+
+console.log('✅ P2a ceremony-deadline smoke passed');
+
+// ---- P2a: sudden death ----
+// A PERFECT first-place tie is built deterministically, never by timing luck:
+// a one-question room in which nobody answers leaves every racer on 0 correct,
+// 0 speed points and a 0 streak. That is a perfect tie for first place by
+// construction, and the only fully reproducible way to reach one.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const sd = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+const sdHost = await rpc('join_room', {
+  p_code: sd.code, p_nickname: 'Ada', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: sd.host_key,
+});
+const sdP2 = await rpc('join_room', {
+  p_code: sd.code, p_nickname: 'Grace', p_avatar: 'duck', p_color: '#38bdf8',
+});
+
+await rpc('start_game', { p_room_id: sd.room_id, p_host_key: sd.host_key });
+await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // read
+await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // answer
+// Nobody answers.
+await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // reveal
+let sdEvt = await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // track
+assert.equal(sdEvt.phase, 'track');
+assert.equal(sdEvt.sudden_death, null, 'no tiebreak is open before the last track resolves');
+
+// -- the last track opens the tiebreak instead of the ceremony
+sdEvt = await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key });
+assert.equal(sdEvt.phase, 'read', 'a perfect first-place tie opens a tiebreak round');
+assert.equal(sdEvt.status, 'playing', 'the game is not finished yet');
+assert.equal(sdEvt.round, 2, 'the tiebreak sits one round past the finish line');
+assert.equal(sdEvt.total_rounds, 1, 'the track does NOT grow');
+assert.ok(sdEvt.payload.prompt, 'the reserve question is a real question');
+assert.equal(sdEvt.payload.correct_index, undefined, 'and it does not leak its answer');
+assert.equal(sdEvt.sudden_death.round, 2);
+assert.equal(sdEvt.sudden_death.winner_id, null, 'nobody has won it yet');
+assert.deepEqual(
+  [...sdEvt.sudden_death.contenders].sort(),
+  [sdHost.player_id, sdP2.player_id].sort(),
+  'both racers tied perfectly, so both are contenders');
+
+// -- the tiebreak question is the reserve, and it was never in the race
+const sdDrawnPrompts = await rpc('get_room_state', { p_code: sd.code });
+assert.equal(sdDrawnPrompts.room.sudden_death.round, 2,
+  'get_room_state carries the tiebreak too, so a reload lands in it');
+
+// -- only contenders may answer, and here that is everyone
+sdEvt = await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // answer
+assert.equal(sdEvt.phase, 'answer');
+await rpc('submit_answer', {
+  p_room_id: sd.room_id, p_player_key: sdHost.player_key, p_round: 2, p_choice_index: 0,
+});
+await sleep(400);
+await rpc('submit_answer', {
+  p_room_id: sd.room_id, p_player_key: sdP2.player_key, p_round: 2, p_choice_index: 1,
+});
+
+// -- the reveal resolves it, and the tiebreak answer is NOT a correct answer
+sdEvt = await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key }); // reveal
+assert.equal(sdEvt.phase, 'reveal');
+const sdCorrectIndex = sdEvt.payload.correct_index;
+const sdExpectedWinner =
+  sdCorrectIndex === 0 ? sdHost.player_id : sdCorrectIndex === 1 ? sdP2.player_id : null;
+assert.equal(sdEvt.sudden_death.winner_id, sdExpectedWinner,
+  'the first correct answer among the contenders wins');
+for (const row of sdEvt.payload.standings) {
+  assert.equal(row.correct, 0, 'the tiebreak answer never becomes a correct answer');
+  assert.equal(row.speed_points, 0, 'nor a speed point');
+  assert.equal(row.longest_streak, 0, 'nor a streak');
+}
+
+// -- a tiebreak has no TRACK beat: reveal goes straight to the ceremony
+sdEvt = await rpc('advance_phase', { p_room_id: sd.room_id, p_host_key: sd.host_key });
+assert.equal(sdEvt.phase, 'results', 'the tiebreak reveal ends the game');
+assert.equal(sdEvt.status, 'finished');
+const sdCeremonyMs = new Date(sdEvt.ends_at) - new Date(sdEvt.server_now);
+assert.ok(Math.abs(sdCeremonyMs - CEREMONY_MS) < 500, 'the ceremony still gets its full length');
+
+if (sdExpectedWinner) {
+  assert.equal(sdEvt.payload[0].player_id, sdExpectedWinner,
+    'the tiebreak winner heads the final standings');
+  assert.equal(sdEvt.payload[0].correct, 0,
+    'and they head it on the tiebreak alone, with no invented correct answer');
+} else {
+  console.log('   (the reserve question had no contender pick it — the tie stands)');
+}
+assert.equal(sdEvt.payload.length, 2, 'nobody is dropped from the final standings');
+
+// -- a reload onto the finished room sees the same order
+const sdFinal = await rpc('get_room_state', { p_code: sd.code });
+assert.deepEqual(
+  sdFinal.standings.map(s => s.player_id),
+  sdEvt.payload.map(s => s.player_id),
+  'get_room_state and the phase event agree on the final order');
+assert.equal(sdFinal.room.sudden_death.winner_id, sdExpectedWinner);
+
+console.log('✅ P2a sudden-death smoke passed');
+
+// ---- P2a: the tiebreak's boundaries ----
+// A clean finish must be untouched by any of the above.
+const clean = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+const cleanHost = await rpc('join_room', {
+  p_code: clean.code, p_nickname: 'Solo', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: clean.host_key,
+});
+await rpc('join_room', {
+  p_code: clean.code, p_nickname: 'Duo', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('start_game', { p_room_id: clean.room_id, p_host_key: clean.host_key });
+await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // read
+let cleanEvt = await rpc('advance_phase', {
+  p_room_id: clean.room_id, p_host_key: clean.host_key,
+}); // answer
+// Both tier-1 'fuel' questions are correct_index 0 in the seed, which the
+// game-flow section above already depends on. One racer takes it; the other
+// does not answer, so the finish is decided on correct answers alone.
+await rpc('submit_answer', {
+  p_room_id: clean.room_id, p_player_key: cleanHost.player_key,
+  p_round: 1, p_choice_index: 0,
+});
+await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // reveal
+await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // track
+cleanEvt = await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key });
+assert.equal(cleanEvt.phase, 'results', 'a decided race goes straight to the ceremony');
+assert.equal(cleanEvt.status, 'finished');
+assert.equal(cleanEvt.sudden_death, null, 'and never opens a tiebreak');
+assert.equal(cleanEvt.payload[0].nickname, 'Solo');
+assert.equal(cleanEvt.payload[0].correct, 1);
+
+// -- the tiebreak cannot be skipped, and end_game leaves the tie standing
+const bail = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: bail.code, p_nickname: 'Quit1', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: bail.host_key,
+});
+await rpc('join_room', {
+  p_code: bail.code, p_nickname: 'Quit2', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('start_game', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+for (let i = 0; i < 4; i += 1) {
+  await rpc('advance_phase', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+}
+const bailSd = await rpc('advance_phase', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+assert.equal(bailSd.sudden_death.round, 2, 'the tiebreak opened');
+
+await rpcFails('skip_question',
+  { p_room_id: bail.room_id, p_host_key: bail.host_key },
+  /tiebreak cannot be skipped/i);
+
+// A pause still works on a tiebreak — it is an ordinary round in every way the
+// host's controls care about.
+const bailPaused = await rpc('pause_game', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+assert.equal(bailPaused.status, 'paused');
+assert.equal(bailPaused.sudden_death.round, 2, 'a paused tiebreak is still a tiebreak');
+await rpc('resume_game', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+
+const bailEnded = await rpc('end_game', { p_room_id: bail.room_id, p_host_key: bail.host_key });
+assert.equal(bailEnded.phase, 'results');
+assert.equal(bailEnded.sudden_death.winner_id, null,
+  'ending during a tiebreak leaves it unresolved');
+assert.equal(bailEnded.payload.length, 2);
+for (const row of bailEnded.payload) {
+  assert.equal(row.correct, 0, 'and invents nothing on the way out');
+}
+
+console.log('✅ P2a tiebreak-boundaries smoke passed');

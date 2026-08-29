@@ -28,19 +28,38 @@ function setVar(name: string, value: number): void {
 }
 
 export function startStagingRuntime(code: string, role: ViewerRole): () => void {
-  const { publish, announce, setCallout, setEscalated } = useStaging.getState();
+  const { publish, announce, setCallout, setEscalated, setSuddenDeath } =
+    useStaging.getState();
 
   // Resolved lazily: a PLAYER's session is written when they join, which can
   // happen after this runtime starts. Cheap to repeat — it only runs on a
   // store change, not per frame. On the stage this never touches storage
   // (lib/viewer.ts) and always reports "playing", which is correct: the
   // tension vignette should ramp for the whole room.
+  /**
+   * "May this device answer the round on screen?"
+   *
+   * Two questions, in order. Is this viewer a racer at all — a spectator or a
+   * non-playing MC host is never handed a grid. And, on the tiebreak round
+   * only, is this racer one of the two-or-more who actually tied?
+   *
+   * The second is COURTESY, not authority: `submit_answer` rejects any
+   * non-contender outright (roadmap decision 2, ADR-0043), and this only spares
+   * them tapping a button to be told so. Routed through `isPlaying` on purpose
+   * — it reuses the whole spectator path GameView already renders ("You're
+   * watching this one.") rather than adding a second disabled state.
+   */
   const isLocalPlayerPlaying = (): boolean => {
-    const { players } = useGameStore.getState();
+    const { players, room } = useGameStore.getState();
     const playerId = viewerPlayerId(role, code);
     if (!playerId) return true; // not joined yet, or a stage view: nothing to disable
+
     const me = players.find(p => p.id === playerId);
-    return me ? me.is_playing : true;
+    if (me && !me.is_playing) return false;
+
+    const sd = room?.sudden_death;
+    if (sd && room?.round === sd.round) return sd.contenders.includes(playerId);
+    return true;
   };
 
   const unsubscribe = on('answer-locked', cue => {
@@ -91,8 +110,16 @@ export function startStagingRuntime(code: string, role: ViewerRole): () => void 
       callouts = clearCallout(callouts);
       publishCallouts();
     }),
+    // Set on SIGHT, never deferred: a reload seeds this cue directly into the
+    // tiebreak's READ, ANSWER or REVEAL (ADR-0021's shape, ADR-0024's rule).
+    on('sudden-death', () => {
+      callouts = { ...callouts, escalated: true };
+      setSuddenDeath(true);
+      publishCallouts();
+    }),
     on('phase-results', () => {
       callouts = resetCallouts();
+      setSuddenDeath(false);
       publishCallouts();
     }),
   ];

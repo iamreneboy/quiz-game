@@ -10,6 +10,7 @@ import { useStaging } from '@/lib/staging/useStaging';
 import StageShell from './StageShell';
 import TimerRing from './TimerRing';
 import QuestionCard from './QuestionCard';
+import SuddenDeathBanner from './SuddenDeathBanner';
 import AnswerButtons from './AnswerButtons';
 import RevealPanel from './RevealPanel';
 import TrackReadout from './TrackReadout';
@@ -23,6 +24,7 @@ export default function GameView({ code }: { code: string }) {
   const steps = useStaging(s => s.steps);
   const lockedChoice = useStaging(s => s.lockedChoice);
   const spectating = useStaging(s => s.spectating);
+  const suddenDeath = useStaging(s => s.suddenDeath);
   const standings = useGameStore(s => s.standings);
   const revealSteps = useStaging(s => s.reveal);
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
@@ -77,6 +79,7 @@ export default function GameView({ code }: { code: string }) {
     <StageShell
       header={
         <>
+          <SuddenDeathBanner />
           {question && (
             <QuestionCard
               question={question}
@@ -106,7 +109,11 @@ export default function GameView({ code }: { code: string }) {
       outcome={
         <>
           {spectating && room.phase === 'answer' && (
-            <p className="text-center text-sm text-ink-mute">You&rsquo;re watching this one.</p>
+            <p className="text-center text-sm text-ink-mute">
+              {suddenDeath
+                ? 'This one is between the tied racers.'
+                : 'You’re watching this one.'}
+            </p>
           )}
           {room.phase === 'reveal' && question && reveal && (
             <RevealPanel reveal={reveal} question={question} steps={revealSteps} />

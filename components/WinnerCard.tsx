@@ -22,7 +22,7 @@ import type { Standing } from '@/lib/types';
  * table, where the column header says what the dash is a dash FOR.
  */
 export default function WinnerCard({
-  winner, totalRounds, show, instant,
+  winner, totalRounds, show, instant, suddenDeath = false,
 }: {
   winner: Standing;
   totalRounds: number;
@@ -30,6 +30,8 @@ export default function WinnerCard({
   show: boolean;
   /** Mounted past the beat — settle without playing the entrance. */
   instant: boolean;
+  /** True when a sudden-death round decided first place (PRD §5.4.2). */
+  suddenDeath?: boolean;
 }) {
   const { accuracy, avgSeconds } = resultStats(winner);
 
@@ -59,6 +61,14 @@ export default function WinnerCard({
           {accuracy !== null && <> · {formatAccuracy(accuracy)}</>}
           {avgSeconds !== null && <> · {formatAvg(avgSeconds)} avg</>}
         </p>
+        {suddenDeath && (
+          <p
+            data-testid="winner-sudden-death"
+            className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-neon-magenta"
+          >
+            Won on sudden death
+          </p>
+        )}
       </Panel>
     </motion.div>
   );

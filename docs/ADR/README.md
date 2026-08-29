@@ -68,3 +68,6 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0039](0039-custom-questions-live-in-the-bank-table.md) | Custom questions live in the bank table, behind a `room_id` | M3 P1 |
 | [0040](0040-the-draw-review-is-role-bound.md) | The draw review is role-bound — a racing host never receives an answer | M3 P1 |
 | [0041](0041-the-sudden-death-reserve-is-drawn-at-room-creation.md) | The sudden-death reserve is drawn at room creation, category-preferring | M3 P1 |
+| [0042](0042-the-wires-fourth-opening.md) | The wire's fourth opening — `sudden_death` | M3 P2a |
+| [0043](0043-sudden-death-is-a-round-past-the-finish-line.md) | Sudden death is a round past the finish line, not a phase | M3 P2a |
+| [0044](0044-the-ceremony-always-reserves-the-prelude.md) | The ceremony always reserves the prelude | M3 P2a |

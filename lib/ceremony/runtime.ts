@@ -14,6 +14,7 @@ import { elapsedIn } from '@/lib/staging/beats';
 import { useGameStore } from '@/lib/store';
 import { CEREMONY_MS, NO_CEREMONY, ceremonyStepsAt } from './beats';
 import { useCeremony } from './useCeremony';
+import { photoFinishFor } from './photoFinish';
 
 export function startCeremonyRuntime(): () => void {
   const { publish } = useCeremony.getState();
@@ -22,7 +23,8 @@ export function startCeremonyRuntime(): () => void {
   const tick = () => {
     frame = requestAnimationFrame(tick);
 
-    const room = useGameStore.getState().room;
+    const state = useGameStore.getState();
+    const room = state.room;
     if (room?.phase !== 'results') {
       publish(NO_CEREMONY);
       return;
@@ -32,7 +34,7 @@ export function startCeremonyRuntime(): () => void {
     // null deadline — a pre-0004 database — means "beat over", so the podium
     // renders settled rather than failing.
     const remainingMs = room.ends_at ? msUntil(room.ends_at) : null;
-    publish(ceremonyStepsAt(elapsedIn(CEREMONY_MS, remainingMs)));
+    publish(ceremonyStepsAt(elapsedIn(CEREMONY_MS, remainingMs), photoFinishFor(state)));
   };
 
   frame = requestAnimationFrame(tick);

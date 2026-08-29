@@ -8,25 +8,31 @@ import {
 } from '@/lib/presentation/celebration';
 
 describe('celebration scale', () => {
-  it('pins the ordinal scale fixed by the M2 roadmap', () => {
+  it('pins the ordinal scale fixed by the M2 roadmap, plus M3 P2a\'s one rung', () => {
     expect(CELEBRATION_TIERS).toEqual([
       'routine',
       'streakMilestone',
       'overtake',
       'finalQuestion',
+      'suddenDeath',
       'victory',
     ]);
   });
 
   it('ranks strictly ascending so routine can never outrank a major moment', () => {
     const ranks = CELEBRATION_TIERS.map(tierRank);
-    expect(ranks).toEqual([0, 1, 2, 3, 4]);
+    expect(ranks).toEqual([0, 1, 2, 3, 4, 5]);
     for (let i = 1; i < ranks.length; i++) expect(ranks[i]).toBeGreaterThan(ranks[i - 1]);
   });
 });
 
 describe('resolveTier', () => {
   const cue = (tier: CelebrationTier) => ({ tier });
+
+  it('stages sudden death above the final question and below victory', () => {
+    expect(resolveTier([cue('finalQuestion'), cue('suddenDeath')])).toBe('suddenDeath');
+    expect(resolveTier([cue('suddenDeath'), cue('victory')])).toBe('victory');
+  });
 
   it('returns the highest tier among simultaneous cues', () => {
     expect(resolveTier([cue('routine'), cue('overtake'), cue('streakMilestone')])).toBe('overtake');

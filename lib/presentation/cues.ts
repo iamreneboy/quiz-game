@@ -104,6 +104,21 @@ export interface FinalQuestionCue {
   round: number;
 }
 
+/* ── The tiebreak ────────────────────────────────────────────────────────── */
+
+/**
+ * A perfect first-place tie has opened a sudden-death round (PRD §5.4.2).
+ *
+ * The one new rung M3 is allowed (roadmap decision 6). Semantic: it names the
+ * round and who is racing it, never a shot, a colour or a sprite.
+ */
+export interface SuddenDeathCue {
+  type: 'sudden-death';
+  tier: 'suddenDeath';
+  round: number;
+  contenders: string[];
+}
+
 /* ── Local-only ──────────────────────────────────────────────────────────── */
 
 export interface AnswerLockedCue {
@@ -180,6 +195,7 @@ export type Cue =
   | StreakTierCue
   | StreakBrokenCue
   | FinalQuestionCue
+  | SuddenDeathCue
   | AnswerLockedCue
   | AnswerResolvedCue
   | PlayerJoinedCue

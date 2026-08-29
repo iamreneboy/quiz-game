@@ -51,6 +51,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         // skip_question shortens the track mid-game, so this is no longer fixed
         // at room creation (ADR-0038).
         total_rounds: e.total_rounds ?? room.total_rounds,
+        // The tiebreak is not derivable from anything else on the event: a
+        // tiebreak READ is indistinguishable from an ordinary one but for this
+        // (ADR-0042). An absent key folds to null, which every consumer reads
+        // as "no tiebreak".
+        sudden_death: e.sudden_death ?? null,
       },
     };
     if (e.phase === 'read') {

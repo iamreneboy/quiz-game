@@ -14,6 +14,7 @@ import StageJoinPanel from './StageJoinPanel';
 import StageOptions from './StageOptions';
 import StageQuestion from './StageQuestion';
 import StageResults from './StageResults';
+import SuddenDeathBanner from '@/components/SuddenDeathBanner';
 
 /**
  * The broadcast shell (spec §6) — the stage view's answer to StageShell.
@@ -108,6 +109,7 @@ export default function StageBroadcast({ code }: { code: string }) {
         the world is a strip behind a card; here it IS the backdrop.
       */}
       <div className="mt-[4cqh] flex flex-col items-center gap-6">
+        <SuddenDeathBanner />
         {beat === 'idle' && room?.status === 'lobby' && <StageJoinPanel code={code} />}
         {beat === 'countdown' && <StageCountdown endsAt={room?.ends_at ?? null} />}
         {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (

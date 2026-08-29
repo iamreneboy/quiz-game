@@ -624,3 +624,53 @@ describe('a skipped round', () => {
     });
   });
 });
+
+describe('sudden death', () => {
+  const lastTrack = {
+    phase: 'track' as const, round: 1, total_rounds: 1,
+    ends_at: null, status: 'playing' as const,
+  };
+  const tiebreak = {
+    phase: 'read' as const, round: 2, total_rounds: 1,
+    ends_at: null, status: 'playing' as const,
+    sudden_death: { round: 2, contenders: [A, B], winner_id: null },
+  };
+  const q = {
+    category: 'fuel', tier: 1 as const,
+    prompt: 'Which mug is haunted?', options: ['a', 'b', 'c', 'd'],
+  };
+
+  it('announces the tiebreak once, ahead of its READ, and never again', () => {
+    const { batches } = run([
+      source({ room: lastTrack }),
+      source({ room: tiebreak, question: q }),
+      source({ room: { ...tiebreak, phase: 'answer' }, question: q }),
+    ]);
+    expect(types(batches[1])).toEqual(['sudden-death', 'phase-read']);
+    expect(types(batches[2])).toEqual(['phase-answer']);
+  });
+
+  it('seeds the cue for a client that reloads into the tiebreak', () => {
+    const { batches } = run([source({ room: { ...tiebreak, phase: 'answer' }, question: q })]);
+    expect(types(batches[0])).toEqual(['sudden-death', 'phase-answer']);
+    // The tiebreak's own cue carries the higher rung, so the final-question
+    // synthesis must stand down rather than spend a second moment on one beat.
+    expect(types(batches[0])).not.toContain('final-question');
+  });
+
+  it('marks the tiebreak READ as final so the camera escalation is not zeroed', () => {
+    const { batches } = run([
+      source({ room: lastTrack }),
+      source({ room: tiebreak, question: q }),
+    ]);
+    expect(batches[1].find(c => c.type === 'phase-read')).toMatchObject({ isFinal: true });
+  });
+
+  it('leaves a race with no tiebreak exactly as it was', () => {
+    const { batches } = run([
+      source({ room: lastTrack }),
+      source({ room: { ...lastTrack, phase: 'results' }, standings: [] }),
+    ]);
+    expect(types(batches[1])).toEqual(['phase-results', 'podium']);
+  });
+});
