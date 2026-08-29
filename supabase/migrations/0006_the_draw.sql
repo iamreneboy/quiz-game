@@ -135,3 +135,68 @@ begin
 end $$;
 
 grant execute on all functions in schema public to anon, authenticated;
+
+-- ============ host_sees_answers ============
+-- ADR-0040. The host's own choice at room creation — "I'm playing too" — is
+-- what decides whether the review step may contain answers.
+--
+-- FAIL CLOSED. create_room runs before join_room, so there is a window with no
+-- host player row at all; the coalesce default of `true` (is_playing) makes
+-- that window mean NO answers rather than all of them.
+create or replace function host_sees_answers(p_room_id uuid) returns boolean
+language sql stable set search_path = public as $$
+  select not coalesce(
+    (select p.is_playing from players p
+      where p.room_id = p_room_id and p.is_host limit 1), true);
+$$;
+
+-- ============ draw_public ============
+-- The one projection every draw RPC returns, so the client replaces its whole
+-- state from any of them and never has to merge.
+--
+-- Rounds 1..N only: `rooms.reserve_question_id` is deliberately absent
+-- (ADR-0041). The redaction is TWO DIFFERENT OBJECTS rather than a nulled
+-- field, because Design Pillar 2 is a statement about what the client
+-- receives, and a `"correct_index": null` is still a received key.
+create or replace function draw_public(p_room_id uuid, p_with_answers boolean) returns jsonb
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'total_rounds',    (select r.total_rounds  from rooms r where r.id = p_room_id),
+    'timer_seconds',   (select r.timer_seconds from rooms r where r.id = p_room_id),
+    'categories',      (select to_jsonb(r.categories) from rooms r where r.id = p_room_id),
+    'answers_visible', p_with_answers,
+    'questions', coalesce((
+      select jsonb_agg(
+        case when p_with_answers then
+          jsonb_build_object(
+            'round', rq.round, 'category', q.category, 'tier', q.tier,
+            'prompt', q.prompt, 'options', q.options,
+            'is_custom', q.room_id is not null,
+            'correct_index', q.correct_index, 'fun_fact', q.fun_fact)
+        else
+          jsonb_build_object(
+            'round', rq.round, 'category', q.category, 'tier', q.tier,
+            'prompt', q.prompt, 'options', q.options,
+            'is_custom', q.room_id is not null)
+        end
+        order by rq.round)
+      from room_questions rq join questions q on q.id = rq.question_id
+      where rq.room_id = p_room_id), '[]'::jsonb));
+$$;
+
+-- ============ get_room_draw ============
+-- PRD §5.1 step 5. Host-only, lobby-only: the draw is a pre-game artifact, and
+-- once the race starts skip_question (0005) is the instrument, not this one.
+create or replace function get_room_draw(p_room_id uuid, p_host_key uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+begin
+  select * into v_room from rooms where id = p_room_id;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'the draw is locked once the race starts'; end if;
+
+  return draw_public(p_room_id, host_sees_answers(p_room_id));
+end $$;
+
+grant execute on all functions in schema public to anon, authenticated;

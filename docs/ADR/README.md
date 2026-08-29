@@ -66,4 +66,5 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0037](0037-the-wires-third-opening.md) | The wire's third opening — `status`, `paused_remaining_ms`, `total_rounds` | M3 P0 |
 | [0038](0038-a-skipped-round-shortens-the-track.md) | A skipped round shortens the track | M3 P0 |
 | [0039](0039-custom-questions-live-in-the-bank-table.md) | Custom questions live in the bank table, behind a `room_id` | M3 P1 |
+| [0040](0040-the-draw-review-is-role-bound.md) | The draw review is role-bound — a racing host never receives an answer | M3 P1 |
 | [0041](0041-the-sudden-death-reserve-is-drawn-at-room-creation.md) | The sudden-death reserve is drawn at room creation, category-preferring | M3 P1 |

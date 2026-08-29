@@ -231,3 +231,72 @@ const st = await rpc('get_room_state', { p_code: c.code });
 assert.equal(st.room.paused_remaining_ms, null);
 
 console.log('✅ P0 host-authority smoke passed');
+
+// ---- P1: the draw ----
+// Two rooms, because the one thing that must differ is what the HOST is.
+// Same categories and mix in both so the only variable is `is_playing`.
+const drawArgs = {
+  p_timer_seconds: 10, p_categories: ['fuel', 'ai-tech'], p_tier_counts: [2, 1, 0, 0],
+};
+
+// -- an MC-only host is trusted with the answers: they read them aloud.
+const mcRoom = await rpc('create_room', drawArgs);
+const mc = await rpc('join_room', {
+  p_code: mcRoom.code, p_nickname: 'Emcee', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: mcRoom.host_key, p_is_playing: false,
+});
+assert.equal(mc.player.is_playing, false);
+
+const mcDraw = await rpc('get_room_draw', {
+  p_room_id: mcRoom.room_id, p_host_key: mcRoom.host_key,
+});
+assert.equal(mcDraw.answers_visible, true, 'an MC-only host sees the answers');
+assert.equal(mcDraw.total_rounds, 3);
+assert.equal(mcDraw.timer_seconds, 10);
+assert.deepEqual(mcDraw.categories, ['fuel', 'ai-tech'], 'the room remembers its pool');
+assert.equal(mcDraw.questions.length, 3);
+for (const q of mcDraw.questions) {
+  assert.ok(Number.isInteger(q.correct_index), 'every question carries its answer');
+  assert.ok('fun_fact' in q, 'every question carries its fun fact');
+  assert.equal(q.is_custom, false);
+  assert.equal(q.options.length, 4);
+}
+// Rounds are 1..N contiguous and ordered easy -> hard. Every later draw RPC
+// preserves this invariant, so it is asserted once here and re-asserted after
+// each mutation.
+assert.deepEqual(mcDraw.questions.map(q => q.round), [1, 2, 3]);
+assert.deepEqual(
+  [...mcDraw.questions.map(q => q.tier)].sort((a, b) => a - b),
+  mcDraw.questions.map(q => q.tier),
+  'the draw runs easy -> hard');
+
+// -- a host who is ALSO RACING must never receive a correct answer (Design
+//    Pillar 2). The key is ABSENT, not null: a null would still be a key.
+const playRoom = await rpc('create_room', drawArgs);
+const playHost = await rpc('join_room', {
+  p_code: playRoom.code, p_nickname: 'Racer', p_avatar: 'duck', p_color: '#38bdf8',
+  p_host_key: playRoom.host_key, p_is_playing: true,
+});
+assert.equal(playHost.player.is_playing, true);
+
+const playDraw = await rpc('get_room_draw', {
+  p_room_id: playRoom.room_id, p_host_key: playRoom.host_key,
+});
+assert.equal(playDraw.answers_visible, false, 'a racing host does not see the answers');
+assert.equal(playDraw.questions.length, 3, 'but they still see the whole draw');
+for (const q of playDraw.questions) {
+  assert.ok(q.prompt.length > 0, 'the prompt is there, or veto means nothing');
+  assert.equal(q.options.length, 4);
+  assert.equal('correct_index' in q, false, 'correct_index must be absent, not null');
+  assert.equal('fun_fact' in q, false, 'the fun fact gives the answer away');
+}
+assert.equal(
+  JSON.stringify(playDraw).includes('correct_index'), false,
+  'no correct_index anywhere in the payload a racing host receives');
+
+// -- host authority is server-enforced
+await rpcFails('get_room_draw',
+  { p_room_id: playRoom.room_id, p_host_key: playHost.player_key },
+  /invalid host key/i);
+
+console.log('✅ P1 draw-review smoke passed');
