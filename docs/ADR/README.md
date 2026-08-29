@@ -63,3 +63,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0034](0034-the-stage-ceremony-splits-horizontally.md) | The stage ceremony splits horizontally; the player ceremony still retreats vertically | P6b |
 | [0035](0035-the-stage-rescales-by-scoped-token-override.md) | The stage rescales by overriding theme vars in a scope, not by a parallel token namespace | P6b |
 | [0036](0036-the-shot-book-is-role-selected.md) | The shot book is role-selected — one reducer, two books | P6b |
+| [0038](0038-a-skipped-round-shortens-the-track.md) | A skipped round shortens the track | M3 P0 |

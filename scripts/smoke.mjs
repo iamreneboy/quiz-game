@@ -133,3 +133,96 @@ await rpcFails('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key }
 await rpcFails('join_room', { p_code: g.code, p_nickname: 'Late', p_avatar: 'cat', p_color: '#fff' }, /already started/i);
 
 console.log('✅ game-flow smoke passed');
+
+// ---- P0: host authority ----
+// A fresh 3-round room so skip has a tail to renumber and answers to discard.
+const c = await rpc('create_room', {
+  p_timer_seconds: 20, p_categories: ['fuel', 'ai-tech'], p_tier_counts: [3, 0, 0, 0],
+});
+const ch = await rpc('join_room', { p_code: c.code, p_nickname: 'Chief', p_avatar: 'robot', p_color: '#f59e0b', p_host_key: c.host_key });
+const cp = await rpc('join_room', { p_code: c.code, p_nickname: 'Pat', p_avatar: 'duck', p_color: '#38bdf8' });
+
+await rpc('start_game', { p_room_id: c.room_id, p_host_key: c.host_key });
+await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // read
+let e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // answer
+assert.equal(e.phase, 'answer');
+assert.equal(e.status, 'playing', 'phase_event carries status');
+assert.equal(e.total_rounds, 3, 'phase_event carries total_rounds');
+
+// -- pause freezes the remainder and clears the deadline
+const paused = await rpc('pause_game', { p_room_id: c.room_id, p_host_key: c.host_key });
+assert.equal(paused.status, 'paused');
+assert.equal(paused.ends_at, null, 'a paused room has no live deadline');
+assert.ok(paused.paused_remaining_ms > 15_000 && paused.paused_remaining_ms <= 20_000,
+  `remainder should be most of the 20s timer, got ${paused.paused_remaining_ms}`);
+
+// -- the status guard: no answers while paused
+await rpcFails('submit_answer',
+  { p_room_id: c.room_id, p_player_key: cp.player_key, p_round: 1, p_choice_index: 0 },
+  /not accepting answers/i);
+
+// -- advance_phase cannot run past a pause
+await rpcFails('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }, /not started/i);
+
+// -- pause is idempotent: a second call must not overwrite the remainder with 0
+const again = await rpc('pause_game', { p_room_id: c.room_id, p_host_key: c.host_key });
+assert.equal(again.paused_remaining_ms, paused.paused_remaining_ms, 'double pause keeps the remainder');
+
+// -- host authority is server-enforced
+await rpcFails('resume_game', { p_room_id: c.room_id, p_host_key: ch.player_key }, /invalid host key/i);
+await rpcFails('skip_question', { p_room_id: c.room_id, p_host_key: ch.player_key }, /invalid host key/i);
+await rpcFails('end_game', { p_room_id: c.room_id, p_host_key: ch.player_key }, /invalid host key/i);
+
+// -- resume shifts the deadline forward by exactly the frozen remainder
+const resumed = await rpc('resume_game', { p_room_id: c.room_id, p_host_key: c.host_key });
+assert.equal(resumed.status, 'playing');
+assert.equal(resumed.paused_remaining_ms, null);
+assert.equal(resumed.phase, 'answer', 'resume replays no beat');
+assert.equal(resumed.round, 1, 'resume does not advance');
+const shiftMs = new Date(resumed.ends_at) - new Date(resumed.server_now);
+assert.ok(Math.abs(shiftMs - paused.paused_remaining_ms) < 1500,
+  `resumed deadline should restore the remainder, got ${shiftMs}`);
+
+// -- answers flow again after a resume
+await rpc('submit_answer', { p_room_id: c.room_id, p_player_key: cp.player_key, p_round: 1, p_choice_index: 0 });
+
+// -- skip discards the round, renumbers the tail and shortens the track
+const skipped = await rpc('skip_question', { p_room_id: c.room_id, p_host_key: c.host_key });
+assert.equal(skipped.phase, 'read', 'skip lands on the next READ');
+assert.equal(skipped.round, 1, 'the round NUMBER is reused - the tail moved down');
+assert.equal(skipped.total_rounds, 2, 'the track is one segment shorter');
+assert.equal(skipped.status, 'playing', 'skipping a paused room resumes it');
+assert.ok(skipped.payload.prompt, 'the new round has a real question');
+
+// -- the discarded round left no answers behind
+await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // answer
+await rpc('submit_answer', { p_room_id: c.room_id, p_player_key: cp.player_key, p_round: 1, p_choice_index: 0 });
+e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // reveal
+assert.equal(e.payload.counts.reduce((a, b) => a + b, 0), 1,
+  'exactly one answer for the reused round number');
+
+// -- end_game reaches the ceremony from mid-round with resolved standings only
+e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // track (round 1 resolved)
+e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // read, round 2
+e = await rpc('advance_phase', { p_room_id: c.room_id, p_host_key: c.host_key }); // answer, round 2
+await rpc('submit_answer', { p_room_id: c.room_id, p_player_key: ch.player_key, p_round: 2, p_choice_index: 0 });
+
+const ended = await rpc('end_game', { p_room_id: c.room_id, p_host_key: c.host_key });
+assert.equal(ended.phase, 'results');
+assert.equal(ended.status, 'finished');
+assert.ok(ended.ends_at, 'the ceremony gets its 9s deadline');
+assert.equal(ended.round, 1, 'the in-flight round is discarded, not counted');
+const pat = ended.payload.find(s => s.nickname === 'Pat');
+const chief = ended.payload.find(s => s.nickname === 'Chief');
+assert.equal(pat.correct, 1, 'the resolved round counts');
+assert.equal(chief.correct, 0, "the in-flight round's answer was discarded");
+
+// -- a finished game takes no more commands
+await rpcFails('pause_game', { p_room_id: c.room_id, p_host_key: c.host_key }, /not running/i);
+await rpcFails('skip_question', { p_room_id: c.room_id, p_host_key: c.host_key }, /not running/i);
+
+// -- get_room_state exposes the paused remainder
+const st = await rpc('get_room_state', { p_code: c.code });
+assert.equal(st.room.paused_remaining_ms, null);
+
+console.log('✅ P0 host-authority smoke passed');
