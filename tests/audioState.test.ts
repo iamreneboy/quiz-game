@@ -188,3 +188,21 @@ it('holds the escalated bed through the tiebreak', () => {
   expect(applyCue(live, suddenDeath).state.escalated).toBe(true);
 });
 });
+
+describe('game-reset', () => {
+  const reset: Cue = { type: 'game-reset', tier: 'routine' };
+
+  it('takes the bed back to the lobby and clears the last race', () => {
+    const { state } = run([countdown, read, finalQ, results, reset]);
+    expect(state.bed).toBe('lobby');
+    expect(state.escalated).toBe(false);
+    expect(state.pending).toEqual([]);
+    expect(state.paused).toBe(false);
+  });
+
+  it('is silent — a reset is not a moment', () => {
+    const { stings } = run([results, reset]);
+    expect(stings).not.toContain('fanfare');
+    expect(run([reset]).stings).toEqual([]);
+  });
+});

@@ -184,6 +184,20 @@ export function deriveCues(
   const phaseChanged =
     room.phase !== s.phase || room.round !== s.round || room.total_rounds !== s.totalRounds;
   if (phaseChanged) {
+    // A rematch resets the room to the lobby (ADR-0046). `phaseCues` has no
+    // arm for `lobby` — until P2b nothing ever arrived there from anywhere —
+    // so without this the transition would emit nothing at all and three
+    // consumers would keep the last race's state (ADR-0047).
+    //
+    // The baseline is cleared in the same breath: leave it and the next race's
+    // FIRST reveal is compared against the previous race's finishing order,
+    // which reads as a field of overtakes and a lead change that never
+    // happened.
+    if (room.phase === 'lobby' && s.phase !== 'lobby') {
+      cues.push({ type: 'game-reset', tier: 'routine' });
+      s = { ...s, order: [], correct: {}, streaks: {} };
+    }
+
     const beatCues = phaseCues(room, next);
 
     // A skip that shortens the track ONTO the current round makes it the final

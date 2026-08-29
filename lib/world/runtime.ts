@@ -67,6 +67,7 @@ const SUBSCRIBED: CueType[] = [
   'phase-answer',
   'phase-track',
   'phase-results',
+  'game-reset',
   'overtake',
   'lead-changed',
   'final-question',
@@ -189,6 +190,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
         choreo = holdAnchors(choreo, anchors);
       } else if (cue.type === 'player-joined') {
         choreo = notePlayerJoined(choreo, cue.playerId, now);
+      } else if (cue.type === 'game-reset') {
+        // Hard-complete whatever the ceremony left running. `fieldAnchors`
+        // already returns the lobby grid off `room.phase`, so the only stale
+        // thing here is the choreographer's own held/pending state.
+        choreo = completeSequence(choreo);
       } else {
         choreo = bufferCue(choreo, cue, anchors);
       }

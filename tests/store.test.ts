@@ -46,6 +46,29 @@ describe('applyPhaseEvent', () => {
     useGameStore.getState().applyPhaseEvent(evt);
     expect(useGameStore.getState().room?.status).toBe('finished');
   });
+
+  it('lobby event clears the whole previous race', () => {
+    useGameStore.setState({
+      room: { ...baseRoom, status: 'finished', phase: 'results' },
+      question: { category: 'fuel', tier: 1, prompt: 'Q?', options: ['a','b','c','d'] },
+      reveal: {} as never,
+      standings: [{ player_id: 'p1' }] as never,
+      myAnswer: 1,
+    });
+    const evt: PhaseEvent = {
+      phase: 'lobby', round: 0, ends_at: null, server_now: new Date().toISOString(),
+      status: 'lobby', total_rounds: 5, sudden_death: null, payload: null,
+    };
+    useGameStore.getState().applyPhaseEvent(evt);
+    const s = useGameStore.getState();
+    expect(s.room?.status).toBe('lobby');
+    expect(s.room?.total_rounds).toBe(5);
+    expect(s.room?.sudden_death).toBeNull();
+    expect(s.question).toBeNull();
+    expect(s.reveal).toBeNull();
+    expect(s.standings).toBeNull();
+    expect(s.myAnswer).toBeNull();
+  });
 });
 
 describe('applyState / addPlayer', () => {

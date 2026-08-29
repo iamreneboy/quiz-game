@@ -674,3 +674,47 @@ describe('sudden death', () => {
     expect(types(batches[1])).toEqual(['phase-results', 'podium']);
   });
 });
+
+describe('a rematch takes the room backwards', () => {
+  it('announces game-reset when the room returns to the lobby', () => {
+    const finished = source({ phase: 'results', round: 3, standings: [standing(A, 3), standing(B, 1)] });
+    const seeded = deriveCues(finished, finished, initialDerivationState).nextState;
+    const lobby = source({ phase: 'lobby', round: 0 });
+
+    const { cues } = deriveCues(finished, lobby, seeded);
+    expect(cues.map(c => c.type)).toContain('game-reset');
+    expect(cues.find(c => c.type === 'game-reset')!.tier).toBe('routine');
+  });
+
+  it('does not announce it twice while the room sits in the lobby', () => {
+    const finished = source({ phase: 'results', round: 3, standings: [standing(A, 3)] });
+    const seeded = deriveCues(finished, finished, initialDerivationState).nextState;
+    const lobby = source({ phase: 'lobby', round: 0 });
+
+    const first = deriveCues(finished, lobby, seeded);
+    expect(first.cues.map(c => c.type)).toContain('game-reset');
+    const second = deriveCues(lobby, lobby, first.nextState);
+    expect(second.cues.map(c => c.type)).not.toContain('game-reset');
+  });
+
+  it('forgets the last race, so the next one opens with no phantom overtake', () => {
+    // A beat the old order would read as B overtaking A.
+    const finished = source({ phase: 'results', round: 3, standings: [standing(A, 3), standing(B, 1)] });
+    const seeded = deriveCues(finished, finished, initialDerivationState).nextState;
+    const lobby = source({ phase: 'lobby', round: 0 });
+    const afterReset = deriveCues(finished, lobby, seeded).nextState;
+
+    expect(afterReset.order).toEqual([]);
+    expect(afterReset.correct).toEqual({});
+    expect(afterReset.streaks).toEqual({});
+
+    const reveal = source({
+      phase: 'reveal', round: 1,
+      standings: [standing(B, 1), standing(A, 0)],
+      reveal: { correct_index: 0, fun_fact: null, counts: [], picks: [], fastest: null, standings: [] } as never,
+    });
+    const { cues } = deriveCues(lobby, reveal, afterReset);
+    expect(cues.map(c => c.type)).not.toContain('overtake');
+    expect(cues.map(c => c.type)).not.toContain('lead-changed');
+  });
+});
