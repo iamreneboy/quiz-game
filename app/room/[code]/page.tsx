@@ -68,7 +68,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   } else if (room.status === 'lobby') {
     content = <LobbyView code={code} isHost={isHost} onStart={driver.start} startError={driver.error} />;
   } else if (room.status === 'finished') {
-    content = <ResultsView code={code} />;
+    content = <ResultsView code={code} driver={driver} />;
   } else {
     content = <GameView code={code} />;
   }

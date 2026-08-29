@@ -9,12 +9,14 @@ import { elapsedIn } from '@/lib/staging/beats';
 import { AWARDS_AT, BOARD_AT, CEREMONY_MS, PHOTO_TALLY_AT } from '@/lib/ceremony/beats';
 import { useCeremony } from '@/lib/ceremony/useCeremony';
 import { useAwards } from '@/lib/useAwards';
+import type { HostDriver } from '@/lib/useHostDriver';
 import AwardsCard from './AwardsCard';
+import RematchCard from './RematchCard';
 import PhotoFinish from './PhotoFinish';
 import ResultsTable from './ResultsTable';
 import WinnerCard from './WinnerCard';
 
-export default function ResultsView({ code }: { code: string }) {
+export default function ResultsView({ code, driver }: { code: string; driver: HostDriver }) {
   const room = useGameStore(s => s.room);
   const standings = useGameStore(s => s.standings);
   const board = useCeremony(s => s.steps.board);
@@ -131,10 +133,12 @@ export default function ResultsView({ code }: { code: string }) {
 
       {/*
         Spec decision 5 — ADR-0016's "staging never gates input", applied to the
-        last screen. Deliberately OUTSIDE every fading wrapper: an exit that is
-        focusable but invisible is worse than one that is simply there, so this
-        never carries the board's staged opacity.
+        last screen. Both of these sit deliberately OUTSIDE every fading
+        wrapper: a control that is focusable but invisible is worse than one
+        that is simply there, so neither carries the board's staged opacity.
       */}
+      <RematchCard driver={driver} />
+
       <Link
         href="/"
         className="mx-auto rounded-control border border-haze/50 bg-abyss/70 px-5 py-2.5
