@@ -593,4 +593,34 @@ describe('a skipped round', () => {
     // The resume leads so the bed un-ducks before the new question's slam.
     expect(types(batches[1])).toEqual(['game-resumed', 'phase-read']);
   });
+
+  /**
+   * Skipping the PENULTIMATE round lands past the run-up TRACK that normally
+   * escalates (ADR-0021), and the shortened track can never reach it again —
+   * so the live path has to synthesize the cue exactly as the seed path does.
+   */
+  describe('that makes the current round the last one', () => {
+    const at = (phase: Phase, round: number, total: number): CueSource => ({
+      ...source({ phase, round }),
+      room: { phase, round, total_rounds: total, ends_at: null, status: 'playing' },
+    });
+
+    it('announces the final question the live path would otherwise never reach', () => {
+      const { batches } = run([at('read', 2, 3), at('read', 2, 2)]);
+      // Ahead of the beat cue, matching the run-up's own emission order.
+      expect(types(batches[1])).toEqual(['final-question', 'phase-read']);
+    });
+
+    it('fires exactly once as the shortened game plays out', () => {
+      const { batches } = run([
+        at('read', 2, 3),
+        at('read', 2, 2), // the skip
+        at('answer', 2, 2),
+        at('reveal', 2, 2),
+        at('track', 2, 2),
+        at('results', 2, 2),
+      ]);
+      expect(batches.flat().filter(c => c.type === 'final-question')).toHaveLength(1);
+    });
+  });
 });

@@ -162,7 +162,28 @@ export function deriveCues(
   const phaseChanged =
     room.phase !== s.phase || room.round !== s.round || room.total_rounds !== s.totalRounds;
   if (phaseChanged) {
-    cues.push(...phaseCues(room, next));
+    const beatCues = phaseCues(room, next);
+
+    // A skip that shortens the track ONTO the current round makes it the final
+    // round without ever passing the run-up TRACK that normally escalates
+    // (ADR-0021, ADR-0038) — and the shortened track can never reach that beat
+    // again, so nothing downstream would ever escalate. Synthesized here
+    // exactly as the seed path above synthesizes it for a reload. This cannot
+    // double-announce: skipping FROM the final round ends the game outright
+    // (`skip_question`'s `v_round > v_total` branch), so a total_rounds change
+    // landing on `round === total_rounds` is only reachable from the
+    // penultimate round, where the run-up provably has not fired yet.
+    const becameFinal =
+      room.total_rounds !== s.totalRounds &&
+      room.total_rounds > 0 &&
+      room.round === room.total_rounds &&
+      room.phase !== 'lobby' &&
+      room.phase !== 'results';
+    if (becameFinal && !beatCues.some(c => c.type === 'final-question')) {
+      beatCues.unshift({ type: 'final-question', tier: 'finalQuestion', round: room.round });
+    }
+
+    cues.push(...beatCues);
 
     if (room.phase === 'reveal') {
       const drama = standingsCues(s, next.standings);

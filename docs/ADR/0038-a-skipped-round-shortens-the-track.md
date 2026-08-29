@@ -53,6 +53,17 @@ can transiently collide with a row the statement has not reached yet.
   (ADR-0021). `deriveCues`' seed path already covers "in the final round without
   having seen the run-up"; the live path does not. Left as known behaviour for
   P0 — the escalation is missing, nothing is broken — and recorded in
-  `docs/progress/CURRENT.md`.
+  `docs/progress/CURRENT.md`. **Closed 2026-08-29**, outside any phase: the live
+  path in `lib/presentation/deriveCues.ts` now synthesizes the cue on a
+  `total_rounds` change that lands on `round === total_rounds`, exactly as the
+  seed path synthesizes it for a reload. It cannot double-announce, because
+  skipping *from* the final round ends the game outright (`v_round > v_total`
+  above), so that condition is only reachable from the penultimate round, where
+  the run-up provably has not fired yet. The escalation this restores is the
+  world, chip, frame and bed — **not** a "FINAL QUESTION" banner and not the
+  final sting: the batch is `[final-question, phase-read]`, and `phase-read`
+  clears the pending callout in `lib/staging/callouts.ts` and the pending drama
+  in `lib/audio/state.ts`. That is the reload path's behaviour byte for byte,
+  and it is what ADR-0021 wants — the final READ's reading window stays whole.
 - **P2's rematch must respect the shortened draw**: a room that skipped
   questions has fewer `room_questions` rows than it was created with.
