@@ -1,6 +1,6 @@
 # M3 P2a — The tiebreak
 
-- **Status:** Complete. All local gates green; migrations `0005` and `0007` applied to the cloud project and the tiebreak suite re-verified against it (see "Live-verification findings").
+- **Status:** Complete. All local gates green; migrations `0005` and `0007` applied to the cloud project and verified there by direct query. The browser suite could **not** be re-run against the cloud project — see "Live-verification findings".
 - **Completed:** 2026-08-30
 - **Spec:** `docs/superpowers/specs/2026-08-29-m3-host-power-polish-roadmap.md` (§3 "P2 — The finish")
 - **Plan:** `docs/superpowers/plans/2026-08-29-m3-p2a-the-tiebreak.md`
@@ -134,12 +134,28 @@ regression; re-run before concluding otherwise.
   plan framed it: a **judgement call for P2b**, whose generator (ADR-0025) can
   produce one without adding an asset. Nothing about it is wrong today; it
   simply has not been proven to read as its own moment.
-- **Cloud.** `supabase migration list --linked` showed `0005`, `0006` and `0007`
-  all with an empty `remote` column before this phase — `0006` was applied via
-  `db query` during M3 P1, which does not write the migration history table, so
-  that column understates what is really there. `0005` and `0007` were applied
-  in that order, after the branch merged and Vercel redeployed, so the deployed
-  client was never the old one against the new deadline.
+- **Cloud, migrations.** `supabase migration list --linked` showed `0005`, `0006`
+  and `0007` all with an empty `remote` column before this phase — `0006` was
+  applied via `db query` during M3 P1, which does not write the migration history
+  table, so that column understates what is really there. `0005` and `0007` were
+  applied in that order, **after** the branch merged and Vercel redeployed, so
+  the deployed client was never the old one against the new 12400ms deadline
+  (the reverse window is the one ADR-0044 says degrades gracefully). Verified
+  directly against the cloud project: `ceremony_ms()` returns `12400` and `rooms`
+  carries all three `sudden_death_*` columns.
+- **Cloud, browser suite — NOT verified, and the reason is not P2a.**
+  `npm run test:e2e -- --workers=2 e2e/tiebreak.spec.ts` against the cloud
+  project fails all three specs at the *first* assertion of each,
+  `Starting grid — 2 joined`: the second browser context joins successfully but
+  the host page never learns of it. The RPCs themselves are fine against cloud —
+  `create_room`, two `join_room` calls and `get_room_state` run directly against
+  the cloud REST endpoint return a room with 2 players — so this is
+  **cross-client realtime delivery to the browser, not the tiebreak and not the
+  migration.** M3 P1's cloud verification used `e2e/host-draw.spec.ts`, which is
+  single-context and never exercised a second client, so this was not previously
+  visible. Left open deliberately: it is a cloud/realtime configuration question
+  that predates this phase and would have been equally broken before it. The
+  cloud schema is correct; what is unproven is a two-device game against cloud.
 
 ## Exit criteria (roadmap §3, P2 — minus the two P2b owns)
 

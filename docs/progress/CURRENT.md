@@ -37,7 +37,7 @@ None.
 
 ## Tech debt / known issues
 
-None.
+- **Cross-client realtime does not reach the browser against the cloud project.** Found in M3 P2a while re-verifying the tiebreak suite against `niznfbabmixesfvxlypi`: all three specs fail at `Starting grid — 2 joined` — the second browser context joins, but the host page never sees it. The RPCs are fine (`create_room` + two `join_room` + `get_room_state` against the cloud REST endpoint return a room with 2 players), so the room state is correct and only the broadcast delivery is missing. **Not caused by P2a** — M3 P1's cloud verification used the single-context `e2e/host-draw.spec.ts` and never exercised a second client, so this was simply never visible before. The cloud schema is verified correct (`ceremony_ms()` = 12400, all three `sudden_death_*` columns present); what is unproven is a two-device game against cloud. Check the project's Realtime settings (broadcast authorization / the `realtime` publication) before a demo that uses phones.
 
 ## Intentionally skipped
 
