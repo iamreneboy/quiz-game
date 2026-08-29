@@ -29,11 +29,19 @@ export default function QuestionCard({
 }) {
   const cat = CATEGORIES.find(c => c.key === question.category);
   const escalated = useStaging(s => s.escalated);
+  const suddenDeath = useStaging(s => s.suddenDeath);
 
   return (
     <div className="space-y-4 text-center">
       <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
-        {escalated ? (
+        {suddenDeath ? (
+          <span
+            data-testid="sudden-death-badge"
+            className="rounded-full border border-neon-magenta/60 bg-neon-magenta/15 px-3 py-1.5 text-neon-magenta"
+          >
+            Sudden death
+          </span>
+        ) : escalated ? (
           <span className="rounded-full border border-warning/60 bg-warning/15 px-3 py-1.5 text-warning">
             Final question
           </span>

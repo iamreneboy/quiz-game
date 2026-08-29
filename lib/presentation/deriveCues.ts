@@ -15,6 +15,8 @@ export interface CueRoom {
   total_rounds: number;
   ends_at: string | null;
   status: RoomStatus;
+  /** The tiebreak, or null/absent when the race ended cleanly (ADR-0042). */
+  sudden_death?: { round: number; contenders: string[]; winner_id: string | null } | null;
 }
 
 /** Structural subset of PlayerPublic this deriver needs. */
@@ -85,9 +87,29 @@ export function deriveCues(
   // beat (so a reload lands in the right visual state), derive nothing else.
   if (!state.seeded) {
     const seedCues = phaseCues(room, next);
+
+    // A client that reloads into the tiebreak never saw it open. Seeded here
+    // for the same reason the final-question escalation is, and INSTEAD of it:
+    // the tiebreak's own cue carries the higher rung, and announcing both would
+    // spend two moments on one beat.
+    const inSuddenDeath =
+      !!room.sudden_death &&
+      room.round === room.sudden_death.round &&
+      room.phase !== 'lobby' &&
+      room.phase !== 'results';
+    if (inSuddenDeath && !seedCues.some(c => c.type === 'sudden-death')) {
+      seedCues.unshift({
+        type: 'sudden-death',
+        tier: 'suddenDeath',
+        round: room.round,
+        contenders: room.sudden_death!.contenders,
+      });
+    }
+
     // A client that reloads or joins mid-final-round never saw the run-up, so
     // the escalation has to be seeded here or the world never goes neon.
     const inFinalRound =
+      !inSuddenDeath &&
       room.total_rounds > 0 &&
       room.round === room.total_rounds &&
       room.phase !== 'lobby' &&
@@ -197,8 +219,18 @@ export function deriveCues(
   return { cues, nextState: s };
 }
 
+/** True while the room is on its tiebreak round. */
+function inTiebreak(room: CueRoom): boolean {
+  return !!room.sudden_death && room.round === room.sudden_death.round;
+}
+
 function phaseCues(room: CueRoom, next: CueSource): Cue[] {
-  const isFinal = room.total_rounds > 0 && room.round === room.total_rounds;
+  const tiebreak = inTiebreak(room);
+  // The tiebreak IS the final question, in the strongest sense the game has.
+  // Saying so here is load-bearing: `reduceCue`'s `phase-read` arm zeroes the
+  // camera's escalation whenever `isFinal` is false, which would darken the
+  // world back down one frame after the tiebreak lit it.
+  const isFinal = tiebreak || (room.total_rounds > 0 && room.round === room.total_rounds);
 
   switch (room.phase) {
     case 'countdown': {
@@ -211,20 +243,33 @@ function phaseCues(room: CueRoom, next: CueSource): Cue[] {
       return cues;
     }
 
-    case 'read':
+    case 'read': {
       // `final-question` no longer rides with the final READ: it fires one beat
       // earlier, on the run-up (spec decision 7), so the final question's own
       // announcement never spends its reading time.
-      return [
-        {
-          type: 'phase-read',
-          tier: 'routine',
+      const cues: Cue[] = [];
+      // Emitted BEFORE phase-read, exactly as `final-question` is emitted
+      // before `phase-track` on the run-up (ADR-0021): lib/staging/runtime.ts
+      // resolves the beat's headline on the phase cue and must already hold
+      // this one.
+      if (tiebreak) {
+        cues.push({
+          type: 'sudden-death',
+          tier: 'suddenDeath',
           round: room.round,
-          category: next.question?.category ?? null,
-          questionTier: next.question?.tier ?? null,
-          isFinal,
-        },
-      ];
+          contenders: room.sudden_death!.contenders,
+        });
+      }
+      cues.push({
+        type: 'phase-read',
+        tier: 'routine',
+        round: room.round,
+        category: next.question?.category ?? null,
+        questionTier: next.question?.tier ?? null,
+        isFinal,
+      });
+      return cues;
+    }
 
     case 'answer':
       return [{ type: 'phase-answer', tier: 'routine', round: room.round, endsAt: room.ends_at }];

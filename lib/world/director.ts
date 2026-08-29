@@ -153,6 +153,18 @@ export function reduceCue(state: DirectorState, cue: Cue, now: number): Director
         escalation: 1,
       };
 
+    case 'sudden-death': {
+      // The same shot as the final question — the tiebreak is that moment
+      // again, so inventing a second push would say it twice. What differs is
+      // the TIER it carries, which is what lets it preempt a live overtake
+      // transient the final question could not.
+      const shot = { ...shots.finalQuestionShot, tier: 'suddenDeath' as const };
+      return {
+        ...withTransient(state, shot, shots.finalQuestionHoldMs, now),
+        escalation: 1,
+      };
+    }
+
     case 'overtake':
       return withTransient(
         state,

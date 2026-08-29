@@ -61,6 +61,11 @@ export function stingFor(cue: Cue): SoundId | null {
     case 'streak-tier':
       return cue.streak === 3 ? 'streak-3' : cue.streak === 5 ? 'streak-5' : 'streak-8';
     case 'final-question': return 'final-sting';
+    // Reuses the final-question sting rather than adding an asset. The sounds
+    // are generated source, not files (ADR-0025), and a new one would mean a
+    // regenerate pass for a moment that already has the right character: this
+    // IS the final question, one rung up. P2b may revisit it.
+    case 'sudden-death': return 'final-sting';
     case 'podium': return 'fanfare';
     default: return null;
   }

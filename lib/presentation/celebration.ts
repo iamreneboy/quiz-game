@@ -11,6 +11,10 @@ export const CELEBRATION_TIERS = [
   'streakMilestone',
   'overtake',
   'finalQuestion',
+  // M3 roadmap decision 6: the hierarchy extends by EXACTLY one rung, here.
+  // Above the final question because a tiebreak is the question after the last
+  // one; below victory because it decides the winner rather than crowning them.
+  'suddenDeath',
   'victory',
 ] as const;
 

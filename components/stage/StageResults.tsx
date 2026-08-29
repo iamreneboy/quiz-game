@@ -58,6 +58,9 @@ export default function StageResults() {
 
   if (!room || !standings || standings.length === 0) return null;
 
+  const sd = room?.sudden_death ?? null;
+  const wonOnSuddenDeath = !!sd?.winner_id && sd.winner_id === standings[0].player_id;
+
   const show = board || settled;
 
   return (
@@ -76,7 +79,13 @@ export default function StageResults() {
         {photo.open && <PhotoFinish key="photo-finish" instant={photoInstant} />}
       </AnimatePresence>
 
-      <WinnerCard winner={standings[0]} totalRounds={room.total_rounds} show={show} instant={settled} />
+      <WinnerCard
+        winner={standings[0]}
+        totalRounds={room.total_rounds}
+        show={show}
+        instant={settled}
+        suddenDeath={wonOnSuddenDeath}
+      />
       <ResultsTable standings={standings} myId={null} show={show} instant={settled} />
     </div>
   );

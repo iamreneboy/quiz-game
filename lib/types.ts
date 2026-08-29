@@ -14,6 +14,21 @@ export interface Pick { player_id: string; choice_index: number; }
 export interface RevealPayload { correct_index: number; fun_fact: string|null; counts: number[]; picks: Pick[]; fastest: { player_id: string; nickname: string; time_remaining_ms: number }|null; standings: Standing[]; }
 export type RoomStatus = 'lobby'|'playing'|'paused'|'finished';
 
+/**
+ * The tiebreak, as the server describes it (ADR-0042).
+ *
+ * `contenders` is the authority's own list echoed back for rendering;
+ * `submit_answer` enforces it, so a client that ignored this would still be
+ * refused. `winner_id` is null until the tiebreak's REVEAL — it is written at
+ * the `answer -> reveal` transition, so the READ never carries it.
+ */
+export interface SuddenDeathInfo {
+  /** The round the tiebreak occupies: always `total_rounds + 1` (ADR-0043). */
+  round: number;
+  contenders: string[];
+  winner_id: string | null;
+}
+
 export interface PhaseEvent {
   phase: Phase; round: number; ends_at: string|null; server_now: string;
   /**
@@ -27,6 +42,8 @@ export interface PhaseEvent {
   paused_remaining_ms?: number|null;
   /** The live track length — `skip_question` shortens it mid-game. Absent pre-0005. */
   total_rounds?: number;
+  /** The tiebreak, or null. Absent against a pre-0007 database. */
+  sudden_death?: SuddenDeathInfo | null;
   payload: QuestionPublic|RevealPayload|Standing[]|null;
 }
 
@@ -36,6 +53,8 @@ export interface RoomInfo {
   server_now: string;
   /** ms frozen at the pause. Null while playing. Absent against a pre-0005 database. */
   paused_remaining_ms?: number|null;
+  /** The tiebreak, or null. Absent against a pre-0007 database. */
+  sudden_death?: SuddenDeathInfo | null;
 }
 export interface RoomState { room: RoomInfo; players: PlayerPublic[]; question: QuestionPublic|null; reveal: RevealPayload|null; standings: Standing[]|null; }
 

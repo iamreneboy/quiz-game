@@ -16,7 +16,8 @@ export type DramaCue =
   | CueOf<'overtake'>
   | CueOf<'lead-changed'>
   | CueOf<'streak-tier'>
-  | CueOf<'final-question'>;
+  | CueOf<'final-question'>
+  | CueOf<'sudden-death'>;
 
 const DRAMA_TYPES = ['overtake', 'lead-changed', 'streak-tier', 'final-question'] as const;
 const DRAMA: ReadonlySet<CueType> = new Set(DRAMA_TYPES);
@@ -25,7 +26,7 @@ const DRAMA: ReadonlySet<CueType> = new Set(DRAMA_TYPES);
 export const AUDIO_CUE_TYPES: readonly CueType[] = [
   'phase-countdown', 'phase-read', 'phase-answer', 'phase-reveal', 'phase-track', 'phase-results',
   'answer-locked', 'answer-resolved', 'player-joined', 'podium',
-  'game-paused', 'game-resumed',
+  'game-paused', 'game-resumed', 'sudden-death',
   ...DRAMA_TYPES,
 ];
 
@@ -79,7 +80,12 @@ export function applyCue(state: AudioState, cue: Cue): AudioStep {
   // Set on SIGHT, never deferred to the beat that resolves it: a reload can
   // seed this cue directly into the final round's READ, ANSWER or REVEAL, none
   // of which reach the arbitration below (ADR-0021).
-  if (cue.type === 'final-question') next = { ...next, escalated: true };
+  // Set on SIGHT, for the same reason `final-question` is (ADR-0021, ADR-0024).
+  // NOT buffered to a TRACK beat like the drama cues: a tiebreak has no track
+  // beat at all (ADR-0043), so a buffered sting would never be spent.
+  if (cue.type === 'final-question' || cue.type === 'sudden-death') {
+    next = { ...next, escalated: true };
+  }
 
   // Set on SIGHT, for the same reason `escalated` is (ADR-0021, ADR-0024): a
   // reload seeds `game-paused` in the catch-up batch, where stings are

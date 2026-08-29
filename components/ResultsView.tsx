@@ -65,6 +65,9 @@ export default function ResultsView({ code }: { code: string }) {
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   if (!room || !standings || standings.length === 0) return null;
 
+  const sd = room?.sudden_death ?? null;
+  const wonOnSuddenDeath = !!sd?.winner_id && sd.winner_id === standings[0].player_id;
+
   const winner = standings[0];
   const show = board || settled;
 
@@ -91,7 +94,13 @@ export default function ResultsView({ code }: { code: string }) {
         style={{ height: 'var(--ceremony-band, 0px)' }}
       />
 
-      <WinnerCard winner={winner} totalRounds={room.total_rounds} show={show} instant={settled} />
+      <WinnerCard
+        winner={winner}
+        totalRounds={room.total_rounds}
+        show={show}
+        instant={settled}
+        suddenDeath={wonOnSuddenDeath}
+      />
 
       <ResultsTable standings={standings} myId={myId} show={show} instant={settled} />
 

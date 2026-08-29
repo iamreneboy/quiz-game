@@ -70,6 +70,7 @@ const SUBSCRIBED: CueType[] = [
   'overtake',
   'lead-changed',
   'final-question',
+  'sudden-death',
   'player-advanced',
   'streak-tier',
   'streak-broken',

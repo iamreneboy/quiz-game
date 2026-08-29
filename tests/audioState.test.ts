@@ -168,3 +168,23 @@ describe('pause', () => {
     expect(state.pending.map(c => c.type)).toEqual(['overtake']);
   });
 });
+
+describe('sudden death', () => {
+const suddenDeath: Cue = {
+  type: 'sudden-death', tier: 'suddenDeath', round: 2, contenders: ['a', 'b'],
+};
+
+it('stings the tiebreak once it is live', () => {
+  const live = endCatchUp(initialAudioState);
+  expect(applyCue(live, suddenDeath).stings).toEqual(['final-sting']);
+});
+
+it('suppresses the tiebreak sting on a catch-up batch', () => {
+  expect(applyCue(initialAudioState, suddenDeath).stings).toEqual([]);
+});
+
+it('holds the escalated bed through the tiebreak', () => {
+  const live = endCatchUp(initialAudioState);
+  expect(applyCue(live, suddenDeath).state.escalated).toBe(true);
+});
+});

@@ -20,10 +20,13 @@ export interface StagingStore extends StagingState {
   deltas: RailDelta[];
   /** True from the final-question run-up until the results beat. */
   escalated: boolean;
+  /** True for the tiebreak round only. Set on sight; cleared at the ceremony. */
+  suddenDeath: boolean;
   publish(next: StagingState): void;
   announce(text: string): void;
   setCallout(callout: Callout | null, deltas: RailDelta[]): void;
   setEscalated(escalated: boolean): void;
+  setSuddenDeath(on: boolean): void;
 }
 
 export const useStaging = create<StagingStore>(set => ({
@@ -32,6 +35,7 @@ export const useStaging = create<StagingStore>(set => ({
   callout: null,
   deltas: [],
   escalated: false,
+  suddenDeath: false,
   publish(next) {
     set(state => (sameStaging(state, next) ? state : next));
   },
@@ -43,6 +47,9 @@ export const useStaging = create<StagingStore>(set => ({
   },
   setEscalated(escalated) {
     set({ escalated });
+  },
+  setSuddenDeath(on) {
+    set(state => (state.suddenDeath === on ? state : { suddenDeath: on }));
   },
 }));
 

@@ -165,11 +165,32 @@ describe('tallyValue', () => {
 
 describe('photoFinishFor', () => {
   it('is false before any standings exist', () => {
-    expect(photoFinishFor({ standings: null })).toBe(false);
+    expect(photoFinishFor({ standings: null, room: null })).toBe(false);
   });
 
   it('is false for a clean finish and true for a tied one', () => {
-    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 2, 80)] })).toBe(false);
-    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 3, 80)] })).toBe(true);
+    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 2, 80)], room: null })).toBe(false);
+    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 3, 80)], room: null })).toBe(true);
+  });
+
+  it('drops the decided group when the room carries a resolved tiebreak', () => {
+    expect(photoFinishFor({
+      standings: [s('a', 0, 0), s('b', 0, 0)],
+      room: { sudden_death: { contenders: ['a', 'b'], winner_id: 'a' } },
+    })).toBe(false);
+  });
+
+  it('still stages it when the tiebreak found no winner', () => {
+    expect(photoFinishFor({
+      standings: [s('a', 0, 0), s('b', 0, 0)],
+      room: { sudden_death: { contenders: ['a', 'b'], winner_id: null } },
+    })).toBe(true);
+  });
+
+  it('is unbothered by a room that never had a tiebreak', () => {
+    expect(photoFinishFor({
+      standings: [s('a', 3, 90), s('b', 3, 80)], room: { sudden_death: null },
+    })).toBe(true);
+    expect(photoFinishFor({ standings: [s('a', 3, 90), s('b', 3, 80)], room: null })).toBe(true);
   });
 });

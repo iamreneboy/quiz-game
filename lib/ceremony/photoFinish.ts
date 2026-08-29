@@ -127,6 +127,9 @@ function isPerfectlyTied(players: readonly Standing[]): boolean {
  */
 export interface PhotoFinishSource {
   standings: readonly Standing[] | null;
+  room: {
+    sudden_death?: { contenders: string[]; winner_id: string | null } | null;
+  } | null;
 }
 
 /**
@@ -135,9 +138,14 @@ export interface PhotoFinishSource {
  * is why it lives here rather than in either of them. One question, one answer,
  * so the podium's rise and the card's timeline cannot fall out of step.
  *
- * Task 5 note: this widens to exclude the group sudden death decided, by
- * reading `sudden_death` off the room. The signature does not change.
+ * It excludes the group sudden death already decided, by reading
+ * `sudden_death` off the room.
  */
 export function photoFinishFor(source: PhotoFinishSource): boolean {
-  return hasPhotoFinish({ standings: source.standings });
+  const sd = source.room?.sudden_death ?? null;
+  return hasPhotoFinish({
+    standings: source.standings,
+    suddenDeathContenders: sd?.contenders ?? null,
+    suddenDeathResolved: !!sd?.winner_id,
+  });
 }

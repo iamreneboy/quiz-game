@@ -38,8 +38,14 @@ function placeName(place: number): string {
  */
 export default function PhotoFinish({ instant }: { instant: boolean }) {
   const standings = useGameStore(s => s.standings);
+  const room = useGameStore(s => s.room);
   const photo = useCeremony(s => s.steps.photo);
-  const groups = tieGroups({ standings });
+  const sd = room?.sudden_death ?? null;
+  const groups = tieGroups({
+    standings,
+    suddenDeathContenders: sd?.contenders ?? null,
+    suddenDeathResolved: !!sd?.winner_id,
+  });
 
   if (groups.length === 0) return null;
 
