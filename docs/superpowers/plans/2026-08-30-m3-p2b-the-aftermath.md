@@ -162,7 +162,7 @@ section.
   with a zero. Task 2's `lib/awards.ts` parses exactly this shape; Task 3
   renders it.
 
-- [ ] **Step 1: Write the failing smoke section**
+- [x] **Step 1: Write the failing smoke section**
 
 Append to the end of `scripts/smoke.mjs`:
 
@@ -260,13 +260,13 @@ console.log('✅ P2b awards smoke passed');
 `sleep` already exists in this file; if the section is placed before its
 declaration, move the section, not the helper.
 
-- [ ] **Step 2: Run it to make sure it fails**
+- [x] **Step 2: Run it to make sure it fails**
 
 Run: `node scripts/smoke.mjs`
 Expected: FAIL at the first `awards` call with
 `awards: Could not find the function public.awards(p_room_id)`.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 Create `supabase/migrations/0008_the_aftermath.sql`:
 
@@ -424,7 +424,7 @@ end $$;
 grant execute on all functions in schema public to anon, authenticated;
 ```
 
-- [ ] **Step 4: Apply the migration and run the smoke harness**
+- [x] **Step 4: Apply the migration and run the smoke harness**
 
 Run:
 ```bash
@@ -433,7 +433,7 @@ node scripts/smoke.mjs
 ```
 Expected: every `✅`, ending with `✅ P2b awards smoke passed`.
 
-- [ ] **Step 5: Prove the migration is idempotent**
+- [x] **Step 5: Prove the migration is idempotent**
 
 Run:
 ```bash
@@ -442,7 +442,7 @@ node scripts/smoke.mjs
 ```
 Expected: the second apply is clean and the harness still passes end to end.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/migrations/0008_the_aftermath.sql scripts/smoke.mjs
@@ -472,7 +472,7 @@ git commit -m "feat: the awards projection"
   - `lib/ceremony/beats.ts`: `AWARDS_AT: number` (7200) and
     `CeremonySteps.awards: boolean`. Task 3 reads both.
 
-- [ ] **Step 1: Write the failing tests for the pure module**
+- [x] **Step 1: Write the failing tests for the pure module**
 
 Create `tests/awards.test.ts`:
 
@@ -538,12 +538,12 @@ describe('describeAwards', () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `npx vitest run tests/awards.test.ts`
 Expected: FAIL — `Failed to resolve import "@/lib/awards"`.
 
-- [ ] **Step 3: Add the award types**
+- [x] **Step 3: Add the award types**
 
 Append to `lib/types.ts`:
 
@@ -573,7 +573,7 @@ export interface Award {
 }
 ```
 
-- [ ] **Step 4: Write the pure module**
+- [x] **Step 4: Write the pure module**
 
 Create `lib/awards.ts`:
 
@@ -671,12 +671,12 @@ function isWinner(value: unknown): value is AwardWinner {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npx vitest run tests/awards.test.ts`
 Expected: PASS.
 
-- [ ] **Step 6: Write the failing tests for the awards beat**
+- [x] **Step 6: Write the failing tests for the awards beat**
 
 Append to `tests/ceremonyBeats.test.ts`, inside the existing
 `describe('ceremonyStepsAt — no photo finish')` block:
@@ -714,13 +714,13 @@ And extend the two settled-state assertions already in the file — the object i
 `'is fully settled at the end of the beat and stays there'` gains
 `awards: true`, and add `AWARDS_AT` to the import list at the top.
 
-- [ ] **Step 7: Run them to verify they fail**
+- [x] **Step 7: Run them to verify they fail**
 
 Run: `npx vitest run tests/ceremonyBeats.test.ts`
 Expected: FAIL — `AWARDS_AT` is not exported, and the settled object no longer
 matches.
 
-- [ ] **Step 8: Add the awards beat**
+- [x] **Step 8: Add the awards beat**
 
 In `lib/ceremony/beats.ts`, after `export const BOARD_AT = 6000;`:
 
@@ -763,12 +763,12 @@ In `sameSteps`, after the `board` comparison, add:
     a.awards === b.awards &&
 ```
 
-- [ ] **Step 9: Run the full unit suite**
+- [x] **Step 9: Run the full unit suite**
 
 Run: `npx vitest run`
 Expected: PASS, and the total has grown by the tests added above.
 
-- [ ] **Step 10: Clear diagnostics and commit**
+- [x] **Step 10: Clear diagnostics and commit**
 
 Run: `npx tsc --noEmit && npm run lint`
 Expected: silent, zero problems.
@@ -797,7 +797,7 @@ git commit -m "feat: the awards beat and the shape the card reads"
     boolean; instant: boolean })`. Task 7's e2e reads `data-testid="awards"`,
     `data-testid="award"` and `data-award="<key>"`.
 
-- [ ] **Step 1: Write the fetch hook**
+- [x] **Step 1: Write the fetch hook**
 
 Create `lib/useAwards.ts`:
 
@@ -847,7 +847,7 @@ export function useAwards(roomId: string | null, enabled: boolean): Award[] | nu
 }
 ```
 
-- [ ] **Step 2: Write the card**
+- [x] **Step 2: Write the card**
 
 Create `components/AwardsCard.tsx`:
 
@@ -976,7 +976,7 @@ export default function AwardsCard({
 }
 ```
 
-- [ ] **Step 3: Mount it on the player results screen**
+- [x] **Step 3: Mount it on the player results screen**
 
 In `components/ResultsView.tsx`:
 
@@ -1023,7 +1023,7 @@ import AwardsCard from './AwardsCard';
       />
 ```
 
-- [ ] **Step 4: Mount it on the stage**
+- [x] **Step 4: Mount it on the stage**
 
 Make the identical four changes in `components/stage/StageResults.tsx` —
 imports, the two selectors, the `awardsSettled` one-shot, and the
@@ -1031,7 +1031,7 @@ imports, the two selectors, the `awardsSettled` one-shot, and the
 explains why its one-shots are not optional; the awards one carries the same
 reason and needs no second comment.
 
-- [ ] **Step 5: Verify it live, headed**
+- [x] **Step 5: Verify it live, headed**
 
 Run the app against the local stack, play a two-player race to the ceremony in a
 headed browser (CURRENT.md: headless Chromium is unusable for this work), and
@@ -1046,7 +1046,7 @@ confirm:
 npm run dev
 ```
 
-- [ ] **Step 6: Clear diagnostics and commit**
+- [x] **Step 6: Clear diagnostics and commit**
 
 Run: `npx tsc --noEmit && npm run lint && npx vitest run`
 Expected: silent, zero problems, all green.
@@ -1075,7 +1075,7 @@ git commit -m "feat: the awards on screen"
     returns jsonb` — a `phase_event` for a room back in the lobby. Task 6 calls
     it with all five arguments named, nulls included.
 
-- [ ] **Step 1: Write the failing smoke section**
+- [x] **Step 1: Write the failing smoke section**
 
 Append to the end of `scripts/smoke.mjs`:
 
@@ -1194,13 +1194,13 @@ assert.equal(rmcDraw.questions.filter(q => q.prompt === 'Whose room is this?').l
 console.log('✅ P2b rematch smoke passed');
 ```
 
-- [ ] **Step 2: Run it to make sure it fails**
+- [x] **Step 2: Run it to make sure it fails**
 
 Run: `node scripts/smoke.mjs`
 Expected: FAIL at the first `rematch` call with
 `Could not find the function public.rematch(...)`.
 
-- [ ] **Step 3: Write the schema and the RPC**
+- [x] **Step 3: Write the schema and the RPC**
 
 Append to `supabase/migrations/0008_the_aftermath.sql`:
 
@@ -1352,7 +1352,7 @@ end $$;
 grant execute on all functions in schema public to anon, authenticated;
 ```
 
-- [ ] **Step 4: Apply and run the smoke harness**
+- [x] **Step 4: Apply and run the smoke harness**
 
 Run:
 ```bash
@@ -1361,7 +1361,7 @@ node scripts/smoke.mjs
 ```
 Expected: every `✅`, ending with `✅ P2b rematch smoke passed`.
 
-- [ ] **Step 5: Prove the whole file is still idempotent**
+- [x] **Step 5: Prove the whole file is still idempotent**
 
 Run:
 ```bash
@@ -1371,7 +1371,7 @@ node scripts/smoke.mjs
 Expected: the second apply is clean and the harness still passes end to end,
 including Task 1's `P2b awards` section.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/migrations/0008_the_aftermath.sql scripts/smoke.mjs
@@ -1397,7 +1397,7 @@ git commit -m "feat: rematch resets the room in place"
   `lib/presentation/cues.ts`, added to the `Cue` union. Task 6's button is what
   makes it fire in the app; nothing else consumes it.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/deriveCues.test.ts` (inside the top-level `describe` the file
 already uses for phase transitions, or a new one):
@@ -1526,13 +1526,13 @@ describe('game-reset', () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `npx vitest run tests/deriveCues.test.ts tests/store.test.ts tests/director.test.ts tests/audioState.test.ts`
 Expected: FAIL — `game-reset` is not assignable to `Cue`, and the store's lobby
 event leaves the old race in place.
 
-- [ ] **Step 3: Add the cue**
+- [x] **Step 3: Add the cue**
 
 In `lib/presentation/cues.ts`, after the `GameResumedCue` interface:
 
@@ -1558,7 +1558,7 @@ export interface GameResetCue {
 
 Add `| GameResetCue` to the `Cue` union, beside `GameResumedCue`.
 
-- [ ] **Step 4: Derive it**
+- [x] **Step 4: Derive it**
 
 In `lib/presentation/deriveCues.ts`, at the very top of the `if (phaseChanged)`
 block, before `const beatCues = phaseCues(room, next);`:
@@ -1579,7 +1579,7 @@ block, before `const beatCues = phaseCues(room, next);`:
     }
 ```
 
-- [ ] **Step 5: Clear the store**
+- [x] **Step 5: Clear the store**
 
 In `lib/store.ts`'s `applyPhaseEvent`, add a final arm to the payload chain:
 
@@ -1596,7 +1596,7 @@ In `lib/store.ts`'s `applyPhaseEvent`, add a final arm to the payload chain:
     }
 ```
 
-- [ ] **Step 6: Point the camera back at the start line**
+- [x] **Step 6: Point the camera back at the start line**
 
 In `lib/world/director.ts`'s `reduceCue`, after the `phase-results` case:
 
@@ -1610,7 +1610,7 @@ In `lib/world/director.ts`'s `reduceCue`, after the `phase-results` case:
       return { ...state, base: shots.base.lobby, transient: null, escalation: 0 };
 ```
 
-- [ ] **Step 7: Reset the audio bed and the choreographer**
+- [x] **Step 7: Reset the audio bed and the choreographer**
 
 In `lib/audio/state.ts`, add `'game-reset'` to `AUDIO_CUE_TYPES` (beside
 `'game-paused', 'game-resumed'`), and add an arm to the bed switch in
@@ -1638,12 +1638,12 @@ a branch to the cue handler's chain, before the trailing `else`:
         choreo = completeSequence(choreo);
 ```
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `npx vitest run`
 Expected: PASS, all files.
 
-- [ ] **Step 9: Clear diagnostics and commit**
+- [x] **Step 9: Clear diagnostics and commit**
 
 Run: `npx tsc --noEmit && npm run lint`
 Expected: silent, zero problems.
@@ -1670,7 +1670,7 @@ git commit -m "feat: game-reset takes the show back to the lobby"
   - Task 7's e2e reads `data-testid="rematch"`, `"rematch-timer"`,
     `"rematch-confirm"`, `"rematch-cancel"` and `"rematch-error"`.
 
-- [ ] **Step 1: Add the command to the driver**
+- [x] **Step 1: Add the command to the driver**
 
 In `lib/useHostDriver.ts`, extend the interface:
 
@@ -1728,7 +1728,7 @@ And add `rematch` to the returned object:
   return { isHost: hostKey !== null, start, pause, resume, skip, end, rematch, error };
 ```
 
-- [ ] **Step 2: Write the card**
+- [x] **Step 2: Write the card**
 
 Create `components/RematchCard.tsx`:
 
@@ -1826,7 +1826,7 @@ export default function RematchCard({ driver }: { driver: HostDriver }) {
 }
 ```
 
-- [ ] **Step 3: Wire it into the results screen**
+- [x] **Step 3: Wire it into the results screen**
 
 In `components/ResultsView.tsx`:
 
@@ -1852,7 +1852,7 @@ In `app/room/[code]/page.tsx`, pass the driver through:
     content = <ResultsView code={code} driver={driver} />;
 ```
 
-- [ ] **Step 4: Verify it live, headed, in two browsers**
+- [x] **Step 4: Verify it live, headed, in two browsers**
 
 Run `npm run dev`, then in a headed browser plus a second window:
 - play a two-player race to the ceremony;
@@ -1865,7 +1865,7 @@ Run `npm run dev`, then in a headed browser plus a second window:
 - start race 2 and confirm the first question differs and the timer is the one
   you set.
 
-- [ ] **Step 5: Clear diagnostics and commit**
+- [x] **Step 5: Clear diagnostics and commit**
 
 Run: `npx tsc --noEmit && npm run lint && npx vitest run`
 Expected: silent, zero problems, all green.
@@ -1891,7 +1891,7 @@ git commit -m "feat: the rematch card"
 - Consumes: everything from Tasks 1–6.
 - Produces: nothing further tasks depend on. This is the phase's closing task.
 
-- [ ] **Step 1: Write the end-to-end spec**
+- [x] **Step 1: Write the end-to-end spec**
 
 Create `e2e/aftermath.spec.ts`:
 
@@ -2050,7 +2050,7 @@ test('a rematch returns the same players to a fresh lobby with a new question',
 > `question-prompt` is `components/QuestionCard.tsx:77`, confirmed while this
 > plan was written.
 
-- [ ] **Step 2: Run the new spec**
+- [x] **Step 2: Run the new spec**
 
 Run: `npm run test:e2e -- --workers=2 e2e/aftermath.spec.ts`
 Expected: 2 passed.
@@ -2059,13 +2059,13 @@ A "element is not stable / element was detached from the DOM" failure on an
 animated element is the load flake CURRENT.md records — re-run before
 concluding otherwise.
 
-- [ ] **Step 3: Run the whole browser suite**
+- [x] **Step 3: Run the whole browser suite**
 
 Run: `npm run test:e2e -- --workers=2`
 Expected: every spec passes. Do not raise the worker count; the default is
 flaky on this machine.
 
-- [ ] **Step 4: Write the ADRs**
+- [x] **Step 4: Write the ADRs**
 
 Create `docs/ADR/0045-awards-are-fetched-not-broadcast.md`:
 
@@ -2243,7 +2243,7 @@ Append the three rows to `docs/ADR/README.md`'s index table:
 | [0047](0047-returning-to-the-lobby-is-a-cue.md) | Returning to the lobby is a cue | M3 P2b |
 ```
 
-- [ ] **Step 5: Run every gate**
+- [x] **Step 5: Run every gate**
 
 Run:
 ```bash
@@ -2261,7 +2261,7 @@ progress doc quotes it.
 Also check the VS Code Problems panel on every touched file: a clean panel is
 part of "done" (CLAUDE.md).
 
-- [ ] **Step 6: Write the phase record**
+- [x] **Step 6: Write the phase record**
 
 Create `docs/progress/M3-P2b-the-aftermath.md`, following the structure of
 `docs/progress/M3-P2a-the-tiebreak.md`: Status / Completed / Spec / Plan /
@@ -2285,7 +2285,7 @@ At minimum the notes must carry:
   Live-verification findings). If it was not judged here, say so and hand it to
   M3 P5 rather than letting it disappear.
 
-- [ ] **Step 7: Update the live tracker**
+- [x] **Step 7: Update the live tracker**
 
 In `docs/progress/CURRENT.md`:
 - **Current phase** → `M3 P2b complete → docs/progress/M3-P2b-the-aftermath.md`,
@@ -2299,7 +2299,7 @@ In `docs/progress/CURRENT.md`:
   suite was re-run against cloud, amend that entry with what was found; if it
   was not, say nothing new.
 
-- [ ] **Step 8: Commit, merge, push and clean up**
+- [x] **Step 8: Commit, merge, push and clean up**
 
 Per CLAUDE.md this is not a question — do it.
 
@@ -2313,7 +2313,7 @@ git worktree remove ../quiz-game-m3-p2b
 git branch -d worktree-m3-p2b-the-aftermath
 ```
 
-- [ ] **Step 9: Apply the migration to the cloud project**
+- [x] **Step 9: Apply the migration to the cloud project**
 
 `0008_the_aftermath.sql` must reach `niznfbabmixesfvxlypi` **after** the branch
 merges and Vercel redeploys, for the same reason P2a applied `0005` and `0007`
