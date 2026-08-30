@@ -14,6 +14,62 @@
     "funFact": "The triple-O auto-reply dates back to Microsoft Exchange in the 1990s."
   },
   {
+    "tier": 1,
+    "prompt": "A \"standup\" meeting is supposed to be…",
+    "options": ["Short","Annual","Optional","Recorded"],
+    "correctIndex": 0,
+    "funFact": "Standing is the whole mechanism: the discomfort is meant to be the timer."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"ASAP\" stand for?",
+    "options": ["As Simple As Possible","As Soon As Possible","At Speed And Pace","Always Send A Password"],
+    "correctIndex": 1,
+    "funFact": "It spread through military signal traffic, where every extra character cost transmission time."
+  },
+  {
+    "tier": 1,
+    "prompt": "\"Touch base\" means to…",
+    "options": ["Restart a project","Escalate a problem","Have a quick catch-up","Book a meeting room"],
+    "correctIndex": 2,
+    "funFact": "It comes from baseball, where touching the base is the one thing you must not forget to do."
+  },
+  {
+    "tier": 1,
+    "prompt": "A meeting invite marked \"FYI only\" is asking you to…",
+    "options": ["Chair the meeting","Take the minutes","Reply within the hour","Read it and do nothing"],
+    "correctIndex": 3,
+    "funFact": "FYI predates email by decades — it was office-memo shorthand long before anyone had an inbox."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"CC\" do on an email?",
+    "options": ["Copies in other people","Encrypts the message","Deletes it after reading","Sends it to a printer"],
+    "correctIndex": 0,
+    "funFact": "It stands for carbon copy — the flimsy second sheet a typist put behind the original."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"HR\" stand for in a company?",
+    "options": ["High Regard","Human Resources","Hourly Rates","House Rules"],
+    "correctIndex": 1,
+    "funFact": "The phrase was coined by an economist in 1893, but no company had a department for it until much later."
+  },
+  {
+    "tier": 1,
+    "prompt": "\"Bandwidth\", in office talk, means…",
+    "options": ["Internet speed","Meeting room size","Time and capacity","Budget remaining"],
+    "correctIndex": 2,
+    "funFact": "Borrowing it from engineering lets people decline work without ever saying the word no."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"WFH\" mean?",
+    "options": ["Waiting for handover","Work from head office","Week from Friday","Working from home"],
+    "correctIndex": 3,
+    "funFact": "The abbreviation existed for years as a rare perk before it briefly became the default."
+  },
+  {
     "tier": 2,
     "prompt": "What does \"EOD\" usually mean in work chat?",
     "options": ["End of day","End of discussion","Every other day","Executive on duty"],
@@ -26,6 +82,62 @@
     "options": ["Kitchen snacks","Easy wins","Junior employees","Cheap suppliers"],
     "correctIndex": 1,
     "funFact": "Orchard workers actually pick low fruit last — it bruises less in the basket."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Boiling the ocean\" describes a plan that is…",
+    "options": ["Impossibly broad","Extremely urgent","Poorly funded","Secretly cancelled"],
+    "correctIndex": 0,
+    "funFact": "Consultants use it as a warning; the phrase is often traced to Mark Twain as a joke about ambition."
+  },
+  {
+    "tier": 2,
+    "prompt": "On an email, \"BCC\" hides a recipient from…",
+    "options": ["The sender","Everyone else","The mail server","The spam filter"],
+    "correctIndex": 1,
+    "funFact": "Replying all to a message you were blind-copied on is the classic way to reveal yourself."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Blue sky thinking\" asks a team to…",
+    "options": ["Cut costs first","Check the weather","Ignore constraints","Work outdoors"],
+    "correctIndex": 2,
+    "funFact": "The instruction is usually followed within minutes by someone naming the budget."
+  },
+  {
+    "tier": 2,
+    "prompt": "A project \"post-mortem\" exists to do what?",
+    "options": ["Assign blame fairly","Approve the budget","Celebrate the launch","Learn what happened"],
+    "correctIndex": 3,
+    "funFact": "Some firms run a \"pre-mortem\" instead — imagining the failure first, before anything has gone wrong."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Take it offline\" in a meeting means…",
+    "options": ["Discuss it separately","Disconnect the call","Cancel the project","Write it down"],
+    "correctIndex": 0,
+    "funFact": "The phrase survived the move to video calls, where absolutely nothing is offline."
+  },
+  {
+    "tier": 2,
+    "prompt": "What does signing an \"NDA\" stop you doing?",
+    "options": ["Working elsewhere","Sharing information","Claiming expenses","Taking annual leave"],
+    "correctIndex": 1,
+    "funFact": "The document that stops you working elsewhere is a different one entirely — a non-compete."
+  },
+  {
+    "tier": 2,
+    "prompt": "A \"dotted line\" report means you also answer to…",
+    "options": ["Nobody at all","The board only","A second manager","An outside auditor"],
+    "correctIndex": 2,
+    "funFact": "The name is literal: on the org chart the second relationship is drawn as a dashed line."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Scope creep\" describes a project that…",
+    "options": ["Runs out of money","Loses its sponsor","Finishes too early","Keeps growing"],
+    "correctIndex": 3,
+    "funFact": "It rarely arrives as one big change; it arrives as a series of small reasonable ones."
   },
   {
     "tier": 3,
@@ -42,6 +154,62 @@
     "funFact": "Gmail and AdSense both started as 20% projects."
   },
   {
+    "tier": 3,
+    "prompt": "Which country gave us \"karoshi\", meaning death from overwork?",
+    "options": ["Japan","Korea","China","Taiwan"],
+    "correctIndex": 0,
+    "funFact": "The word entered official use in the 1980s, when the deaths began appearing in labour statistics."
+  },
+  {
+    "tier": 3,
+    "prompt": "The Peter Principle says people are promoted until they…",
+    "options": ["Retire early","Reach incompetence","Become directors","Leave the company"],
+    "correctIndex": 1,
+    "funFact": "It was published as satire in 1969, then studied seriously and found to hold up rather well."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which management approach is Toyota famous for pioneering?",
+    "options": ["Six Sigma","Agile","Lean","Waterfall"],
+    "correctIndex": 2,
+    "funFact": "Any worker on the line could halt the whole factory by pulling a cord — that was the point."
+  },
+  {
+    "tier": 3,
+    "prompt": "Parkinson's Law says work expands to fill…",
+    "options": ["The nearest deadline","The budget allowed","The team assigned","The time available"],
+    "correctIndex": 3,
+    "funFact": "It appeared in a 1955 magazine essay about the civil service, and was meant as mockery."
+  },
+  {
+    "tier": 3,
+    "prompt": "The phrase \"think outside the box\" comes from…",
+    "options": ["A puzzle with nine dots","A shipping industry term","A military training drill","A 1960s advertising slogan"],
+    "correctIndex": 0,
+    "funFact": "The puzzle is solved by drawing past the square the dots imply — a box nobody actually drew."
+  },
+  {
+    "tier": 3,
+    "prompt": "A Gantt chart plots tasks against what?",
+    "options": ["Cost","Time","Risk","People"],
+    "correctIndex": 1,
+    "funFact": "Henry Gantt drew his by hand in 1910; every bar had to be redrawn when a date moved."
+  },
+  {
+    "tier": 3,
+    "prompt": "What did the word \"deadline\" originally describe?",
+    "options": ["A printing cut-off","A railway timetable","A prison boundary","A ship’s waterline"],
+    "correctIndex": 2,
+    "funFact": "Prisoners who crossed the line at a Civil War camp were shot, which is a firmer deadline than most."
+  },
+  {
+    "tier": 3,
+    "prompt": "Brainstorming was popularised by someone working in…",
+    "options": ["Engineering","Medicine","Teaching","Advertising"],
+    "correctIndex": 3,
+    "funFact": "Alex Osborn set out the rules in 1953; studies since suggest people generate more ideas alone."
+  },
+  {
     "tier": 4,
     "prompt": "The QWERTY layout was originally designed partly to…",
     "options": ["Speed up typing","Reduce typewriter jams","Alphabetize keys","Fit smaller desks"],
@@ -54,5 +222,61 @@
     "options": ["1950s","1970s","1960s","1980s"],
     "correctIndex": 2,
     "funFact": "Designer Robert Propst called later cramped versions \"monolithic insanity\" and regretted the invention."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which company was founded to sell playing cards?",
+    "options": ["Nintendo","Samsung","Panasonic","Konami"],
+    "correctIndex": 0,
+    "funFact": "It also ran taxis and a chain of love hotels before deciding that toys were the better business."
+  },
+  {
+    "tier": 4,
+    "prompt": "The Post-it note began as a failed attempt to make…",
+    "options": ["A cleaning spray","A stronger glue","A whiteboard film","A paper coating"],
+    "correctIndex": 1,
+    "funFact": "The weak adhesive sat unused for years until a colleague wanted a bookmark that would stay put."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which company began as a grocery trader selling dried fish and noodles?",
+    "options": ["Hyundai","LG","Samsung","Kia"],
+    "correctIndex": 2,
+    "funFact": "The name means \"three stars\", chosen to suggest something big and everlasting."
+  },
+  {
+    "tier": 4,
+    "prompt": "The \"elevator pitch\" takes its name from…",
+    "options": ["A lift maker's advert","A stock exchange floor","A famous 1920s speech","The length of a lift ride"],
+    "correctIndex": 3,
+    "funFact": "The premise is that you have caught the one person you needed, and roughly thirty seconds of them."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which company sold the first commercial photocopier?",
+    "options": ["Xerox","Canon","Kodak","Ricoh"],
+    "correctIndex": 0,
+    "funFact": "Market research advised against it: nobody could see why an office would need copies of anything."
+  },
+  {
+    "tier": 4,
+    "prompt": "What did Berkshire Hathaway originally manufacture?",
+    "options": ["Farm machinery","Textiles","Railway parts","Furniture"],
+    "correctIndex": 1,
+    "funFact": "Warren Buffett has called buying the failing mill the worst investment decision he ever made."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which company's chief executive wrote \"Only the Paranoid Survive\"?",
+    "options": ["Apple","Sony","Intel","Dell"],
+    "correctIndex": 2,
+    "funFact": "Andy Grove had already bet the company once, abandoning memory chips for processors."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which car maker started out building weaving looms?",
+    "options": ["Honda","Mazda","Nissan","Toyota"],
+    "correctIndex": 3,
+    "funFact": "The loom business was sold to fund the first cars, and the family changed a letter of its name."
   }
 ]
