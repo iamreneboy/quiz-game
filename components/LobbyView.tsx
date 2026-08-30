@@ -54,7 +54,7 @@ export default function LobbyView({
   return (
     <main className="relative mx-auto flex min-h-screen max-w-3xl flex-col justify-end gap-6 p-6">
       <motion.div custom={0} initial="hidden" animate="show" variants={rise}>
-        <Panel className="relative flex items-center justify-center gap-6 p-6">
+        <Panel className="relative flex flex-wrap items-center justify-center gap-6 p-6">
           <HudCorners />
           <div className="text-center">
             <p className="text-ink-dim">
