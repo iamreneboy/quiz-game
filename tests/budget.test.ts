@@ -34,10 +34,13 @@ const TIMER_SECONDS = 10; // app/host/new/page.tsx's default
  * Phase broadcasts the host sends per game.
  *
  * One at start_game (COUNTDOWN), then four per round — READ, ANSWER, REVEAL,
- * and the fourth that is TRACK for every round but the last, where it is
- * RESULTS (supabase/migrations/0009_presence.sql's advance_phase).
+ * TRACK — for every round including the last, plus one more: RESULTS is a
+ * fifth, separate transition after the final round's TRACK, not a
+ * replacement for it (supabase/migrations/0009_presence.sql's advance_phase,
+ * the `when 'track'` branch — confirmed empirically too, not just read: a
+ * 12-round `npm run soak` run sends exactly 50, matching `1 + 12*4 + 1`).
  */
-const PHASE_BROADCASTS = 1 + ROUNDS * 4;
+const PHASE_BROADCASTS = 2 + ROUNDS * 4;
 
 /** One `player_joined` per joiner (app/room/[code]/page.tsx). */
 const JOIN_BROADCASTS = PLAYERS;
