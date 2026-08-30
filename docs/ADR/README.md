@@ -79,3 +79,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0050](0050-the-door-reopens-inside-join-room.md) | The door reopens inside `join_room` — reclaim and late join are one function | M3 P3a |
 | [0051](0051-a-vanished-host-is-swept-by-any-client.md) | A vanished host is swept by an elected client against the host's own heartbeat | M3 P3b |
 | [0052](0052-the-wires-fifth-opening.md) | The wire's fifth opening — `host_absent`, derived and never stored | M3 P3b |
+| [0053](0053-the-bank-is-generated-data.md) | The question bank is generated data, and it ships as an upsert | M3 P4 |
