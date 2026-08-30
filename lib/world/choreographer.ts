@@ -22,6 +22,7 @@ import {
   type MovementTrack,
 } from './movement';
 import type { VfxAllowance } from './vfxBudget';
+import { elapsedIn, NOMINAL_MS } from '@/lib/staging/beats';
 
 /** Below-headline effects are quieter, never absent (spec §4). */
 export const SUBDUED_INTENSITY = 0.6;
@@ -244,6 +245,85 @@ export function beginSequence(
 /** Hard-complete: snap to final anchors, clear transients, keep persistent flair. */
 export function completeSequence(state: ChoreographerState): ChoreographerState {
   return { ...state, pending: [], heldAnchors: null, sequence: null };
+}
+
+/**
+ * A movement sequence with no drama in it: the field simply goes from one
+ * formation to another.
+ *
+ * `beginSequence` compiles buffered cues; this takes the two formations
+ * directly, because the lobby → start-line move is not a consequence of
+ * anything a player did. Same grammar (anticipate → launch → travel → settle),
+ * same sampler, same reduced-profile snap — only the reason differs.
+ *
+ * The stagger runs FRONT ROW FIRST (descending x), the reverse of
+ * `beginSequence`'s back-marker-first ordering. A race start unspools from the
+ * line backwards; a pass has to read as the passer arriving after the passed.
+ * Two orders, two meanings, one `staggerFor`.
+ *
+ * `startedAt` is a parameter rather than "now" so the caller can position the
+ * sequence against a server deadline — see `beginCountdownRollUp`.
+ */
+export function beginFormationMove(
+  state: ChoreographerState,
+  from: readonly MarkerAnchor[],
+  to: readonly MarkerAnchor[],
+  startedAt: number,
+  profile: Profile,
+): ChoreographerState {
+  if (to.length === 0) return completeSequence(state);
+
+  const fromById = new Map(from.map(a => [a.playerId, a]));
+  const ordered = [...to].sort((a, b) => b.x - a.x);
+  const tracks: MovementTrack[] = ordered.map((anchor, index) => {
+    // A racer with no slot in the old formation stands still rather than
+    // flying in from the origin: they joined between the two computations.
+    const origin = fromById.get(anchor.playerId) ?? anchor;
+    return {
+      playerId: anchor.playerId,
+      from: { x: origin.x, y: origin.y },
+      to: { x: anchor.x, y: anchor.y },
+      delayMs: staggerFor(index, profile),
+    };
+  });
+
+  const lastDelay = Math.max(...tracks.map(t => t.delayMs));
+  return {
+    pending: [],
+    heldAnchors: null,
+    pulses: state.pulses,
+    sequence: {
+      startedAt,
+      headline: 'routine',
+      tracks,
+      lightnings: [],
+      ignitions: [],
+      arenaPlayerId: null,
+      leadChange: null,
+      durationMs: lastDelay + MOVEMENT_MS,
+    },
+  };
+}
+
+/**
+ * Lights out: the field leaves the lobby grid and takes the line.
+ *
+ * Positioned against the server's countdown deadline rather than against local
+ * arrival, exactly as every other beat is (ADR-0014). A client that reloads
+ * 2.4 seconds into a 3-second countdown starts a sequence that finished 400ms
+ * ago and renders it settled — the launch is not replayed, and no catch-up flag
+ * is needed to say so.
+ */
+export function beginCountdownRollUp(
+  state: ChoreographerState,
+  grid: readonly MarkerAnchor[],
+  line: readonly MarkerAnchor[],
+  remainingMs: number | null,
+  now: number,
+  profile: Profile,
+): ChoreographerState {
+  const elapsed = elapsedIn(NOMINAL_MS.countdown, remainingMs);
+  return beginFormationMove(completeSequence(state), grid, line, now - elapsed, profile);
 }
 
 /** The lobby ready pulse (PRD §5.2) — an arrival, not drama, so it never queues. */

@@ -3,12 +3,14 @@ import type { Cue } from '@/lib/presentation/cues';
 import { allowanceFor } from '@/lib/world/vfxBudget';
 import { markerAnchors, startLineAnchors, trackMetrics, type MarkerAnchor } from '@/lib/world/geometry';
 import { flairFor, type FlairStanding } from '@/lib/world/flair';
-import { ANTICIPATE_MS, MOVEMENT_MS, TRAVEL_MS } from '@/lib/world/movement';
+import { ANTICIPATE_MS, MOVEMENT_MS, STAGGER_MS, TRAVEL_MS } from '@/lib/world/movement';
 import {
   ARENA_AT_MS,
   PULSE_MS,
   SUBDUED_INTENSITY,
   avatarStates,
+  beginCountdownRollUp,
+  beginFormationMove,
   beginSequence,
   bufferCue,
   completeSequence,
@@ -17,9 +19,15 @@ import {
   isSequenceRunning,
   notePlayerJoined,
 } from '@/lib/world/choreographer';
+import { NOMINAL_MS } from '@/lib/staging/beats';
 
 const metrics = trackMetrics(12);
 const full = allowanceFor('full');
+const anchor = (playerId: string, x: number, y = 0): MarkerAnchor =>
+  ({ playerId, x, y, row: 0, rank: 0, side: 0, segment: 0 });
+
+/** No flair, no budget clamping — these blocks are about positions only. */
+const NO_FLAIR = new Map();
 
 const s = (id: string, correct: number, speed = 0): FlairStanding => ({
   player_id: id, correct, speed_points: speed, current_streak: 0,
@@ -357,5 +365,117 @@ describe('the overtake accent', () => {
     const at = firesAt(state, tiedAnchors);
     expect(at).not.toBeNull();
     expect(at!).toBeCloseTo(60 + ANTICIPATE_MS + TRAVEL_MS * 0.6, -1);
+  });
+});
+
+describe('beginFormationMove', () => {
+  // A three-column grid in the run-off, and the line it rolls up to.
+  const grid = [anchor('a', -40), anchor('b', -130), anchor('c', -220)];
+  // Segment 0 with a tie pairing: c right, a centre-ish, b left.
+  const line = [anchor('a', 0), anchor('b', -45), anchor('c', 45)];
+
+  it('staggers front row first — the reverse of a drama beat', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'high');
+    const delays = Object.fromEntries(
+      state.sequence!.tracks.map(t => [t.playerId, t.delayMs]),
+    );
+    // Descending x on the LINE: c(45), a(0), b(-45).
+    expect(delays).toEqual({ c: 0, a: STAGGER_MS, b: 2 * STAGGER_MS });
+  });
+
+  it('runs each track from its grid slot to its place on the line', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'high');
+    const byId = new Map(state.sequence!.tracks.map(t => [t.playerId, t]));
+    expect(byId.get('a')!.from.x).toBe(-40);
+    expect(byId.get('a')!.to.x).toBe(0);
+    expect(byId.get('c')!.from.x).toBe(-220);
+    expect(byId.get('c')!.to.x).toBe(45);
+  });
+
+  it('holds the whole field on the grid at t = 0', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'high');
+    const xs = Object.fromEntries(
+      avatarStates(state, line, NO_FLAIR, full, 0, 'high').map(a => [a.playerId, a.x]),
+    );
+    expect(xs).toEqual({ a: -40, b: -130, c: -220 });
+  });
+
+  it('lands the whole field on the line once the sequence is over', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'high');
+    const end = state.sequence!.durationMs;
+    const xs = Object.fromEntries(
+      avatarStates(state, line, NO_FLAIR, full, end, 'high').map(a => [a.playerId, a.x]),
+    );
+    expect(xs).toEqual({ a: 0, b: -45, c: 45 });
+  });
+
+  it('lasts the last stagger plus one movement', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'high');
+    expect(state.sequence!.durationMs).toBe(2 * STAGGER_MS + MOVEMENT_MS);
+  });
+
+  it('snaps under the reduced profile, with no stagger at all', () => {
+    const state = beginFormationMove(initialChoreographerState, grid, line, 0, 'reduced');
+    expect(state.sequence!.tracks.every(t => t.delayMs === 0)).toBe(true);
+    const xs = avatarStates(state, line, NO_FLAIR, full, 0, 'reduced').map(a => a.x);
+    expect(xs).toEqual([0, -45, 45]);
+  });
+
+  it('gives a racer who was not on the grid a track that does not move', () => {
+    // Someone whose join landed between the two anchor computations.
+    const withLate = [...line, anchor('d', 90)];
+    const state = beginFormationMove(initialChoreographerState, grid, withLate, 0, 'high');
+    const late = state.sequence!.tracks.find(t => t.playerId === 'd')!;
+    expect(late.from).toEqual({ x: 90, y: 0 });
+    expect(late.to).toEqual({ x: 90, y: 0 });
+  });
+
+  it('starts nothing for an empty field', () => {
+    const state = beginFormationMove(initialChoreographerState, [], [], 0, 'high');
+    expect(state.sequence).toBeNull();
+  });
+
+  it('clears anything the lobby left buffered', () => {
+    const dirty = {
+      ...initialChoreographerState,
+      pending: [{ type: 'overtake', tier: 'overtake', playerId: 'a', passed: ['b'] }] as never,
+      heldAnchors: grid,
+    };
+    const state = beginFormationMove(dirty, grid, line, 0, 'high');
+    expect(state.pending).toEqual([]);
+    expect(state.heldAnchors).toBeNull();
+  });
+});
+
+describe('beginCountdownRollUp', () => {
+  const grid = [anchor('a', -40), anchor('b', -130)];
+  const line = [anchor('a', 0), anchor('b', -45)];
+
+  it('starts now when the countdown has only just begun', () => {
+    const state = beginCountdownRollUp(
+      initialChoreographerState, grid, line, NOMINAL_MS.countdown, 1000, 'high',
+    );
+    expect(state.sequence!.startedAt).toBe(1000);
+    expect(isSequenceRunning(state, 1000)).toBe(true);
+  });
+
+  it('starts in the past for a client that reloaded mid-countdown', () => {
+    // 500ms left of 3000 means the countdown began 2500ms ago.
+    const state = beginCountdownRollUp(
+      initialChoreographerState, grid, line, 500, 10_000, 'high',
+    );
+    expect(state.sequence!.startedAt).toBe(10_000 - 2500);
+    // 2500ms is well past a 900ms roll-up: settled, not replayed.
+    expect(isSequenceRunning(state, 10_000)).toBe(false);
+    const xs = avatarStates(state, line, NO_FLAIR, full, 10_000, 'high').map(a => a.x);
+    expect(xs).toEqual([0, -45]);
+  });
+
+  it('treats an unknown deadline as a countdown already over', () => {
+    const state = beginCountdownRollUp(
+      initialChoreographerState, grid, line, null, 10_000, 'high',
+    );
+    expect(state.sequence!.startedAt).toBe(10_000 - NOMINAL_MS.countdown);
+    expect(isSequenceRunning(state, 10_000)).toBe(false);
   });
 });
