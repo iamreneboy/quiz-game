@@ -59,15 +59,30 @@ assert.ok(state.room.server_now, 'server_now present');
 console.log('✅ lobby smoke passed');
 
 // ---- Game flow ----
-// Room with a known 1-question draw so we can force correctness deterministically:
-// seed has exactly 2 tier-1 'fuel' questions; draw both -> 2 rounds.
+// A 2-round room whose answer key the test READS rather than assumes.
+//
+// M3 P4 took the bank to ten questions per (category, tier), so "both tier-1
+// fuel questions are correct_index 0" — which this section used to rest on — is
+// gone for good. The host therefore sits out as an MC, and that is precisely
+// what makes the key readable: ADR-0040 hands the answers to a host who is not
+// racing. The draw is read before start_game, while it is still open.
 const g = await rpc('create_room', {
   p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
 });
-const h = await rpc('join_room', { p_code: g.code, p_nickname: 'Host', p_avatar: 'robot', p_color: '#f59e0b', p_host_key: g.host_key });
+const gRef = await rpc('join_room', {
+  p_code: g.code, p_nickname: 'Ref', p_avatar: 'cat', p_color: '#94a3b8',
+  p_host_key: g.host_key, p_is_playing: false,
+});
+const h = await rpc('join_room', { p_code: g.code, p_nickname: 'Host', p_avatar: 'robot', p_color: '#f59e0b' });
 const a = await rpc('join_room', { p_code: g.code, p_nickname: 'Alice', p_avatar: 'duck', p_color: '#38bdf8' });
 
-await rpcFails('start_game', { p_room_id: g.room_id, p_host_key: h.player_key }, /invalid host key/i);
+const gDraw = await rpc('get_room_draw', { p_room_id: g.room_id, p_host_key: g.host_key });
+assert.equal(gDraw.answers_visible, true, 'an MC host may read the key');
+const gKey = gDraw.questions.map(q => q.correct_index);
+/** Any option that is not the right one. */
+const wrong = k => (k + 1) % 4;
+
+await rpcFails('start_game', { p_room_id: g.room_id, p_host_key: gRef.player_key }, /invalid host key/i);
 
 let evt = await rpc('start_game', { p_room_id: g.room_id, p_host_key: g.host_key });
 assert.equal(evt.phase, 'countdown');
@@ -87,17 +102,20 @@ await rpcFails('submit_answer',
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key });
 assert.equal(evt.phase, 'answer');
 
-// Both tier-1 fuel questions have correct_index 0 in the seed.
-await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: h.player_key, p_round: 1, p_choice_index: 0 }); // Host correct
-await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 1, p_choice_index: 1 }); // Alice wrong
+// Host takes round 1 first and correctly; Alice answers second and wrong.
+await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: h.player_key, p_round: 1, p_choice_index: gKey[0] });
+await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 1, p_choice_index: wrong(gKey[0]) });
 await rpcFails('submit_answer',
-  { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 1, p_choice_index: 0 },
+  { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 1, p_choice_index: gKey[0] },
   /already answered/i);
 
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key });
 assert.equal(evt.phase, 'reveal');
-assert.equal(evt.payload.correct_index, 0);
-assert.deepEqual(evt.payload.counts, [1, 1, 0, 0]);
+assert.equal(evt.payload.correct_index, gKey[0], 'the reveal agrees with the draw');
+const gExpected = [0, 0, 0, 0];
+gExpected[gKey[0]] += 1;
+gExpected[wrong(gKey[0])] += 1;
+assert.deepEqual(evt.payload.counts, gExpected, 'one right answer and one wrong one');
 assert.equal(evt.payload.fastest.nickname, 'Host');
 assert.ok(evt.payload.fun_fact !== undefined);
 
@@ -115,8 +133,8 @@ assert.equal(evt.phase, 'read');
 assert.equal(evt.round, 2);
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key });
 assert.equal(evt.phase, 'answer');
-await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: h.player_key, p_round: 2, p_choice_index: 0 });
-await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 2, p_choice_index: 0 });
+await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: h.player_key, p_round: 2, p_choice_index: gKey[1] });
+await rpc('submit_answer', { p_room_id: g.room_id, p_player_key: a.player_key, p_round: 2, p_choice_index: gKey[1] });
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key }); // reveal
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key }); // track
 evt = await rpc('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key }); // results (last round)
@@ -354,12 +372,11 @@ const prompts = swapped.questions.map(q => q.prompt);
 assert.equal(new Set(prompts).size, prompts.length, 'no duplicate prompts in the draw');
 
 // -- a swap with nothing left to draw says so rather than silently doing nothing.
-//    'fuel' tier 1 holds exactly 2 seeded questions; a room that takes both has
-//    no third to swap in. (P4 raises the bank to >=10 per tier per category and
-//    must revisit this assertion — the game-flow section above already carries
-//    the same seed dependency.)
+//    'fuel' tier 1 holds exactly MIN_PER_CELL seeded questions since M3 P4; a
+//    room that takes all ten has no eleventh to swap in. The number here is the
+//    bank's per-cell floor, so it moves only if that floor moves.
 const tight = await rpc('create_room', {
-  p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
+  p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [10, 0, 0, 0],
 });
 await rpc('join_room', {
   p_code: tight.code, p_nickname: 'Tight', p_avatar: 'robot', p_color: '#f59e0b',
@@ -445,11 +462,11 @@ assert.equal(mine.correct_index, 2);
 assert.deepEqual(mine.options, customArgs.p_options);
 
 // -- ADR-0039's whole point: one room's custom question is invisible to the
-//    bank. 'fuel' tier 1 holds exactly 2 seeded questions, and the custom one
-//    above is a third fuel tier-1 row -- if it leaked into the pool, this
-//    would succeed. (P4 raises the bank and must revisit this assertion.)
+//    bank. 'fuel' tier 1 holds exactly ten seeded questions since M3 P4, and the
+//    custom one above is an eleventh fuel tier-1 row -- if it leaked into the
+//    shared pool, asking for eleven here would succeed.
 await rpcFails('create_room',
-  { p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [3, 0, 0, 0] },
+  { p_timer_seconds: 10, p_categories: ['fuel'], p_tier_counts: [11, 0, 0, 0] },
   /not enough questions/i);
 
 // -- validation, one message per rule
@@ -510,13 +527,19 @@ const CEREMONY_MS = 12_400;
 const cer = await rpc('create_room', {
   p_timer_seconds: 20, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
 });
+await rpc('join_room', {
+  p_code: cer.code, p_nickname: 'Ref', p_avatar: 'cat', p_color: '#94a3b8',
+  p_host_key: cer.host_key, p_is_playing: false,
+});
 const cerHost = await rpc('join_room', {
   p_code: cer.code, p_nickname: 'Clock', p_avatar: 'robot', p_color: '#f59e0b',
-  p_host_key: cer.host_key,
 });
 await rpc('join_room', {
   p_code: cer.code, p_nickname: 'Watch', p_avatar: 'duck', p_color: '#38bdf8',
 });
+const cerKey = (await rpc('get_room_draw', {
+  p_room_id: cer.room_id, p_host_key: cer.host_key,
+})).questions[0].correct_index;
 await rpc('start_game', { p_room_id: cer.room_id, p_host_key: cer.host_key });
 await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // read
 await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // answer
@@ -525,7 +548,7 @@ await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key })
 // rather than the ceremony (ADR-0043) — this section is about the deadline,
 // not the tiebreak, so it must reach `results` directly.
 await rpc('submit_answer', {
-  p_room_id: cer.room_id, p_player_key: cerHost.player_key, p_round: 1, p_choice_index: 0,
+  p_room_id: cer.room_id, p_player_key: cerHost.player_key, p_round: 1, p_choice_index: cerKey,
 });
 await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // reveal
 await rpc('advance_phase', { p_room_id: cer.room_id, p_host_key: cer.host_key }); // track
@@ -641,24 +664,30 @@ console.log('✅ P2a sudden-death smoke passed');
 const clean = await rpc('create_room', {
   p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
 });
+await rpc('join_room', {
+  p_code: clean.code, p_nickname: 'Ref', p_avatar: 'cat', p_color: '#94a3b8',
+  p_host_key: clean.host_key, p_is_playing: false,
+});
 const cleanHost = await rpc('join_room', {
   p_code: clean.code, p_nickname: 'Solo', p_avatar: 'robot', p_color: '#f59e0b',
-  p_host_key: clean.host_key,
 });
 await rpc('join_room', {
   p_code: clean.code, p_nickname: 'Duo', p_avatar: 'duck', p_color: '#38bdf8',
 });
+const cleanKey = (await rpc('get_room_draw', {
+  p_room_id: clean.room_id, p_host_key: clean.host_key,
+})).questions[0].correct_index;
 await rpc('start_game', { p_room_id: clean.room_id, p_host_key: clean.host_key });
 await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // read
 let cleanEvt = await rpc('advance_phase', {
   p_room_id: clean.room_id, p_host_key: clean.host_key,
 }); // answer
-// Both tier-1 'fuel' questions are correct_index 0 in the seed, which the
-// game-flow section above already depends on. One racer takes it; the other
-// does not answer, so the finish is decided on correct answers alone.
+// The key is read from the draw, not assumed (M3 P4 — see the game-flow
+// section). One racer takes it; the other does not answer, so the finish is
+// decided on correct answers alone.
 await rpc('submit_answer', {
   p_room_id: clean.room_id, p_player_key: cleanHost.player_key,
-  p_round: 1, p_choice_index: 0,
+  p_round: 1, p_choice_index: cleanKey,
 });
 await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // reveal
 await rpc('advance_phase', { p_room_id: clean.room_id, p_host_key: clean.host_key }); // track
@@ -729,9 +758,15 @@ console.log('✅ P2a tiebreak-boundaries smoke passed');
 const aw = await rpc('create_room', {
   p_timer_seconds: 6, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
 });
+// The host referees rather than races, so the answer key is readable (ADR-0040)
+// and an MC is excluded from standings — the three racers below are the whole
+// field, exactly as before.
+await rpc('join_room', {
+  p_code: aw.code, p_nickname: 'Ref', p_avatar: 'cat', p_color: '#94a3b8',
+  p_host_key: aw.host_key, p_is_playing: false,
+});
 const awBrain = await rpc('join_room', {
   p_code: aw.code, p_nickname: 'Brain', p_avatar: 'robot', p_color: '#f59e0b',
-  p_host_key: aw.host_key,
 });
 const awGun = await rpc('join_room', {
   p_code: aw.code, p_nickname: 'Gun', p_avatar: 'duck', p_color: '#38bdf8',
@@ -739,10 +774,12 @@ const awGun = await rpc('join_room', {
 const awSurge = await rpc('join_room', {
   p_code: aw.code, p_nickname: 'Surge', p_avatar: 'cat', p_color: '#a78bfa',
 });
+const awKey = (await rpc('get_room_draw', {
+  p_room_id: aw.room_id, p_host_key: aw.host_key,
+})).questions.map(q => q.correct_index);
 await rpc('start_game', { p_room_id: aw.room_id, p_host_key: aw.host_key });
 
-// Both seeded tier-1 'fuel' questions are correct_index 0; the game-flow
-// section above already depends on that.
+// Each round's key is read from the draw, not assumed (M3 P4).
 const awAdvance = () => rpc('advance_phase', { p_room_id: aw.room_id, p_host_key: aw.host_key });
 const awAnswer = (player, round, choice) => rpc('submit_answer', {
   p_room_id: aw.room_id, p_player_key: player.player_key,
@@ -751,19 +788,19 @@ const awAnswer = (player, round, choice) => rpc('submit_answer', {
 
 await awAdvance();                       // read 1
 await awAdvance();                       // answer 1
-await awAnswer(awGun, 1, 1);             // wrong
+await awAnswer(awGun, 1, wrong(awKey[0]));   // wrong
 await sleep(3600);
-await awAnswer(awBrain, 1, 0);           // late, but ahead of Surge
+await awAnswer(awBrain, 1, awKey[0]);        // late, but ahead of Surge
 await sleep(1200);
-await awAnswer(awSurge, 1, 0);           // later still
+await awAnswer(awSurge, 1, awKey[0]);        // later still
 await awAdvance();                       // reveal 1
 await awAdvance();                       // track 1
 await awAdvance();                       // read 2
 await awAdvance();                       // answer 2
-await awAnswer(awGun, 2, 0);             // instant
+await awAnswer(awGun, 2, awKey[1]);          // instant
 await sleep(3600);
-await awAnswer(awBrain, 2, 0);           // late again
-await awAnswer(awSurge, 2, 1);           // wrong
+await awAnswer(awBrain, 2, awKey[1]);        // late again
+await awAnswer(awSurge, 2, wrong(awKey[1])); // wrong
 await awAdvance();                       // reveal 2
 await awAdvance();                       // track 2
 const awFinal = await awAdvance();       // results
@@ -809,20 +846,26 @@ assert.deepEqual(await rpc('awards', { p_room_id: awNil.room_id }), [],
 console.log('✅ P2b awards smoke passed');
 
 // ---- P2b: rematch ----
-// Two racers, one question, played out — then run back. The seed holds exactly
-// two tier-1 'fuel' questions, which makes "no repeated questions" provable
-// rather than probable: race 2 MUST draw the other one, and race 3 has nothing
-// left to draw.
+// Two racers, one question, played out — then run back. Since M3 P4 the bank
+// holds ten tier-1 'fuel' questions, so exhaustion is proved by ASKING for the
+// whole cell rather than by the cell being small; and the host referees so the
+// answer key is readable, which is what keeps race 1 from ending in a tie.
 const rm = await rpc('create_room', {
   p_timer_seconds: 8, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
 });
+await rpc('join_room', {
+  p_code: rm.code, p_nickname: 'Ref', p_avatar: 'cat', p_color: '#94a3b8',
+  p_host_key: rm.host_key, p_is_playing: false,
+});
 const rmHost = await rpc('join_room', {
   p_code: rm.code, p_nickname: 'Again', p_avatar: 'robot', p_color: '#f59e0b',
-  p_host_key: rm.host_key,
 });
 const rmP2 = await rpc('join_room', {
   p_code: rm.code, p_nickname: 'Encore', p_avatar: 'duck', p_color: '#38bdf8',
 });
+const rmKey1 = (await rpc('get_room_draw', {
+  p_room_id: rm.room_id, p_host_key: rm.host_key,
+})).questions[0].correct_index;
 
 await rpcFails('rematch', { p_room_id: rm.room_id, p_host_key: rm.host_key },
   /the race has not finished/i);
@@ -832,7 +875,7 @@ await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); 
 const rmRead1 = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
 const rmPrompt1 = rmRead1.payload.prompt;
 await rpc('submit_answer', {
-  p_room_id: rm.room_id, p_player_key: rmHost.player_key, p_round: 1, p_choice_index: 0,
+  p_room_id: rm.room_id, p_player_key: rmHost.player_key, p_round: 1, p_choice_index: rmKey1,
 });
 await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // reveal
 await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // track
@@ -857,8 +900,8 @@ assert.equal(rmEvt.payload, null);
 const rmState = await rpc('get_room_state', { p_code: rm.code });
 assert.equal(rmState.room.code, rm.code, 'the SAME room code — nobody re-joins');
 assert.equal(rmState.room.timer_seconds, 12, 'the tweaked timer took');
-assert.equal(rmState.players.length, 2, 'the same players are still in the room');
-assert.deepEqual(rmState.players.map(p => p.nickname).sort(), ['Again', 'Encore']);
+assert.equal(rmState.players.length, 3, 'the same players are still in the room');
+assert.deepEqual(rmState.players.map(p => p.nickname).sort(), ['Again', 'Encore', 'Ref']);
 assert.equal(rmState.standings, null, 'the old standings are gone');
 
 // -- the draw is new, and excludes what the room has already asked
@@ -873,7 +916,8 @@ await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); 
 const rmRead2 = await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key });
 assert.notEqual(rmRead2.payload.prompt, rmPrompt1);
 await rpc('submit_answer', {
-  p_room_id: rm.room_id, p_player_key: rmP2.player_key, p_round: 1, p_choice_index: 0,
+  p_room_id: rm.room_id, p_player_key: rmP2.player_key, p_round: 1,
+  p_choice_index: rmDraw.questions[0].correct_index,
 });
 await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // reveal
 await rpc('advance_phase', { p_room_id: rm.room_id, p_host_key: rm.host_key }); // track
@@ -882,8 +926,11 @@ assert.equal(rmDone2.status, 'finished');
 assert.equal(rmDone2.payload.find(s => s.nickname === 'Again').correct, 0,
   'race 2 starts everybody at zero');
 
-// -- an exhausted pool refuses rather than repeating
-await rpcFails('rematch', { p_room_id: rm.room_id, p_host_key: rm.host_key },
+// -- an exhausted pool refuses rather than repeating. The room has spent two of
+//    the ten tier-1 'fuel' questions, so asking for all ten cannot be satisfied
+//    without repeating one — and a rematch never repeats.
+await rpcFails('rematch',
+  { p_room_id: rm.room_id, p_host_key: rm.host_key, p_tier_counts: [10, 0, 0, 0] },
   /not enough (unused )?questions/i);
 
 // -- a custom question is spent with its race
@@ -1257,3 +1304,24 @@ await rpc('create_room', {
 await rpc('get_room_state', { p_code: keep.code }); // still there afterwards
 
 console.log('✅ P3b host-absence smoke passed');
+
+// ---- M3 P4: the bank at launch size ----
+// The roadmap's exit criterion: a single-category room taking TEN questions from
+// every tier. Before P4 this raised `not enough questions in tier 1`.
+const bankRoom = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [10, 10, 10, 10],
+});
+assert.equal(bankRoom.total_rounds, 40, 'a single category can now field 40 rounds');
+
+// The tier-4 reserve had to come from ANOTHER category: this room drew every
+// tier-4 question `fuel` has. ADR-0041's category-preference is a preference,
+// and 0006_the_draw.sql's comment names this exact case.
+const bankState = await rpc('get_room_state', { p_code: bankRoom.code });
+assert.equal(bankState.room.total_rounds, 40);
+
+// Asking for eleven still fails, and still says so precisely.
+await rpcFails('create_room',
+  { p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [11, 0, 0, 0] },
+  /not enough questions in tier 1 \(need 11, have 10\)/i);
+
+console.log('✅ P4 bank smoke passed');

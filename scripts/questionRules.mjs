@@ -18,12 +18,12 @@ export const CATEGORY_LABELS = {
 };
 
 /**
- * A RATCHET. It ships at 2 — the floor the pre-P4 bank of 48 already meets —
- * and Task 9 raises it to 10 once the bank can. Never lower it: PRD §12's
- * launch bank is 10 per tier per category, and `create_room`'s own availability
- * check is what a lower number would quietly re-break.
+ * A RATCHET. It shipped at 2 — the floor the pre-P4 bank of 48 met — and was
+ * raised to 10 when the bank reached 240 (M3 P4, Task 9). Never lower it:
+ * PRD §12's launch bank is 10 per tier per category, and `create_room`'s own
+ * availability check is what a lower number would quietly re-break.
  */
-export const MIN_PER_CELL = 2;
+export const MIN_PER_CELL = 10;
 
 /** Hand-mirror of lib/draw.ts, which mirrors add_custom_question's own limits. */
 export const MAX_PROMPT_CHARS = 200;

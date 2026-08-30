@@ -189,6 +189,10 @@ describe('the hand-mirrors', () => {
     expect(CATEGORY_KEYS).toEqual(CATEGORIES.map(c => c.key));
   });
 
+  it('MIN_PER_CELL is at its launch value — a ratchet, never lowered', () => {
+    expect(MIN_PER_CELL).toBe(10);
+  });
+
   it('the text limits match lib/draw.ts, which mirrors add_custom_question', () => {
     expect(MAX_PROMPT_CHARS).toBe(DRAFT_PROMPT);
     expect(MAX_OPTION_CHARS).toBe(DRAFT_OPTION);
