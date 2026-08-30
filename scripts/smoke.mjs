@@ -917,3 +917,74 @@ assert.equal(rmcDraw.questions.filter(q => q.is_custom).length, 0,
 assert.equal(rmcDraw.questions.filter(q => q.prompt === 'Whose room is this?').length, 0);
 
 console.log('✅ P2b rematch smoke passed');
+
+// ---- P3a presence ----
+// The host reports the roster it can see; a player it stops reporting is
+// eventually dropped, by COUNT of missed reports rather than by wall clock.
+const pr = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['ai-tech', 'online'], p_tier_counts: [2, 0, 0, 0],
+});
+const prHost = await rpc('join_room', {
+  p_code: pr.code, p_nickname: 'Marshal', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: pr.host_key,
+});
+const prA = await rpc('join_room', {
+  p_code: pr.code, p_nickname: 'Stayer', p_avatar: 'duck', p_color: '#38bdf8',
+});
+const prB = await rpc('join_room', {
+  p_code: pr.code, p_nickname: 'Leaver', p_avatar: 'cat', p_color: '#a78bfa',
+});
+
+assert.equal(await rpc('drop_reports', {}), 20);
+assert.equal(await rpc('presence_report_ms', {}), 3000);
+
+// The thresholds are a hand-mirror of lib/presence.ts. 20 reports x 3000ms is
+// the PRD's 60-second grace; if either number moves, both files move.
+assert.equal((await rpc('drop_reports', {})) * (await rpc('presence_report_ms', {})), 60_000);
+
+await rpcFails('report_presence',
+  { p_room_id: pr.room_id, p_host_key: prA.player_key, p_present: [] },
+  /invalid host key/i);
+
+// Everyone present: nobody accrues anything.
+await rpc('report_presence', {
+  p_room_id: pr.room_id, p_host_key: pr.host_key,
+  p_present: [prHost.player_id, prA.player_id, prB.player_id],
+});
+let prState = await rpc('get_room_state', { p_code: pr.code });
+assert.ok(prState.room.host_seen_at, 'the host checked in');
+for (const p of prState.players) {
+  assert.equal(p.absent_reports, 0, `${p.nickname} is present`);
+  assert.equal(p.joined_late, false, `${p.nickname} was here from the start`);
+}
+
+// Nineteen reports without Leaver: reconnecting, not yet dropped.
+for (let i = 0; i < 19; i++) {
+  await rpc('report_presence', {
+    p_room_id: pr.room_id, p_host_key: pr.host_key,
+    p_present: [prHost.player_id, prA.player_id],
+  });
+}
+prState = await rpc('get_room_state', { p_code: pr.code });
+const leaver19 = prState.players.find(p => p.nickname === 'Leaver');
+const stayer19 = prState.players.find(p => p.nickname === 'Stayer');
+assert.equal(leaver19.absent_reports, 19);
+assert.equal(stayer19.absent_reports, 0, 'a present player never accrues');
+
+// The twentieth crosses the line.
+await rpc('report_presence', {
+  p_room_id: pr.room_id, p_host_key: pr.host_key,
+  p_present: [prHost.player_id, prA.player_id],
+});
+prState = await rpc('get_room_state', { p_code: pr.code });
+assert.equal(prState.players.find(p => p.nickname === 'Leaver').absent_reports, 20);
+
+// Coming back resets the count outright — a drop is not a debt.
+await rpc('report_presence', {
+  p_room_id: pr.room_id, p_host_key: pr.host_key,
+  p_present: [prHost.player_id, prA.player_id, prB.player_id],
+});
+prState = await rpc('get_room_state', { p_code: pr.code });
+assert.equal(prState.players.find(p => p.nickname === 'Leaver').absent_reports, 0);
+
+console.log('✅ P3a presence smoke passed');
