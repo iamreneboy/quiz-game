@@ -24,7 +24,9 @@ export default function StagePage({ params }: { params: Promise<{ code: string }
   const room = useGameStore(s => s.room);
   const roomMissing = useGameStore(s => s.roomMissing);
 
-  useRoomChannel(code);
+  // 'stage' both selects the read-only shot book and keeps this screen OUT of
+  // the presence map: a TV is not a racer (ADR-0031).
+  useRoomChannel(code, 'stage');
   useRoomRuntimes(code, 'stage');
 
   if (roomMissing) {
