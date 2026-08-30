@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '@/lib/store';
 import { supabase } from '@/lib/supabaseClient';
 import { loadSession } from '@/lib/session';
-import { msUntil } from '@/lib/serverTime';
 import { loadAnswerLock, saveAnswerLock, clearAnswerLock } from '@/lib/staging/answerLock';
 import { distributionRows } from '@/lib/staging/distribution';
 import { useStaging } from '@/lib/staging/useStaging';
 import StageShell from './StageShell';
+import Countdown from './Countdown';
 import TimerRing from './TimerRing';
 import QuestionCard from './QuestionCard';
 import SuddenDeathBanner from './SuddenDeathBanner';
@@ -75,7 +75,16 @@ export default function GameView({ code }: { code: string }) {
     if (error) setSubmitError(error.message);
   }
 
-  if (room.phase === 'countdown') return <Countdown endsAt={room.ends_at} />;
+  if (room.phase === 'countdown') {
+    return (
+      <main className="grid min-h-screen place-items-center">
+        <Countdown endsAt={room.ends_at} />
+        <p role="status" aria-live="polite" className="sr-only">
+          The race is starting.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <StageShell
@@ -127,24 +136,5 @@ export default function GameView({ code }: { code: string }) {
         </>
       }
     />
-  );
-}
-
-/** Restyled to the design system (spec §5). No choreography — not in P3's scope. */
-function Countdown({ endsAt }: { endsAt: string | null }) {
-  const [n, setN] = useState(3);
-  useEffect(() => {
-    const id = setInterval(() => setN(Math.max(1, Math.ceil(msUntil(endsAt) / 1000))), 100);
-    return () => clearInterval(id);
-  }, [endsAt]);
-  return (
-    <main className="grid min-h-screen place-items-center">
-      <span
-        className="font-display text-display font-black text-neon-cyan tabular-nums"
-        style={{ textShadow: '0 0 60px color-mix(in oklab, var(--color-neon-cyan) 55%, transparent)' }}
-      >
-        {n}
-      </span>
-    </main>
   );
 }

@@ -1,15 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { useGameStore } from '@/lib/store';
 import { useStaging } from '@/lib/staging/useStaging';
-import { msUntil } from '@/lib/serverTime';
 import { CATEGORIES, TIER_NAMES } from '@/lib/rank';
 import { distributionRows } from '@/lib/staging/distribution';
 import PauseCard from '@/components/PauseCard';
 import LowerThird from '@/components/LowerThird';
 import TimerRing from '@/components/TimerRing';
 import RevealPanel from '@/components/RevealPanel';
+import Countdown from '@/components/Countdown';
 import StageJoinPanel from './StageJoinPanel';
 import StageOptions from './StageOptions';
 import StageQuestion from './StageQuestion';
@@ -111,7 +110,7 @@ export default function StageBroadcast({ code }: { code: string }) {
       <div className="mt-[4cqh] flex flex-col items-center gap-6">
         <SuddenDeathBanner />
         {beat === 'idle' && room?.status === 'lobby' && <StageJoinPanel code={code} />}
-        {beat === 'countdown' && <StageCountdown endsAt={room?.ends_at ?? null} />}
+        {beat === 'countdown' && <Countdown endsAt={room?.ends_at ?? null} />}
         {question && (beat === 'read' || beat === 'answer' || beat === 'reveal') && (
           <StageQuestion question={question} steps={steps} />
         )}
@@ -162,26 +161,5 @@ export default function StageBroadcast({ code }: { code: string }) {
         )}
       </div>
     </div>
-  );
-}
-
-/**
- * The countdown at TV scale. Same one-interval shape as GameView's Countdown
- * (components/GameView.tsx) — the numeral comes from the server deadline, so
- * a stage view that opens mid-countdown joins it rather than restarting it.
- */
-function StageCountdown({ endsAt }: { endsAt: string | null }) {
-  const [n, setN] = useState(3);
-  useEffect(() => {
-    const id = setInterval(() => setN(Math.max(1, Math.ceil(msUntil(endsAt) / 1000))), 100);
-    return () => clearInterval(id);
-  }, [endsAt]);
-  return (
-    <p
-      className="text-center font-display text-display font-black text-neon-cyan tabular-nums"
-      style={{ textShadow: '0 0 60px color-mix(in oklab, var(--color-neon-cyan) 55%, transparent)' }}
-    >
-      {n}
-    </p>
   );
 }
