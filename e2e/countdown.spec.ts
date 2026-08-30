@@ -65,3 +65,18 @@ test('a stage view opening mid-countdown joins it rather than restarting it', as
   // Never 3: it opened after the countdown had already begun.
   await expect(numeral).not.toHaveAttribute('data-count', '3');
 });
+
+test('the lobby leaves before the countdown arrives, and only one main exists', async ({ browser }) => {
+  test.setTimeout(90_000);
+  const { host, joiner } = await twoPlayerLobby(browser);
+
+  await expect(joiner.getByTestId('room-stage')).toHaveAttribute('data-stage', 'lobby');
+  await host.getByRole('button', { name: /start the race/i }).click();
+
+  await expect(joiner.getByTestId('room-stage')).toHaveAttribute('data-stage', 'game', {
+    timeout: 10_000,
+  });
+  await expect(joiner.getByText('Starting grid')).toHaveCount(0);
+  // The handoff is a handoff: never two landmarks at once, before or after.
+  await expect(joiner.locator('main')).toHaveCount(1);
+});
