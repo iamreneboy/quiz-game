@@ -29,7 +29,11 @@ export default function PlayerConnection({ playerId }: { playerId: string }) {
       className={
         'shrink-0 rounded-full px-1.5 py-0.5 font-display text-[10px] font-semibold ' +
         'uppercase tracking-[0.14em] ' +
-        (reconnecting ? 'bg-warning/15 text-warning' : 'bg-haze/40 text-ink-mute')
+        // `ink-dim`, not `ink-mute`: haze is the lightest ground the app paints
+        // text on, and no ink-mute that still reads as muted clears AA there
+        // (3.95:1 even after M3 P5b's lift). Every other chip on a haze ground
+        // — DrawCard, QuestionCard, StageBroadcast — already uses ink-dim.
+        (reconnecting ? 'bg-warning/15 text-warning' : 'bg-haze/40 text-ink-dim')
       }
     >
       {reconnecting ? 'Reconnecting…' : 'Dropped'}

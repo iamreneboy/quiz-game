@@ -30,7 +30,12 @@
   /* Ink */
   --color-ink: #eaeeff;
   --color-ink-dim: #a6adde;
-  --color-ink-mute: #6d75ab;
+  /* Lifted from #6d75ab in M3 P5b (ADR-0055): the old value carried the app's
+     11px uppercase micro-labels at 3.99:1 on `night` and 4.28:1 on the answer
+     row, both under WCAG AA's 4.5:1 for small text. This is the smallest nudge
+     that clears 4.5:1 on every ground it is painted on; lib/a11y/palette.ts
+     mirrors it and tests/a11y.test.ts fails if the two drift. */
+  --color-ink-mute: #767eb9;
 
   /* Neon accents */
   --color-neon-cyan: #35f2ff;

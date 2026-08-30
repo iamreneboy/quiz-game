@@ -93,3 +93,15 @@ describe('the usage table covers what the source actually renders', () => {
     expect([...used].filter(t => !covered.has(t))).toEqual([]);
   });
 });
+
+describe('the palette mirror matches app/globals.css', () => {
+  const css = readFileSync('app/globals.css', 'utf8');
+
+  for (const [name, value] of Object.entries(TOKENS)) {
+    it(`--color-${name} is ${value}`, () => {
+      const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6});`));
+      expect(match, `--color-${name} not found in app/globals.css`).not.toBeNull();
+      expect(match![1].toLowerCase()).toBe(value.toLowerCase());
+    });
+  }
+});
