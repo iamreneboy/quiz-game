@@ -18,6 +18,7 @@ export interface GameState {
   applyState(s: RoomState): void;
   applyPhaseEvent(e: PhaseEvent): void;
   addPlayer(p: PlayerPublic): void;
+  setPlayers(players: PlayerPublic[]): void;
   setMyAnswer(i: number): void;
   setRoomMissing(missing: boolean): void;
 }
@@ -86,6 +87,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   addPlayer(p) {
     set(s => (s.players.some(x => x.id === p.id) ? s : { players: [...s.players, p] }));
   },
+
+  /**
+   * Replace the roster and nothing else (M3 P3a).
+   *
+   * `addPlayer` cannot express a CHANGE to a player already known, and a
+   * player's `is_playing` and `absent_reports` both move while the room is
+   * running. Deliberately narrower than `applyState`, which also rewrites the
+   * room, the question, the reveal and the standings — a roster refresh must
+   * never be able to clobber a phase event that landed while it was in flight.
+   */
+  setPlayers(players) { set({ players }); },
 
   setMyAnswer(i) { set({ myAnswer: i }); },
 
