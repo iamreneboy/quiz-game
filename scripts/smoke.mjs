@@ -129,8 +129,14 @@ assert.equal(evt.payload[1].longest_streak, 1);
 
 await rpcFails('advance_phase', { p_room_id: g.room_id, p_host_key: g.host_key }, /finished/i);
 
-// Joining a started game must fail
-await rpcFails('join_room', { p_code: g.code, p_nickname: 'Late', p_avatar: 'cat', p_color: '#fff' }, /already started/i);
+// M3 P3a opened this door for a room that is still RUNNING — a mid-game join
+// is now a late join, asserted in full in the P3a reclaim/late-join sections.
+// This room is FINISHED by here (advance_phase refuses it, just above), and a
+// finished room takes nobody: the message is the one P3a made specific, where
+// 0002 folded it in with "already started".
+await rpcFails('join_room',
+  { p_code: g.code, p_nickname: 'Late', p_avatar: 'cat', p_color: '#fff' },
+  /race has finished/i);
 
 console.log('✅ game-flow smoke passed');
 
@@ -986,5 +992,72 @@ await rpc('report_presence', {
 });
 prState = await rpc('get_room_state', { p_code: pr.code });
 assert.equal(prState.players.find(p => p.nickname === 'Leaver').absent_reports, 0);
+
+// -- reclaim: the same nickname takes the run back, but only once dropped
+const rc = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+const rcHost = await rpc('join_room', {
+  p_code: rc.code, p_nickname: 'Marshal', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: rc.host_key, p_is_playing: false,
+});
+const rcA = await rpc('join_room', {
+  p_code: rc.code, p_nickname: 'Ghost', p_avatar: 'duck', p_color: '#38bdf8',
+});
+const rcB = await rpc('join_room', {
+  p_code: rc.code, p_nickname: 'Anchor', p_avatar: 'cat', p_color: '#a78bfa',
+});
+// The draw locks at start_game, so the answer key is read while it is still
+// open — the host is an MC here, so draw_public gives it up (ADR-0040).
+const rcDraw = await rpc('get_room_draw', { p_room_id: rc.room_id, p_host_key: rc.host_key });
+const rcCorrect = rcDraw.questions[0].correct_index;
+
+await rpc('start_game', { p_room_id: rc.room_id, p_host_key: rc.host_key });
+await rpc('advance_phase', { p_room_id: rc.room_id, p_host_key: rc.host_key }); // read
+const rcRead = await rpc('advance_phase', { p_room_id: rc.room_id, p_host_key: rc.host_key });
+assert.equal(rcRead.phase, 'answer');
+
+// Ghost scores, then vanishes.
+await rpc('submit_answer', {
+  p_room_id: rc.room_id, p_player_key: rcA.player_key, p_round: 1, p_choice_index: rcCorrect,
+});
+
+// Still connected as far as the server knows: the nickname is taken.
+await rpcFails('join_room',
+  { p_code: rc.code, p_nickname: 'Ghost', p_avatar: 'duck', p_color: '#38bdf8' },
+  /nickname taken/i);
+
+for (let i = 0; i < 20; i++) {
+  await rpc('report_presence', {
+    p_room_id: rc.room_id, p_host_key: rc.host_key,
+    p_present: [rcHost.player_id, rcB.player_id],
+  });
+}
+
+const rcBack = await rpc('join_room', {
+  p_code: rc.code, p_nickname: 'Ghost', p_avatar: 'robot', p_color: '#ffffff',
+});
+assert.equal(rcBack.reclaimed, true, 'the run was reclaimed, not restarted');
+assert.equal(rcBack.player_id, rcA.player_id, 'the SAME player row');
+assert.equal(rcBack.player_key, rcA.player_key, 'and the same key, so the session works');
+assert.equal(rcBack.player.absent_reports, 0, 'back in the room');
+
+// The score survived the drop, untouched.
+await rpc('advance_phase', { p_room_id: rc.room_id, p_host_key: rc.host_key }); // reveal
+const rcTrack = await rpc('advance_phase', { p_room_id: rc.room_id, p_host_key: rc.host_key });
+assert.equal(rcTrack.phase, 'track');
+assert.equal(rcTrack.payload.find(s => s.nickname === 'Ghost').correct, 1,
+  'a reclaimed run keeps every answer it had');
+
+// A reclaimed player is a normal racer again, and the nickname re-locks.
+await rpcFails('join_room',
+  { p_code: rc.code, p_nickname: 'Ghost', p_avatar: 'duck', p_color: '#38bdf8' },
+  /nickname taken/i);
+
+// A finished room takes nobody at all.
+await rpc('end_game', { p_room_id: rc.room_id, p_host_key: rc.host_key });
+await rpcFails('join_room',
+  { p_code: rc.code, p_nickname: 'Latecomer', p_avatar: 'cat', p_color: '#fff' },
+  /race has finished/i);
 
 console.log('✅ P3a presence smoke passed');

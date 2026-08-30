@@ -159,3 +159,95 @@ end $$;
 -- New functions need their own grant; earlier blanket grants ran before they
 -- existed.
 grant execute on all functions in schema public to anon, authenticated;
+
+-- ============ join_room ============
+-- THE DOOR OPENS (ADR-0050). 0002's flat `status <> 'lobby' -> raise` becomes
+-- two arms of one function, because the two mid-game cases differ by exactly
+-- one nickname lookup:
+--
+--   RECLAIM   an existing nickname whose player the server can see is gone.
+--             The SAME row is returned — same id, same player_key, same
+--             answers — so the browser that reclaims it simply is that racer
+--             again. Task 6 adds nothing here.
+--   LATE JOIN anything else: a new player, spectating, flagged joined_late.
+--             Materialised by advance_phase at the next round start (Task 6).
+--
+-- THE RECLAIM GATE IS `player_dropped`, AND THAT IS THE WHOLE SECURITY MODEL.
+-- Reclaim hands out an existing player_key on a nickname match, so it must be
+-- impossible while that player is demonstrably still connected — otherwise
+-- anyone in the room could take over anyone else's run by typing their name.
+-- Twenty consecutive missed host reports is the bar. PRD §9 asks for exactly
+-- this ("can rejoin with the same nickname to reclaim their run") and the room
+-- code is already a shared secret, so a party-game threat model is the right
+-- one; see ADR-0050 for what this deliberately does NOT protect.
+--
+-- The host's OWN key is never handed out. A host who loses their localStorage
+-- can reclaim their player row like anyone else and will come back as an
+-- ordinary racer; recovering host authority from a lost session is out of
+-- scope for M3 and is not attempted here.
+create or replace function join_room(
+  p_code text, p_nickname text, p_avatar text, p_color text,
+  p_host_key uuid default null, p_is_playing boolean default true
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_player players;
+  v_is_host boolean := false;
+  v_nick text := trim(p_nickname);
+  v_reclaimed boolean := false;
+begin
+  select * into v_room from rooms where code = upper(p_code);
+  if not found then raise exception 'room not found'; end if;
+  if v_room.status = 'finished' then raise exception 'the race has finished'; end if;
+  if length(v_nick) < 1 or length(v_nick) > 20 then
+    raise exception 'nickname must be 1-20 characters';
+  end if;
+
+  -- Validated before the branch, so a wrong host key is rejected rather than
+  -- quietly ignored by the mid-game arm.
+  if p_host_key is not null then
+    if p_host_key <> v_room.host_key then raise exception 'invalid host key'; end if;
+    v_is_host := true;
+  end if;
+
+  if v_room.status <> 'lobby' then
+    select * into v_player from players
+      where room_id = v_room.id and nickname = v_nick;
+
+    if found then
+      if not player_dropped(v_player) then raise exception 'nickname taken'; end if;
+      -- Avatar and colour are deliberately NOT overwritten: the room has been
+      -- watching this racer's colours on the track all game, and a reclaim is
+      -- the same racer returning, not a new one.
+      update players set absent_reports = 0
+        where id = v_player.id returning * into v_player;
+      v_reclaimed := true;
+    else
+      insert into players (room_id, nickname, avatar, color, is_host, is_playing, joined_late)
+      values (v_room.id, v_nick, p_avatar, p_color, false, false, true)
+      returning * into v_player;
+    end if;
+
+    return jsonb_build_object(
+      'room_id', v_room.id, 'player_id', v_player.id,
+      'player_key', v_player.player_key, 'player', player_public(v_player),
+      'reclaimed', v_reclaimed);
+  end if;
+
+  begin
+    insert into players (room_id, nickname, avatar, color, is_host, is_playing)
+    values (v_room.id, v_nick, p_avatar, p_color, v_is_host,
+            case when v_is_host then p_is_playing else true end)
+    returning * into v_player;
+  exception when unique_violation then
+    raise exception 'nickname taken';
+  end;
+
+  return jsonb_build_object(
+    'room_id', v_room.id, 'player_id', v_player.id,
+    'player_key', v_player.player_key, 'player', player_public(v_player),
+    'reclaimed', false);
+end $$;
+
+grant execute on all functions in schema public to anon, authenticated;

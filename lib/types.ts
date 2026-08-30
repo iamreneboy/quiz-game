@@ -128,3 +128,19 @@ export interface Award {
   /** Always at least one. More than one means the award is shared. */
   winners: AwardWinner[];
 }
+
+/**
+ * What `join_room` returns (M3 P3a).
+ *
+ * `reclaimed` is true when an existing dropped player's run was handed back
+ * rather than a new player created — the caller's session is that racer's
+ * session, answers and all (ADR-0050).
+ */
+export interface JoinResult {
+  room_id: string;
+  player_id: string;
+  player_key: string;
+  player: PlayerPublic;
+  /** Absent against a pre-0009 database, where every join was a new player. */
+  reclaimed?: boolean;
+}
