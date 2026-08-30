@@ -197,4 +197,15 @@ VFX budget before a test starts (CURRENT.md).
 `0009_presence.sql` applied to `niznfbabmixesfvxlypi` via
 `npx -y supabase@latest db query --linked --file supabase/migrations/0009_presence.sql`,
 then verified by schema rather than by `supabase migration list --linked`, which
-understates what is applied (CURRENT.md).
+understates what is applied (CURRENT.md):
+
+```
+player_cols = 2   (players.absent_reports, players.joined_late)
+room_cols   = 1   (rooms.host_seen_at)
+fns         = 3   (report_presence, player_dropped, materialize_late_joiners)
+```
+
+Note for the next phase: **a fresh worktree cannot reach the cloud project until
+`supabase/.temp/` is copied into it by hand.** It is gitignored, like
+`.env.local`, and without it the linked CLI answers
+`Cannot find project ref. Have you run supabase link?`.
