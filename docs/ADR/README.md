@@ -80,3 +80,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0051](0051-a-vanished-host-is-swept-by-any-client.md) | A vanished host is swept by an elected client against the host's own heartbeat | M3 P3b |
 | [0052](0052-the-wires-fifth-opening.md) | The wire's fifth opening — `host_absent`, derived and never stored | M3 P3b |
 | [0053](0053-the-bank-is-generated-data.md) | The question bank is generated data, and it ships as an upsert | M3 P4 |
+| [0054](0054-the-grid-rolls-up-on-the-servers-countdown.md) | The grid rolls up on the server's countdown | M3 P5a |

@@ -1,5 +1,7 @@
 'use client';
 import { Suspense, use, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { DURATION, EASE } from '@/lib/presentation/tokens';
 import { useGameStore } from '@/lib/store';
 import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useRoomRuntimes } from '@/lib/useRoomRuntimes';
@@ -20,6 +22,21 @@ import PerfOverlay from '@/components/PerfOverlay';
 import TensionFrame from '@/components/TensionFrame';
 import HostControlStrip from '@/components/HostControlStrip';
 import PauseCard from '@/components/PauseCard';
+
+type Stage = 'unknown' | 'gate' | 'connecting' | 'lobby' | 'game' | 'results';
+
+/**
+ * How long each stage takes to LEAVE.
+ *
+ * Only the lobby has an exit. The race starting is the one swap on this page
+ * that is a moment rather than a navigation, and `mode="wait"` — which is what
+ * keeps exactly one <main> landmark in the tree at every instant — would
+ * otherwise put that same gap in front of the ceremony, whose DOM is derived
+ * from `ends_at` and has to be present from its first frame (ADR-0030).
+ */
+const EXIT_MS: Record<Stage, number> = {
+  unknown: 0, gate: 0, connecting: 0, lobby: DURATION.beat, game: 0, results: 0,
+};
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = use(params);
@@ -97,18 +114,24 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     }
   }
 
+  let stage: Stage = 'unknown';
   let content: React.ReactNode = null;
   if (hasSession === null) {
-    content = null;
+    stage = 'unknown';
   } else if (!hasSession) {
+    stage = 'gate';
     content = <JoinGate code={code} onJoined={handleJoined} />;
   } else if (!room) {
+    stage = 'connecting';
     content = <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>;
   } else if (room.status === 'lobby') {
+    stage = 'lobby';
     content = <LobbyView code={code} isHost={isHost} onStart={driver.start} startError={driver.error} />;
   } else if (room.status === 'finished') {
+    stage = 'results';
     content = <ResultsView code={code} driver={driver} />;
   } else {
+    stage = 'game';
     content = <GameView code={code} />;
   }
 
@@ -128,7 +151,29 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
         to reach Resume through the card that is telling everyone why they are
         waiting.
       */}
-      <div className={`relative z-10 ${isHost ? 'pb-16' : ''}`}>{content}</div>
+      {/*
+        One keyed child, mode="wait": the outgoing view finishes leaving before
+        the incoming one mounts, so there is never a frame with two <main>
+        landmarks in the tree. Only the lobby's exit has any duration
+        (EXIT_MS) — the world's roll-up is already running underneath it, on
+        the canvas, which sits outside this wrapper and never unmounts.
+      */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={stage}
+          data-testid="room-stage"
+          data-stage={stage}
+          initial={false}
+          exit={{
+            opacity: 0,
+            y: -24,
+            transition: { duration: EXIT_MS[stage] / 1000, ease: EASE.snap },
+          }}
+          className={`relative z-10 ${isHost ? 'pb-16' : ''}`}
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
       <PauseCard />
       {isHost && <HostControlStrip driver={driver} />}
     </div>

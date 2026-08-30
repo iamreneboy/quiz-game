@@ -1,20 +1,48 @@
 'use client';
-import { useState } from 'react';
+import { motion } from 'motion/react';
 import { useGameStore } from '@/lib/store';
 import { avatarEmoji } from '@/lib/avatars';
 import { joinUrl } from '@/lib/qr';
 import { useOrigin } from '@/lib/useOrigin';
+import { DURATION, EASE } from '@/lib/presentation/tokens';
+import Panel from '@/components/ui/Panel';
+import Button from '@/components/ui/Button';
+import HudCorners from '@/components/ui/HudCorners';
 import JoinQr from '@/components/host/JoinQr';
 import PlayerConnection from '@/components/PlayerConnection';
+import StageLink from '@/components/lobby/StageLink';
 
 /**
- * The lobby's readable half (spec §7). The Pixi start line carries the
- * formation; this strip carries the names, so nothing readable depends on
- * canvas (PRD §9).
+ * The lobby's readable half (M2 P2 spec §7), on the P0 design system as of
+ * M3 P5a — the last M1-era screen to cross over.
+ *
+ * The Pixi start line carries the formation; this strip carries the names, so
+ * nothing readable depends on canvas (PRD §9). At lights-out the formation
+ * rolls up to the line (lib/world/choreographer.ts's beginCountdownRollUp)
+ * while this panel lifts away (app/room/[code]/page.tsx's stage seam).
  *
  * `Starting grid — {n} joined` and the start-button copy are asserted verbatim
  * in e2e/game-flow.spec.ts and e2e/world.spec.ts — do not reword them.
  */
+
+const heading =
+  'font-display text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-neon-cyan';
+
+/**
+ * Entrance only, no exit: leaving is the room page's job, because the lobby
+ * hands off to the countdown rather than unmounting on its own. Replaying this
+ * on a reload is CORRECT — a lobby has no beat position to land in, unlike
+ * every `ends_at`-staged component CURRENT.md warns about.
+ */
+const rise = {
+  hidden: { opacity: 0, y: 20 },
+  show: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: DURATION.settle / 1000, ease: EASE.settle, delay: index * 0.06 },
+  }),
+};
+
 export default function LobbyView({
   code, isHost, onStart, startError,
 }: { code: string; isHost: boolean; onStart: () => void; startError: string | null }) {
@@ -24,136 +52,105 @@ export default function LobbyView({
   const join = origin ? joinUrl(origin, code) : null;
 
   return (
-    <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col justify-end gap-6 p-6">
-      <header className="flex items-center justify-center gap-6">
-        <div className="text-center">
-          <p className="text-slate-400">
-            Join at <b className="text-slate-200">{origin ? new URL(origin).host : ''}</b> with code
-          </p>
-          <p className="text-6xl font-black tracking-[0.2em] text-amber-400">{code}</p>
-        </div>
-        <JoinQr url={join} className="h-28 w-28" />
-      </header>
+    <main className="relative mx-auto flex min-h-screen max-w-3xl flex-col justify-end gap-6 p-6">
+      <motion.div custom={0} initial="hidden" animate="show" variants={rise}>
+        <Panel className="relative flex flex-wrap items-center justify-center gap-6 p-6">
+          <HudCorners />
+          <div className="text-center">
+            <p className="text-ink-dim">
+              Join at <b className="text-ink">{origin ? new URL(origin).host : ''}</b> with code
+            </p>
+            <p className="font-display text-display font-black tracking-[0.2em] text-warning">
+              {code}
+            </p>
+          </div>
+          <JoinQr url={join} className="h-28 w-28" />
+        </Panel>
+      </motion.div>
 
-      <section className="rounded-2xl border border-white/10 bg-abyss/70 p-4 backdrop-blur-sm">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-slate-400">
-          Starting grid — {players.length} joined
-        </h2>
-        <ul data-testid="lobby-roster" className="flex flex-wrap gap-2">
-          {players.map(p => (
-            <li
-              key={p.id}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3"
-            >
-              <span
-                className="grid h-7 w-7 place-items-center rounded-full text-base"
-                style={{ backgroundColor: `${p.color}33`, boxShadow: `inset 0 0 0 2px ${p.color}` }}
-                aria-hidden
+      <motion.section custom={1} initial="hidden" animate="show" variants={rise}>
+        <Panel className="p-4">
+          <h2 className={`${heading} mb-3`}>Starting grid — {players.length} joined</h2>
+          <ul data-testid="lobby-roster" className="flex flex-wrap gap-2">
+            {players.map(p => (
+              <li
+                key={p.id}
+                className="flex items-center gap-2 rounded-full border border-haze/50
+                  bg-night/60 py-1 pl-1 pr-3"
               >
-                {avatarEmoji(p.avatar)}
-              </span>
-              <span className="text-sm font-semibold">{p.nickname}</span>
-              {p.is_host && (
-                <span className="text-xs font-bold text-amber-400">{p.is_playing ? 'Host' : 'MC'}</span>
-              )}
-              <PlayerConnection playerId={p.id} />
-              {p.joined_late && (
                 <span
-                  data-testid="late-badge"
-                  className="shrink-0 rounded-full bg-neon-cyan/15 px-1.5 py-0.5
-                    font-display text-[10px] font-semibold uppercase tracking-[0.14em]
-                    text-neon-cyan"
+                  className="grid h-7 w-7 place-items-center rounded-full text-base"
+                  style={{ backgroundColor: `${p.color}33`, boxShadow: `inset 0 0 0 2px ${p.color}` }}
+                  aria-hidden
                 >
-                  Joined late
+                  {avatarEmoji(p.avatar)}
                 </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+                <span className="text-sm font-semibold text-ink">{p.nickname}</span>
+                {p.is_host && (
+                  <span className="font-display text-xs font-bold uppercase tracking-[0.14em] text-warning">
+                    {p.is_playing ? 'Host' : 'MC'}
+                  </span>
+                )}
+                <PlayerConnection playerId={p.id} />
+                {p.joined_late && (
+                  <span
+                    data-testid="late-badge"
+                    className="shrink-0 rounded-full bg-neon-cyan/15 px-1.5 py-0.5
+                      font-display text-[10px] font-semibold uppercase tracking-[0.14em]
+                      text-neon-cyan"
+                  >
+                    Joined late
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </motion.section>
 
       {isHost && (
-        <a
+        <motion.a
+          custom={2}
+          initial="hidden"
+          animate="show"
+          variants={rise}
           data-testid="lobby-review-link"
           href={`/host/${code}/review`}
-          className="rounded-2xl border border-white/10 bg-abyss/70 p-4 text-center text-sm
-            font-semibold text-slate-300 hover:border-amber-400/60 hover:text-amber-400
-            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+          className="rounded-panel border border-haze/50 bg-night/55 p-4 text-center text-sm
+            font-semibold text-ink-dim backdrop-blur-xl ease-snap duration-(--dur-cut)
+            transition-[border-color,color]
+            hover:border-neon-cyan hover:text-neon-cyan
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan"
         >
           Review the draw — swap a question or add your own
-        </a>
+        </motion.a>
       )}
 
-      {isHost && <StageLink code={code} />}
+      {isHost && (
+        <motion.div custom={3} initial="hidden" animate="show" variants={rise}>
+          <StageLink code={code} />
+        </motion.div>
+      )}
 
       {isHost ? (
-        <div className="space-y-2">
-          {startError && <p className="text-center text-rose-400">{startError}</p>}
-          <button
-            onClick={onStart}
-            disabled={playing.length < 2}
-            className="w-full rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 disabled:opacity-40"
-          >
+        <motion.div custom={4} initial="hidden" animate="show" variants={rise} className="space-y-2">
+          {startError && <p className="text-center text-wrong">{startError}</p>}
+          <Button size="lg" className="w-full" onClick={onStart} disabled={playing.length < 2}>
             {playing.length < 2 ? 'Need at least 2 players' : 'Start the race'}
-          </button>
-          <p className="text-center text-xs text-slate-500">3+ players recommended</p>
-        </div>
+          </Button>
+          <p className="text-center text-xs text-ink-dim">3+ players recommended</p>
+        </motion.div>
       ) : (
-        <p className="text-center text-slate-400">Waiting for the host to start…</p>
+        <motion.p
+          custom={4}
+          initial="hidden"
+          animate="show"
+          variants={rise}
+          className="text-center text-ink-dim"
+        >
+          Waiting for the host to start…
+        </motion.p>
       )}
     </main>
-  );
-}
-
-/**
- * The way into the broadcast screen (PRD §1: a room hands out a join link, a
- * QR and a stage link).
- *
- * Host-only: a player tapping this on their phone would replace their own game
- * with a spectator view of it. The anchor carries a real href so it can be
- * copied, opened in a new tab, or dragged onto a second display — a button
- * that only calls `window.open` can do none of those.
- */
-function StageLink({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-  const url = typeof window === 'undefined' ? '' : `${window.location.origin}/stage/${code}`;
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard access can be denied outright (insecure origin, permission
-      // policy). The URL is on screen either way, so this is a silent no-op
-      // rather than an error the host can do anything about.
-    }
-  }
-
-  return (
-    <section className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-abyss/70 p-4">
-      <div className="min-w-0">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Stage view</h2>
-        <p className="truncate text-sm text-slate-300">{url}</p>
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-slate-200"
-        >
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-        <a
-          data-testid="stage-link"
-          href={`/stage/${code}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg bg-amber-400 px-3 py-2 text-sm font-bold text-slate-950"
-        >
-          Open
-        </a>
-      </div>
-    </section>
   );
 }

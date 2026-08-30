@@ -11,6 +11,7 @@ import type { Tier } from '@/lib/types';
 import Panel from '@/components/ui/Panel';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import HudCorners from '@/components/ui/HudCorners';
 
 const sectionMotion = (index: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -20,19 +21,6 @@ const sectionMotion = (index: number) => ({
 
 const sectionHeading =
   'font-display text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-neon-cyan';
-
-/** HUD viewfinder corners — echoes the landing page's signature on the hero panel. */
-function HudCorners() {
-  const arm = 'pointer-events-none absolute h-4 w-4 border-neon-cyan/70';
-  return (
-    <>
-      <span aria-hidden className={`${arm} -left-1.5 -top-1.5 border-l-2 border-t-2`} />
-      <span aria-hidden className={`${arm} -right-1.5 -top-1.5 border-r-2 border-t-2`} />
-      <span aria-hidden className={`${arm} -bottom-1.5 -left-1.5 border-b-2 border-l-2`} />
-      <span aria-hidden className={`${arm} -bottom-1.5 -right-1.5 border-b-2 border-r-2`} />
-    </>
-  );
-}
 
 export default function HostSetup() {
   const router = useRouter();
