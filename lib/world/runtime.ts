@@ -25,6 +25,7 @@ import {
 } from './camera';
 import {
   avatarStates,
+  beginCountdownRollUp,
   beginSequence,
   bufferCue,
   completeSequence,
@@ -171,16 +172,26 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
 
       const state = useGameStore.getState();
       const metrics = trackMetrics(state.room?.total_rounds ?? 12);
-      const anchors = fieldAnchors(
-        state,
-        metrics,
-        ceremonySteps(state),
-        stackRiseLimit({ width: app.screen.width, height: app.screen.height }),
-      );
+      const riseLimit = stackRiseLimit({ width: app.screen.width, height: app.screen.height });
+      const anchors = fieldAnchors(state, metrics, ceremonySteps(state), riseLimit);
 
       if (cue.type === 'phase-track') {
         choreo = beginSequence(choreo, anchors, now, profile);
-      } else if (cue.type === 'phase-read' || cue.type === 'phase-countdown') {
+      } else if (cue.type === 'phase-countdown') {
+        // Lights out: the field leaves the lobby grid and takes the line,
+        // rather than teleporting there in one frame.
+        //
+        // The grid is RECOMPUTED, not remembered. The store advances `phase`
+        // before this bridge runs, so `anchors` above already answers "start
+        // line"; the formation being left is a pure function of state the
+        // store still holds, and keeping it on every lobby frame would be a
+        // per-frame write for a derived value.
+        //
+        // The racer filter mirrors fieldAnchors': a non-racing MC host is in
+        // `players` but never in the field.
+        const grid = gridAnchors(state.players.filter(p => p.is_playing), metrics, riseLimit);
+        choreo = beginCountdownRollUp(choreo, grid, anchors, msUntil(cue.endsAt), now, profile);
+      } else if (cue.type === 'phase-read') {
         // A new beat hard-completes anything still in flight (spec §4).
         // completeSequence clears heldAnchors, so the hold comes after it.
         choreo = holdAnchors(completeSequence(choreo), anchors);
