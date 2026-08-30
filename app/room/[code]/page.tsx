@@ -5,6 +5,7 @@ import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useRoomRuntimes } from '@/lib/useRoomRuntimes';
 import { useHostDriver } from '@/lib/useHostDriver';
 import { useHostPresenceReporter } from '@/lib/useHostPresenceReporter';
+import { useHostAbsenceSweep } from '@/lib/useHostAbsenceSweep';
 import { useLateJoinerMaterialize } from '@/lib/useLateJoinerMaterialize';
 import { loadSession, subscribeSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
@@ -78,6 +79,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
   const hostKey = typeof window !== 'undefined' ? loadSession(code)?.hostKey ?? null : null;
   useHostPresenceReporter(hostKey);
+  const myPlayerId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
+  useHostAbsenceSweep(channel, myPlayerId);
   useLateJoinerMaterialize(code);
 
   useRoomRuntimes(code, 'player');
