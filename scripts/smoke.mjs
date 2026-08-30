@@ -1151,3 +1151,109 @@ assert.equal(ljFresh.players.find(p => p.nickname === 'Tardy').joined_late, fals
   'nobody joined THIS race late');
 
 console.log('✅ P3a presence smoke passed');
+
+// ---- P3b the vanished host ----
+// The sweep takes NO host key, because it grants nothing: it acts only on a
+// host_seen_at the host itself last wrote (ADR-0051).
+assert.equal(await rpc('host_absence_pause_ms', {}), 9_000);
+assert.equal(await rpc('host_absence_end_ms', {}), 300_000);
+
+const vh = await rpc('create_room', {
+  p_timer_seconds: 20, p_categories: ['fuel'], p_tier_counts: [2, 0, 0, 0],
+});
+const vhHost = await rpc('join_room', {
+  p_code: vh.code, p_nickname: 'Marshal', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: vh.host_key, p_is_playing: false,
+});
+const vhA = await rpc('join_room', {
+  p_code: vh.code, p_nickname: 'Racer1', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('join_room', {
+  p_code: vh.code, p_nickname: 'Racer2', p_avatar: 'cat', p_color: '#a78bfa',
+});
+
+// A room whose host has NEVER reported is not swept: host_seen_at is null, and
+// "never checked in" must not read as "vanished" (every pre-0009 room is that).
+await rpc('start_game', { p_room_id: vh.room_id, p_host_key: vh.host_key });
+assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
+  'a room with no heartbeat at all is left alone');
+
+// A FRESH heartbeat is likewise no cause to act.
+await rpc('report_presence', {
+  p_room_id: vh.room_id, p_host_key: vh.host_key, p_present: [vhHost.player_id, vhA.player_id],
+});
+assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
+  'a live host is not swept');
+
+let vhState = await rpc('get_room_state', { p_code: vh.code });
+assert.equal(vhState.room.status, 'playing');
+assert.equal(vhState.room.host_absent, false, 'the host is here');
+
+// Get into a beat with a real deadline so the freeze has something to freeze.
+await rpc('advance_phase', { p_room_id: vh.room_id, p_host_key: vh.host_key }); // read
+const vhAnswer = await rpc('advance_phase', { p_room_id: vh.room_id, p_host_key: vh.host_key });
+assert.equal(vhAnswer.phase, 'answer');
+assert.equal(vhAnswer.host_absent, false);
+
+// Now stop reporting and wait past the threshold. This is the ONE wall-clock
+// wait in the harness; the five-minute branch is covered by code path rather
+// than by a timed test (see the plan's self-review).
+await new Promise(r => setTimeout(r, 10_000));
+
+const vhPaused = await rpc('sweep_host_absence', { p_room_id: vh.room_id });
+assert.ok(vhPaused, 'a stale host is swept');
+assert.equal(vhPaused.status, 'paused');
+assert.equal(vhPaused.host_absent, true, 'and the wire says why');
+assert.equal(vhPaused.phase, 'answer', 'freeze-and-shift: the beat does not move');
+assert.equal(vhPaused.ends_at, null);
+assert.ok(vhPaused.paused_remaining_ms > 0, 'the remainder is frozen, not zeroed');
+
+// IDEMPOTENT: a second sweep of an already-paused room changes nothing, and
+// must NOT recompute the remainder from the deadline the first one nulled.
+assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
+  'sweeping a paused room is inert');
+vhState = await rpc('get_room_state', { p_code: vh.code });
+assert.equal(vhState.room.paused_remaining_ms, vhPaused.paused_remaining_ms,
+  'the frozen remainder survives a second sweep');
+
+// Answers are refused while paused, exactly as they are for a deliberate pause.
+await rpcFails('submit_answer',
+  { p_room_id: vh.room_id, p_player_key: vhA.player_key, p_round: 1, p_choice_index: 0 },
+  /not accepting answers/i);
+
+// The host comes back: one heartbeat clears host_absent, and the ordinary
+// resume_game path takes it from there.
+await rpc('report_presence', {
+  p_room_id: vh.room_id, p_host_key: vh.host_key, p_present: [vhHost.player_id, vhA.player_id],
+});
+vhState = await rpc('get_room_state', { p_code: vh.code });
+assert.equal(vhState.room.host_absent, false, 'one heartbeat is enough');
+assert.equal(vhState.room.status, 'paused', 'but the sweep does not un-pause itself');
+
+const vhResumed = await rpc('resume_game', { p_room_id: vh.room_id, p_host_key: vh.host_key });
+assert.equal(vhResumed.status, 'playing');
+assert.equal(vhResumed.host_absent, false);
+assert.ok(vhResumed.ends_at, 'the deadline is shifted, not replayed');
+
+// A finished room is never swept.
+await rpc('end_game', { p_room_id: vh.room_id, p_host_key: vh.host_key });
+assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
+  'a finished room is out of the sweep’s reach');
+
+// -- the 24-hour purge (PRD §9)
+// A fresh room is never swept, however many rooms are created around it.
+const keep = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+assert.equal(typeof (await rpc('purge_rooms', {})), 'number',
+  'purge_rooms reports how many it took');
+const keepState = await rpc('get_room_state', { p_code: keep.code });
+assert.equal(keepState.room.code, keep.code, 'today’s room survives');
+
+// Creating a room runs the sweep — that is PRD §9’s "cleanup on access".
+await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('get_room_state', { p_code: keep.code }); // still there afterwards
+
+console.log('✅ P3b host-absence smoke passed');

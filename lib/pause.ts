@@ -21,6 +21,7 @@ export interface PausableRoom {
   status: RoomStatus;
   ends_at: string | null;
   paused_remaining_ms?: number | null;
+  host_absent?: boolean;
 }
 
 export function isPaused(room: { status: RoomStatus } | null | undefined): boolean {
@@ -39,4 +40,19 @@ export function beatRemainingMs(room: PausableRoom | null | undefined): number |
   if (!room) return null;
   if (room.status === 'paused') return room.paused_remaining_ms ?? 0;
   return room.ends_at ? msUntil(room.ends_at) : null;
+}
+
+/**
+ * Paused BECAUSE the host vanished, rather than because the host said so
+ * (ADR-0052).
+ *
+ * Both halves matter. `host_absent` alone is true for a room that is still
+ * running while the host's phone is in a tunnel and the sweep has not yet
+ * fired — nothing should be announced there. And a paused room with a present
+ * host is P0's deliberate pause, which has its own words.
+ */
+export function isHostAbsent(
+  room: { status: RoomStatus; host_absent?: boolean } | null | undefined,
+): boolean {
+  return room?.status === 'paused' && room.host_absent === true;
 }

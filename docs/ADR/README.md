@@ -77,3 +77,5 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0048](0048-the-join-announcement-survives-an-unready-channel.md) | The join announcement survives an unready channel | M3 (P2a debt) |
 | [0049](0049-presence-is-reported-by-the-host.md) | Presence is reported by the host, and "dropped" is a count of missed reports | M3 P3a |
 | [0050](0050-the-door-reopens-inside-join-room.md) | The door reopens inside `join_room` — reclaim and late join are one function | M3 P3a |
+| [0051](0051-a-vanished-host-is-swept-by-any-client.md) | A vanished host is swept by an elected client against the host's own heartbeat | M3 P3b |
+| [0052](0052-the-wires-fifth-opening.md) | The wire's fifth opening — `host_absent`, derived and never stored | M3 P3b |

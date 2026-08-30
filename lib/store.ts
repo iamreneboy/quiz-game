@@ -49,6 +49,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         // pre-0005 fallback (ADR-0037).
         status: e.status ?? (e.phase === 'results' ? 'finished' : 'playing'),
         paused_remaining_ms: e.paused_remaining_ms ?? null,
+        // Absence is derived server-side on every read (ADR-0052), so a stale
+        // value is impossible: whatever the last event said is what was true
+        // when the server built it. An absent key folds to false — a pre-0010
+        // database has no opinion, and "the host is here" is the safe one.
+        host_absent: e.host_absent ?? false,
         // skip_question shortens the track mid-game, so this is no longer fixed
         // at room creation (ADR-0038).
         total_rounds: e.total_rounds ?? room.total_rounds,

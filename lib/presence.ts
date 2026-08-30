@@ -100,3 +100,30 @@ export function connectionState(
 export function absentReportsOf(player: PlayerPublic | undefined): number {
   return player?.absent_reports ?? 0;
 }
+
+/**
+ * Which single client calls `sweep_host_absence` (ADR-0051).
+ *
+ * Deterministic and identical on every client, because it is computed from the
+ * one thing every client already holds a byte-identical copy of: the presence
+ * map. No negotiation, no leader-election protocol, no extra channel traffic.
+ *
+ * THE ELECTION IS POLITENESS, NOT SAFETY. The server guard is what makes the
+ * sweep correct — it acts only on a stale `host_seen_at`, and it returns null
+ * when it changes nothing. If two clients disagree for a tick and both call,
+ * the second gets null and broadcasts nothing. All this saves is N calls where
+ * one will do.
+ *
+ * Never the host: a returning host resumes through its own report loop, and a
+ * host that is present has nothing to sweep. Never a stage view: it holds no
+ * player id, so `myPlayerId` is null there by construction (ADR-0031).
+ */
+export function electSweeper(
+  snap: PresenceSnapshot,
+  hostPlayerId: string | null,
+  myPlayerId: string | null,
+): boolean {
+  if (!myPlayerId) return false;
+  const candidates = snap.present.filter(id => id !== hostPlayerId);
+  return candidates.length > 0 && candidates[0] === myPlayerId;
+}
