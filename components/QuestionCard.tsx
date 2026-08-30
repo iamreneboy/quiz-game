@@ -33,7 +33,10 @@ export default function QuestionCard({
 
   return (
     <div className="space-y-4 text-center">
-      <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
+      {/* flex-wrap: at large text-zoom on a narrow phone, the round badge plus
+          category and tier badges no longer fit one line — found live in M3
+          P5b's 200%-zoom sweep, overflowing the viewport by ~33px unwrapped. */}
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
         {suddenDeath ? (
           <span
             data-testid="sudden-death-badge"
