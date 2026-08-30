@@ -52,6 +52,14 @@ export interface PhaseEvent {
   status?: RoomStatus;
   /** ms frozen at the pause. Null while playing. Absent pre-0005. */
   paused_remaining_ms?: number|null;
+  /**
+   * True when the server has not heard from the host for longer than
+   * `host_absence_pause_ms()` (M3 P3b, ADR-0052). DERIVED on every read, never
+   * stored — so a room the host paused deliberately and then abandoned
+   * correctly changes its own story. Absent against a pre-0010 database, where
+   * it folds to false and the pause card falls back to the deliberate wording.
+   */
+  host_absent?: boolean;
   /** The live track length — `skip_question` shortens it mid-game. Absent pre-0005. */
   total_rounds?: number;
   /** The tiebreak, or null. Absent against a pre-0007 database. */
@@ -65,6 +73,8 @@ export interface RoomInfo {
   server_now: string;
   /** ms frozen at the pause. Null while playing. Absent against a pre-0005 database. */
   paused_remaining_ms?: number|null;
+  /** Paused because the host stopped checking in — derived per read (ADR-0052). */
+  host_absent?: boolean;
   /** The tiebreak, or null. Absent against a pre-0007 database. */
   sudden_death?: SuddenDeathInfo | null;
   /**

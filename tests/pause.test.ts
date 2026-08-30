@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { noteServerTime } from '@/lib/serverTime';
-import { beatRemainingMs, isPaused } from '@/lib/pause';
+import { beatRemainingMs, isHostAbsent, isPaused } from '@/lib/pause';
 import type { RoomInfo } from '@/lib/types';
 
 const room = (over: Partial<RoomInfo> = {}): RoomInfo => ({
@@ -53,5 +53,24 @@ describe('isPaused', () => {
     expect(isPaused(room({ status: 'playing' }))).toBe(false);
     expect(isPaused(room({ status: 'finished' }))).toBe(false);
     expect(isPaused(room({ status: 'paused' }))).toBe(true);
+  });
+});
+
+describe('isHostAbsent', () => {
+  it('is false with no room, and false while playing', () => {
+    expect(isHostAbsent(null)).toBe(false);
+    expect(isHostAbsent(room({ status: 'playing', host_absent: true }))).toBe(false);
+  });
+
+  it('is false for a pause the host issued deliberately', () => {
+    expect(isHostAbsent(room({ status: 'paused', host_absent: false }))).toBe(false);
+  });
+
+  it('is true only for a paused room whose host has stopped checking in', () => {
+    expect(isHostAbsent(room({ status: 'paused', host_absent: true }))).toBe(true);
+  });
+
+  it('folds an absent field to false — a pre-0010 database says nothing', () => {
+    expect(isHostAbsent(room({ status: 'paused' }))).toBe(false);
   });
 });
