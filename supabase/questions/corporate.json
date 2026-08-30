@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "When a colleague says \"let's circle back\", they want to…",
+    "options": ["Cancel the project","Book a bigger room","Return to the topic later","Go around the building"],
+    "correctIndex": 2,
+    "funFact": "\"Circle back\" consistently tops surveys of most-hated office jargon."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"OOO\" mean in an auto-reply?",
+    "options": ["Out of orbit","Only on occasion","Office open online","Out of office"],
+    "correctIndex": 3,
+    "funFact": "The triple-O auto-reply dates back to Microsoft Exchange in the 1990s."
+  },
+  {
+    "tier": 2,
+    "prompt": "What does \"EOD\" usually mean in work chat?",
+    "options": ["End of day","End of discussion","Every other day","Executive on duty"],
+    "correctIndex": 0,
+    "funFact": "Pro tip: whose timezone is \"end of day\"? Nobody has ever agreed."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Low-hanging fruit\" refers to…",
+    "options": ["Kitchen snacks","Easy wins","Junior employees","Cheap suppliers"],
+    "correctIndex": 1,
+    "funFact": "Orchard workers actually pick low fruit last — it bruises less in the basket."
+  },
+  {
+    "tier": 3,
+    "prompt": "What does KPI stand for?",
+    "options": ["Key Process Improvement","Known Productivity Index","Key Personnel Initiative","Key Performance Indicator"],
+    "correctIndex": 3,
+    "funFact": "The concept traces back to 1950s French \"tableau de bord\" management dashboards."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which company popularized \"20% time\" for side projects?",
+    "options": ["Google","Microsoft","Apple","IBM"],
+    "correctIndex": 0,
+    "funFact": "Gmail and AdSense both started as 20% projects."
+  },
+  {
+    "tier": 4,
+    "prompt": "The QWERTY layout was originally designed partly to…",
+    "options": ["Speed up typing","Reduce typewriter jams","Alphabetize keys","Fit smaller desks"],
+    "correctIndex": 1,
+    "funFact": "It spaced out common letter pairs so mechanical arms wouldn't collide."
+  },
+  {
+    "tier": 4,
+    "prompt": "In which decade did the first office cubicle debut?",
+    "options": ["1950s","1970s","1960s","1980s"],
+    "correctIndex": 2,
+    "funFact": "Designer Robert Propst called later cramped versions \"monolithic insanity\" and regretted the invention."
+  }
+]

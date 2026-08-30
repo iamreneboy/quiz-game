@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Which movie features the line \"I'll be back\"?",
+    "options": ["RoboCop","The Terminator","Die Hard","Predator"],
+    "correctIndex": 1,
+    "funFact": "Schwarzenegger lobbied to say \"I will be back\" — he thought the contraction sounded weak."
+  },
+  {
+    "tier": 1,
+    "prompt": "In Finding Nemo, what kind of fish is Dory?",
+    "options": ["Clownfish","Angelfish","Blue tang","Pufferfish"],
+    "correctIndex": 2,
+    "funFact": "After the film, demand for blue tangs spiked so hard that marine biologists issued warnings."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which series is set at the Dunder Mifflin Paper Company?",
+    "options": ["Parks and Recreation","30 Rock","Brooklyn Nine-Nine","The Office"],
+    "correctIndex": 3,
+    "funFact": "The US version was adapted from a UK original that ran only 14 episodes."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed both Inception and Oppenheimer?",
+    "options": ["Christopher Nolan","Denis Villeneuve","Ridley Scott","James Cameron"],
+    "correctIndex": 0,
+    "funFact": "Nolan famously avoids using a smartphone or email."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which show's 1983 finale drew over 105 million US viewers?",
+    "options": ["Cheers","Seinfeld","M*A*S*H","Dallas"],
+    "correctIndex": 2,
+    "funFact": "It held the record for most-watched broadcast until the 2010 Super Bowl."
+  },
+  {
+    "tier": 3,
+    "prompt": "What is the highest-grossing film of all time (unadjusted)?",
+    "options": ["Avengers: Endgame","Titanic","Star Wars: The Force Awakens","Avatar"],
+    "correctIndex": 3,
+    "funFact": "Avatar lost the crown to Endgame in 2019, then re-releases in China put it back on top."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which 1927 film won the first Academy Award for Best Picture?",
+    "options": ["Wings","Sunrise","Metropolis","The Jazz Singer"],
+    "correctIndex": 0,
+    "funFact": "Wings is the only fully silent film ever to win Best Picture."
+  },
+  {
+    "tier": 4,
+    "prompt": "In The Matrix, how is Neo first told to \"follow the white rabbit\"?",
+    "options": ["A phone call","A message on his computer","A dream","Graffiti on a wall"],
+    "correctIndex": 1,
+    "funFact": "Seconds later, a rabbit tattoo appears at his door — the film's first big reality glitch."
+  }
+]

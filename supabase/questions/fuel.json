@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Espresso was invented in which country?",
+    "options": ["Italy","France","Spain","Brazil"],
+    "correctIndex": 0,
+    "funFact": "The word means \"pressed out\" — not \"express\", though it is faster."
+  },
+  {
+    "tier": 1,
+    "prompt": "Sushi is traditionally wrapped in…",
+    "options": ["Seaweed (nori)","Rice paper","Lettuce","Banana leaf"],
+    "correctIndex": 0,
+    "funFact": "Nori was once scraped off dock posts; now it's farmed on huge ocean nets."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which coffee chain is named after a Moby-Dick character?",
+    "options": ["Costa","Peet's","Starbucks","Lavazza"],
+    "correctIndex": 2,
+    "funFact": "The founders almost named it Pequod, after the ship. \"Starbuck\" was the first mate."
+  },
+  {
+    "tier": 2,
+    "prompt": "Croissants originated in which country?",
+    "options": ["France","Belgium","Switzerland","Austria"],
+    "correctIndex": 3,
+    "funFact": "The Viennese kipferl came first; France laminated it with butter and took the credit."
+  },
+  {
+    "tier": 3,
+    "prompt": "After water, the most-consumed drink in the world is…",
+    "options": ["Tea","Coffee","Beer","Orange juice"],
+    "correctIndex": 0,
+    "funFact": "Roughly 2 billion cups of tea are drunk every day."
+  },
+  {
+    "tier": 3,
+    "prompt": "Nutella's main nut is the…",
+    "options": ["Almond","Hazelnut","Peanut","Cashew"],
+    "correctIndex": 1,
+    "funFact": "Nutella uses about a quarter of the world's hazelnut supply."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which country drinks the most coffee per capita?",
+    "options": ["USA","Italy","Brazil","Finland"],
+    "correctIndex": 3,
+    "funFact": "Finns average 8–12 kg of coffee per person per year; coffee breaks are protected in many union contracts."
+  },
+  {
+    "tier": 4,
+    "prompt": "Carrots were originally mostly what color?",
+    "options": ["Purple","Orange","White","Red"],
+    "correctIndex": 0,
+    "funFact": "Dutch growers bred orange carrots in the 1600s, allegedly honoring William of Orange."
+  }
+]

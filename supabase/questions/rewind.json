@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Which 90s virtual pet died if you didn't feed it?",
+    "options": ["Furby","Tamagotchi","Pikachu","Beanie Baby"],
+    "correctIndex": 1,
+    "funFact": "Over 82 million Tamagotchis have been sold; some schools banned them for causing \"funerals\"."
+  },
+  {
+    "tier": 1,
+    "prompt": "Finish the title: The Fresh Prince of ___",
+    "options": ["Beverly Hills","Brooklyn","Bel-Air","Burbank"],
+    "correctIndex": 2,
+    "funFact": "Will Smith took the role partly to pay off a massive tax bill."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which falling-block game came bundled with the original Game Boy?",
+    "options": ["Snake","Pac-Man","Breakout","Tetris"],
+    "correctIndex": 3,
+    "funFact": "Bundling Tetris instead of Mario is credited with selling the Game Boy to adults."
+  },
+  {
+    "tier": 2,
+    "prompt": "What was Microsoft's animated paperclip assistant called?",
+    "options": ["Clippy","Binky","Pixel","Wordy"],
+    "correctIndex": 0,
+    "funFact": "His official name was Clippit. Almost nobody has ever used it."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did Google launch?",
+    "options": ["1996","2000","1998","2002"],
+    "correctIndex": 2,
+    "funFact": "It started in a rented garage that Google later bought for nostalgia."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which group sang \"I Want It That Way\" (1999)?",
+    "options": ["NSYNC","Boyz II Men","Westlife","Backstreet Boys"],
+    "correctIndex": 3,
+    "funFact": "The songwriters barely spoke English — which is why the lyrics famously make no sense."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the best-selling single of the 1990s worldwide?",
+    "options": ["Candle in the Wind 1997","...Baby One More Time","My Heart Will Go On","Wannabe"],
+    "correctIndex": 0,
+    "funFact": "Elton John's Diana tribute sold 33 million copies; he has never performed it again."
+  },
+  {
+    "tier": 4,
+    "prompt": "What did the first-ever SMS text message (1992) say?",
+    "options": ["Hello","Merry Christmas","Test","Happy New Year"],
+    "correctIndex": 1,
+    "funFact": "Engineer Neil Papworth sent it from a computer — phones couldn't type text yet."
+  }
+]

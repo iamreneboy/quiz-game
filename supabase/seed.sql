@@ -1,3 +1,7 @@
+-- GENERATED FILE — do not edit by hand.
+-- Source: supabase/questions/*.json. Regenerate with:
+--   node scripts/build-questions-sql.mjs
+
 insert into questions (category, tier, prompt, options, correct_index, fun_fact) values
 -- 🎬 Screen Break
 ('screen-break',1,'Which movie features the line "I''ll be back"?','["RoboCop","The Terminator","Die Hard","Predator"]',1,'Schwarzenegger lobbied to say "I will be back" — he thought the contraction sounded weak.'),
@@ -53,4 +57,8 @@ insert into questions (category, tier, prompt, options, correct_index, fun_fact)
 ('fuel',3,'Nutella''s main nut is the…','["Almond","Hazelnut","Peanut","Cashew"]',1,'Nutella uses about a quarter of the world''s hazelnut supply.'),
 ('fuel',4,'Which country drinks the most coffee per capita?','["USA","Italy","Brazil","Finland"]',3,'Finns average 8–12 kg of coffee per person per year; coffee breaks are protected in many union contracts.'),
 ('fuel',4,'Carrots were originally mostly what color?','["Purple","Orange","White","Red"]',0,'Dutch growers bred orange carrots in the 1600s, allegedly honoring William of Orange.')
-on conflict (category, prompt) do nothing;
+on conflict (category, prompt) where room_id is null do update set
+  tier = excluded.tier,
+  options = excluded.options,
+  correct_index = excluded.correct_index,
+  fun_fact = excluded.fun_fact;

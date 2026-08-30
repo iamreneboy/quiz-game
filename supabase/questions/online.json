@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "What breed of dog is the \"Doge\" meme?",
+    "options": ["Corgi","Akita","Pomeranian","Shiba Inu"],
+    "correctIndex": 3,
+    "funFact": "The real dog, Kabosu, was a rescue from a Japanese puppy mill."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"LOL\" stand for?",
+    "options": ["Laughing out loud","Lots of love","Log off later","Loudly on line"],
+    "correctIndex": 0,
+    "funFact": "Countless parents have signed condolence texts \"LOL\" thinking it meant lots of love."
+  },
+  {
+    "tier": 2,
+    "prompt": "The \"Distracted Boyfriend\" meme is originally what?",
+    "options": ["A movie still","A stock photo","A music video frame","A news photo"],
+    "correctIndex": 1,
+    "funFact": "The same models appear in dozens of stock photos, forming an accidental cinematic universe."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which platform's logo was a bird until 2023?",
+    "options": ["Snapchat","Telegram","Twitter","Tumblr"],
+    "correctIndex": 2,
+    "funFact": "The bird's official name was Larry, after basketball legend Larry Bird."
+  },
+  {
+    "tier": 3,
+    "prompt": "What was the first YouTube video about?",
+    "options": ["A cat playing piano","Elephants at the zoo","A dance tutorial","A video game"],
+    "correctIndex": 1,
+    "funFact": "\"Me at the zoo\" (2005) is 19 seconds long and still up."
+  },
+  {
+    "tier": 3,
+    "prompt": "Who coined the word \"meme\" in 1976?",
+    "options": ["Douglas Adams","Carl Sagan","Richard Dawkins","Marshall McLuhan"],
+    "correctIndex": 2,
+    "funFact": "He meant it as the cultural equivalent of a gene — cat pictures came later."
+  },
+  {
+    "tier": 4,
+    "prompt": "As of 2020, the most-retweeted post ever was…",
+    "options": ["Ellen's Oscar selfie","A plea for chicken nuggets","An Obama quote","A Japanese billionaire's cash giveaway"],
+    "correctIndex": 3,
+    "funFact": "Yusaku Maezawa offered ¥100m to random retweeters — 4+ million obliged."
+  },
+  {
+    "tier": 4,
+    "prompt": "Keyboard Cat's original footage was recorded in which decade?",
+    "options": ["1980s","1990s","2000s","2010s"],
+    "correctIndex": 0,
+    "funFact": "Charlie Schmidt filmed his cat Fatso in 1984; the internet found it 23 years later."
+  }
+]

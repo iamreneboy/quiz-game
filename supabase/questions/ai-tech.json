@@ -1,0 +1,58 @@
+[
+  {
+    "tier": 1,
+    "prompt": "What does \"www\" stand for in a web address?",
+    "options": ["World Web Window","Wide World Web","Web World Wide","World Wide Web"],
+    "correctIndex": 3,
+    "funFact": "Its inventor Tim Berners-Lee later said the double-u name was a mistake — nine syllables for three letters."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"AI\" stand for?",
+    "options": ["Artificial Intelligence","Automated Intelligence","Advanced Interface","Applied Computation"],
+    "correctIndex": 0,
+    "funFact": "The term was coined for a 1956 workshop at Dartmouth College."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company created ChatGPT?",
+    "options": ["Google","OpenAI","Meta","Anthropic"],
+    "correctIndex": 1,
+    "funFact": "Anthropic — maker of Claude — was founded by former OpenAI researchers."
+  },
+  {
+    "tier": 2,
+    "prompt": "In which decade was the first email sent?",
+    "options": ["1960s","1980s","1970s","1990s"],
+    "correctIndex": 2,
+    "funFact": "Ray Tomlinson sent it in 1971 and picked the @ sign to separate user from machine."
+  },
+  {
+    "tier": 3,
+    "prompt": "What was Google originally called?",
+    "options": ["PageFinder","BackRub","SearchPlus","Googol"],
+    "correctIndex": 1,
+    "funFact": "The name referred to the \"back links\" the engine analyzed. It lasted about a year."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which AI defeated Go world champion Lee Sedol in 2016?",
+    "options": ["Deep Blue","Watson","AlphaGo","Stockfish"],
+    "correctIndex": 2,
+    "funFact": "Move 37 in game two was so unusual that commentators initially assumed it was a mistake."
+  },
+  {
+    "tier": 4,
+    "prompt": "The first computer \"bug\" was literally what, found in the Harvard Mark II?",
+    "options": ["A beetle","A fly","A cockroach","A moth"],
+    "correctIndex": 3,
+    "funFact": "The 1947 moth was taped into the logbook with the note \"first actual case of bug being found\"."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the first item ever sold on eBay?",
+    "options": ["A broken laser pointer","A Beanie Baby","A guitar","A wristwatch"],
+    "correctIndex": 0,
+    "funFact": "The founder emailed the buyer to check it was intentional — he collected broken laser pointers."
+  }
+]
