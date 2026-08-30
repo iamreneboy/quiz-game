@@ -78,7 +78,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
   const hostKey = typeof window !== 'undefined' ? loadSession(code)?.hostKey ?? null : null;
-  useHostPresenceReporter(hostKey);
+  useHostPresenceReporter(hostKey, channel);
   const myPlayerId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   useHostAbsenceSweep(channel, myPlayerId);
   useLateJoinerMaterialize(code);
