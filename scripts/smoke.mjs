@@ -1240,4 +1240,20 @@ await rpc('end_game', { p_room_id: vh.room_id, p_host_key: vh.host_key });
 assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
   'a finished room is out of the sweep’s reach');
 
+// -- the 24-hour purge (PRD §9)
+// A fresh room is never swept, however many rooms are created around it.
+const keep = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+assert.equal(typeof (await rpc('purge_rooms', {})), 'number',
+  'purge_rooms reports how many it took');
+const keepState = await rpc('get_room_state', { p_code: keep.code });
+assert.equal(keepState.room.code, keep.code, 'today’s room survives');
+
+// Creating a room runs the sweep — that is PRD §9’s "cleanup on access".
+await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel'], p_tier_counts: [1, 0, 0, 0],
+});
+await rpc('get_room_state', { p_code: keep.code }); // still there afterwards
+
 console.log('✅ P3b host-absence smoke passed');

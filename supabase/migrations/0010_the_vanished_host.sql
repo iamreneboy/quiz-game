@@ -238,6 +238,56 @@ end $$;
 
 grant execute on all functions in schema public to anon, authenticated;
 
+-- ============ purge_rooms ============
+-- PRD §9: "rooms expire and are purged 24h after creation (Supabase scheduled
+-- function or cleanup on access)". This is cleanup on access.
+--
+-- The cascades do all the work: players, room_questions, answers and a room's
+-- custom questions (0006's `questions.room_id … on delete cascade`) all go with
+-- the row — which is also what finally bounds `rooms.used_question_ids`, the
+-- unbounded array M3 P2b left behind.
+--
+-- Exposed as a plain RPC as well as a trigger so a future pg_cron job, or a
+-- host tool, can call it without duplicating the predicate.
+create or replace function purge_rooms() returns int
+language plpgsql security definer set search_path = public as $$
+declare
+  v_n int;
+begin
+  with gone as (
+    delete from rooms where created_at < now() - interval '24 hours' returning 1
+  )
+  select count(*) into v_n from gone;
+  return v_n;
+end $$;
+
+create index if not exists idx_rooms_created_at on rooms (created_at);
+
+-- The trigger, rather than a `perform purge_rooms()` inside create_room: that
+-- would have meant re-stating 0006's whole 75-line create_room to add one line,
+-- and it would have missed rematch and any future room writer. STATEMENT-level,
+-- so create_room's code-collision retry loop cannot make it run per row; and it
+-- cannot recurse, because a DELETE fires no INSERT trigger.
+create or replace function trg_purge_rooms() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  perform purge_rooms();
+  return null;
+end $$;
+
+drop trigger if exists rooms_purge_expired on rooms;
+create trigger rooms_purge_expired
+  before insert on rooms
+  for each statement
+  execute function trg_purge_rooms();
+
+grant execute on all functions in schema public to anon, authenticated;
+
 -- end_room_now is the mechanism, not a command: see its header. The blanket
--- grant above is deliberately walked back for it, and only for it.
-revoke execute on function end_room_now(uuid) from anon, authenticated;
+-- grants above are deliberately walked back for it, and only for it.
+--
+-- `public` MUST be in this list. Postgres grants EXECUTE on every new function
+-- to PUBLIC by default, so revoking from anon/authenticated alone leaves the
+-- function fully reachable over PostgREST — verified, not assumed
+-- (`has_function_privilege('anon', …)` still answered true).
+revoke execute on function end_room_now(uuid) from public, anon, authenticated;
