@@ -1,3 +1,10 @@
+-- M3 P4 — the bank reaches launch size.
+--
+-- Pure DML, no DDL, and IDEMPOTENT: the same upsert that seeds a fresh
+-- local stack tops up a cloud project that already holds an earlier bank,
+-- and re-running it is a no-op. Defines no function, so PostgREST needs no
+-- schema reload after it.
+--
 -- GENERATED FILE — do not edit by hand.
 -- Source: supabase/questions/*.json. Regenerate with:
 --   node scripts/build-questions-sql.mjs

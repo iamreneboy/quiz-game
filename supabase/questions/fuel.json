@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Espresso was invented in which country?",
+    "options": ["Italy","France","Spain","Brazil"],
+    "correctIndex": 0,
+    "funFact": "The word means \"pressed out\" — not \"express\", though it is faster."
+  },
+  {
+    "tier": 1,
+    "prompt": "Sushi is traditionally wrapped in…",
+    "options": ["Seaweed (nori)","Rice paper","Lettuce","Banana leaf"],
+    "correctIndex": 0,
+    "funFact": "Nori was once scraped off dock posts; now it's farmed on huge ocean nets."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which fruit is dried to make a raisin?",
+    "options": ["Grape","Plum","Fig","Date"],
+    "correctIndex": 0,
+    "funFact": "A dried plum is a prune, which is the same trick under a name nobody enjoys as much."
+  },
+  {
+    "tier": 1,
+    "prompt": "Guacamole is made mainly from what?",
+    "options": ["Peas","Avocado","Courgette","Spinach"],
+    "correctIndex": 1,
+    "funFact": "The fruit ripens only after picking, which is why growers can leave it on the tree for months."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which grain is ordinary bread flour milled from?",
+    "options": ["Rice","Maize","Wheat","Barley"],
+    "correctIndex": 2,
+    "funFact": "Its gluten is what traps the gas from yeast; without that, bread simply stays flat."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which nut is marzipan made from?",
+    "options": ["Walnut","Pecan","Cashew","Almond"],
+    "correctIndex": 3,
+    "funFact": "Bitter varieties of the same nut contain traces of cyanide, so sweet ones are used instead."
+  },
+  {
+    "tier": 1,
+    "prompt": "Mozzarella was traditionally made from the milk of which animal?",
+    "options": ["Buffalo","Goat","Sheep","Camel"],
+    "correctIndex": 0,
+    "funFact": "The herds were kept on marshland where cattle struggled, which is how the tradition started."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which spice gives curry powder its yellow colour?",
+    "options": ["Paprika","Turmeric","Cumin","Saffron"],
+    "correctIndex": 1,
+    "funFact": "It stains almost everything it touches, and was used as a fabric dye long before a kitchen wanted it."
+  },
+  {
+    "tier": 1,
+    "prompt": "Tofu is made from which bean?",
+    "options": ["Kidney","Broad","Soya","Black"],
+    "correctIndex": 2,
+    "funFact": "It is made much like cheese — the milk is curdled, then the curds are pressed into a block."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which vegetable is the main ingredient of kimchi?",
+    "options": ["Carrot","Potato","Onion","Cabbage"],
+    "correctIndex": 3,
+    "funFact": "It was buried in jars through the winter, which is exactly how the fermentation was controlled."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which coffee chain is named after a Moby-Dick character?",
+    "options": ["Costa","Peet's","Starbucks","Lavazza"],
+    "correctIndex": 2,
+    "funFact": "The founders almost named it Pequod, after the ship. \"Starbuck\" was the first mate."
+  },
+  {
+    "tier": 2,
+    "prompt": "Croissants originated in which country?",
+    "options": ["France","Belgium","Switzerland","Austria"],
+    "correctIndex": 3,
+    "funFact": "The Viennese kipferl came first; France laminated it with butter and took the credit."
+  },
+  {
+    "tier": 2,
+    "prompt": "Paella comes from which country?",
+    "options": ["Spain","Italy","Portugal","Greece"],
+    "correctIndex": 0,
+    "funFact": "The name is the pan, not the dish — and the crust stuck to its bottom is the prized part."
+  },
+  {
+    "tier": 2,
+    "prompt": "Goulash is a dish from which country?",
+    "options": ["Poland","Hungary","Austria","Romania"],
+    "correctIndex": 1,
+    "funFact": "It began as herdsmen’s food, dried into blocks so it could be carried and rehydrated later."
+  },
+  {
+    "tier": 2,
+    "prompt": "Feta cheese comes from which country?",
+    "options": ["Turkey","Bulgaria","Greece","Cyprus"],
+    "correctIndex": 2,
+    "funFact": "The name is legally protected, so a similar cheese made elsewhere has to be called something else."
+  },
+  {
+    "tier": 2,
+    "prompt": "Pad thai is the national dish of which country?",
+    "options": ["Vietnam","Malaysia","Cambodia","Thailand"],
+    "correctIndex": 3,
+    "funFact": "It was promoted by the government in the 1930s, partly to reduce how much rice the country ate."
+  },
+  {
+    "tier": 2,
+    "prompt": "What does \"al dente\" describe?",
+    "options": ["Firm to the bite","Cooked in butter","Served very hot","Sliced very thin"],
+    "correctIndex": 0,
+    "funFact": "The phrase means \"to the tooth\", and the firmness is a texture judgement, not a timing one."
+  },
+  {
+    "tier": 2,
+    "prompt": "Ceviche is associated with which country?",
+    "options": ["Chile","Peru","Mexico","Ecuador"],
+    "correctIndex": 1,
+    "funFact": "The fish is not cooked with heat at all — acid from the citrus firms the flesh instead."
+  },
+  {
+    "tier": 2,
+    "prompt": "What does \"umami\" describe?",
+    "options": ["A cooking method","A cutting style","A savoury taste","A serving size"],
+    "correctIndex": 2,
+    "funFact": "It was identified in 1908 but only accepted as a fifth basic taste around a century later."
+  },
+  {
+    "tier": 2,
+    "prompt": "Biryani is a rice dish from which country?",
+    "options": ["Thailand","Malaysia","Indonesia","India"],
+    "correctIndex": 3,
+    "funFact": "The pot is often sealed shut with dough, so the rice finishes cooking in trapped steam."
+  },
+  {
+    "tier": 3,
+    "prompt": "After water, the most-consumed drink in the world is…",
+    "options": ["Tea","Coffee","Beer","Orange juice"],
+    "correctIndex": 0,
+    "funFact": "Roughly 2 billion cups of tea are drunk every day."
+  },
+  {
+    "tier": 3,
+    "prompt": "Nutella's main nut is the…",
+    "options": ["Almond","Hazelnut","Peanut","Cashew"],
+    "correctIndex": 1,
+    "funFact": "Nutella uses about a quarter of the world's hazelnut supply."
+  },
+  {
+    "tier": 3,
+    "prompt": "Botanically, a tomato is a…",
+    "options": ["Fruit","Root","Tuber","Grain"],
+    "correctIndex": 0,
+    "funFact": "A US court once ruled it a vegetable anyway, because the case was really about import taxes."
+  },
+  {
+    "tier": 3,
+    "prompt": "Cinnamon is which part of a tree?",
+    "options": ["The root","The bark","The seed","The flower"],
+    "correctIndex": 1,
+    "funFact": "It curls into quills as it dries, which is why the sticks have that shape at all."
+  },
+  {
+    "tier": 3,
+    "prompt": "Where do peanuts grow?",
+    "options": ["On tall trees","On climbing vines","Under the ground","On low bushes"],
+    "correctIndex": 2,
+    "funFact": "The flower bends down after pollination and pushes itself into the soil to finish the job."
+  },
+  {
+    "tier": 3,
+    "prompt": "A caper is which part of a plant?",
+    "options": ["A dried seed","A young root","A curled leaf","A flower bud"],
+    "correctIndex": 3,
+    "funFact": "Left alone it opens into a large white flower, which is why the harvest window is so short."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which country grows the most coffee?",
+    "options": ["Brazil","Colombia","Vietnam","Ethiopia"],
+    "correctIndex": 0,
+    "funFact": "It has led the world for over a century, and a single bad frost there moves the global price."
+  },
+  {
+    "tier": 3,
+    "prompt": "White chocolate contains none of what?",
+    "options": ["Milk powder","Cocoa solids","Cane sugar","Vanilla flavour"],
+    "correctIndex": 1,
+    "funFact": "It uses the cocoa butter and leaves out the rest, which is why several countries argued over the name."
+  },
+  {
+    "tier": 3,
+    "prompt": "A banana plant is botanically a…",
+    "options": ["Tree","Bush","Herb","Vine"],
+    "correctIndex": 2,
+    "funFact": "The trunk is not wood but tightly packed leaf bases, which is why one storm can flatten a field."
+  },
+  {
+    "tier": 3,
+    "prompt": "How long can sealed honey stay edible?",
+    "options": ["A year","A decade","A century","Indefinitely"],
+    "correctIndex": 3,
+    "funFact": "Jars found in Egyptian tombs were still unspoiled — it is too acidic and too dry for microbes."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which country drinks the most coffee per capita?",
+    "options": ["USA","Italy","Brazil","Finland"],
+    "correctIndex": 3,
+    "funFact": "Finns average 8–12 kg of coffee per person per year; coffee breaks are protected in many union contracts."
+  },
+  {
+    "tier": 4,
+    "prompt": "Carrots were originally mostly what color?",
+    "options": ["Purple","Orange","White","Red"],
+    "correctIndex": 0,
+    "funFact": "Dutch growers bred orange carrots in the 1600s, allegedly honoring William of Orange."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which chemical makes chillies taste hot?",
+    "options": ["Capsaicin","Piperine","Allicin","Menthol"],
+    "correctIndex": 0,
+    "funFact": "It binds to the receptor that detects heat, so the burn is a genuine false alarm."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which country did the potato originally come from?",
+    "options": ["Ireland","Peru","Poland","Spain"],
+    "correctIndex": 1,
+    "funFact": "Thousands of varieties are still grown in the Andes, in colours no supermarket stocks."
+  },
+  {
+    "tier": 4,
+    "prompt": "What is the main flavour compound in vanilla called?",
+    "options": ["Eugenol","Limonene","Vanillin","Linalool"],
+    "correctIndex": 2,
+    "funFact": "Most of what is sold is made in a factory, because the orchid has to be pollinated by hand."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which fruit was once called a \"love apple\"?",
+    "options": ["Peach","Quince","Pomegranate","Tomato"],
+    "correctIndex": 3,
+    "funFact": "Europeans avoided eating it for two centuries, convinced the whole plant was poisonous."
+  },
+  {
+    "tier": 4,
+    "prompt": "How many chambers does a cow's stomach have?",
+    "options": ["Four","Two","Three","Seven"],
+    "correctIndex": 0,
+    "funFact": "Only the last one digests like ours; the first three are essentially a fermentation vat."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which drink was first sold as a remedy for headaches?",
+    "options": ["Lucozade","Coca-Cola","Dr Pepper","Lemonade"],
+    "correctIndex": 1,
+    "funFact": "It was sold by the glass at a pharmacy counter, and the fizzy water was added at the last step."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which spice comes from the stigma of a crocus flower?",
+    "options": ["Cardamom","Turmeric","Saffron","Sumac"],
+    "correctIndex": 2,
+    "funFact": "It takes about 150,000 flowers to make a kilogram, which is why it outprices silver."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which of these is botanically a berry?",
+    "options": ["Strawberry","Raspberry","Blackberry","Banana"],
+    "correctIndex": 3,
+    "funFact": "The three that carry the name are not berries at all, which the botanists find funnier than we do."
+  }
+]

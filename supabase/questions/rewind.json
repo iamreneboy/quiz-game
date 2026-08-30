@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Which 90s virtual pet died if you didn't feed it?",
+    "options": ["Furby","Tamagotchi","Pikachu","Beanie Baby"],
+    "correctIndex": 1,
+    "funFact": "Over 82 million Tamagotchis have been sold; some schools banned them for causing \"funerals\"."
+  },
+  {
+    "tier": 1,
+    "prompt": "Finish the title: The Fresh Prince of ___",
+    "options": ["Beverly Hills","Brooklyn","Bel-Air","Burbank"],
+    "correctIndex": 2,
+    "funFact": "Will Smith took the role partly to pay off a massive tax bill."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which toy is a coloured cube you twist to solve?",
+    "options": ["Rubik's Cube","Etch A Sketch","Slinky","Simon"],
+    "correctIndex": 0,
+    "funFact": "Its inventor took a month to solve his own prototype after he had finished building it."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which company makes the Mario games?",
+    "options": ["Sega","Nintendo","Sony","Capcom"],
+    "correctIndex": 1,
+    "funFact": "Mario wears a cap and moustache because early hardware could not draw hair or a mouth."
+  },
+  {
+    "tier": 1,
+    "prompt": "What was a portable CD player commonly called?",
+    "options": ["Boombox","Ghetto blaster","Discman","Hi-fi"],
+    "correctIndex": 2,
+    "funFact": "Anti-skip buffers arrived late; before them, walking with one was largely optimistic."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which cartoon featured four pizza-loving turtles?",
+    "options": ["ThunderCats","He-Man","Biker Mice from Mars","Ninja Turtles"],
+    "correctIndex": 3,
+    "funFact": "They began as a black-and-white comic parody, drawn for an adult audience."
+  },
+  {
+    "tier": 1,
+    "prompt": "In which board game do you buy property and build hotels?",
+    "options": ["Monopoly","Cluedo","Risk","Scrabble"],
+    "correctIndex": 0,
+    "funFact": "An earlier version was designed to teach players that landlords ruin everyone — the lesson did not land."
+  },
+  {
+    "tier": 1,
+    "prompt": "What did a dial-up modem famously do while connecting?",
+    "options": ["Flash a green light","Screech and hiss","Print a receipt","Warm up slowly"],
+    "correctIndex": 1,
+    "funFact": "The noise is two modems negotiating a speed; once agreed, they stopped and went quiet."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which drink was marketed as \"the Uncola\"?",
+    "options": ["Fanta","Tango","7 Up","Irn-Bru"],
+    "correctIndex": 2,
+    "funFact": "The campaign sold it entirely on not being the thing everyone else was drinking."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which home video format outlasted Betamax?",
+    "options": ["LaserDisc","Video 2000","MiniDV","VHS"],
+    "correctIndex": 3,
+    "funFact": "It won on tape length rather than picture quality — three hours beat one."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which falling-block game came bundled with the original Game Boy?",
+    "options": ["Snake","Pac-Man","Breakout","Tetris"],
+    "correctIndex": 3,
+    "funFact": "Bundling Tetris instead of Mario is credited with selling the Game Boy to adults."
+  },
+  {
+    "tier": 2,
+    "prompt": "What was Microsoft's animated paperclip assistant called?",
+    "options": ["Clippy","Binky","Pixel","Wordy"],
+    "correctIndex": 0,
+    "funFact": "His official name was Clippit. Almost nobody has ever used it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company made the Walkman?",
+    "options": ["Sony","Panasonic","Sharp","Aiwa"],
+    "correctIndex": 0,
+    "funFact": "Early models had two headphone jacks, because nobody assumed you would want to listen alone."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company made the Mega Drive console?",
+    "options": ["Atari","Sega","NEC","SNK"],
+    "correctIndex": 1,
+    "funFact": "Its American advertising attacked a named rival directly, which was almost unheard of at the time."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which band released the album \"Nevermind\"?",
+    "options": ["Pearl Jam","Soundgarden","Nirvana","Alice in Chains"],
+    "correctIndex": 2,
+    "funFact": "The baby on the cover was paid two hundred dollars, and has since had opinions about it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which band sang \"Wonderwall\"?",
+    "options": ["Blur","Pulp","Suede","Oasis"],
+    "correctIndex": 3,
+    "funFact": "The title was borrowed from a 1968 film soundtrack by George Harrison."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company made the Game Gear?",
+    "options": ["Sega","Nintendo","Atari","Sony"],
+    "correctIndex": 0,
+    "funFact": "It had a colour screen years before its rival, and ate six batteries in about four hours."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which artist released the album \"Thriller\"?",
+    "options": ["Prince","Michael Jackson","Lionel Richie","Stevie Wonder"],
+    "correctIndex": 1,
+    "funFact": "Its title video ran fourteen minutes and opened with a disclaimer about the occult."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which toy line featured a character called Optimus Prime?",
+    "options": ["ThunderCats","M.A.S.K.","Transformers","Voltron"],
+    "correctIndex": 2,
+    "funFact": "The toys were two existing Japanese lines, rebranded and given a single story to share."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which band recorded \"Africa\" in 1982?",
+    "options": ["Journey","Foreigner","Chicago","Toto"],
+    "correctIndex": 3,
+    "funFact": "None of them had been to the continent; the lyrics were written from television footage."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did Google launch?",
+    "options": ["1996","2000","1998","2002"],
+    "correctIndex": 2,
+    "funFact": "It started in a rented garage that Google later bought for nostalgia."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which group sang \"I Want It That Way\" (1999)?",
+    "options": ["NSYNC","Boyz II Men","Westlife","Backstreet Boys"],
+    "correctIndex": 3,
+    "funFact": "The songwriters barely spoke English — which is why the lyrics famously make no sense."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did the original Game Boy launch?",
+    "options": ["1989","1991","1993","1995"],
+    "correctIndex": 0,
+    "funFact": "One survived a bombing in the Gulf War, and the scorched unit still switches on."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did the PlayStation 2 launch?",
+    "options": ["1998","2000","2002","2004"],
+    "correctIndex": 1,
+    "funFact": "It doubled as a DVD player, which for many households was the actual reason to buy one."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year was the first Harry Potter book published?",
+    "options": ["1993","1995","1997","1999"],
+    "correctIndex": 2,
+    "funFact": "The first print run was five hundred copies, and most went straight to libraries."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which company created Barbie?",
+    "options": ["Hasbro","Bandai","Tomy","Mattel"],
+    "correctIndex": 3,
+    "funFact": "She was based on a German novelty doll sold to adults, which the company quietly redesigned."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which toy caused shop stampedes at Christmas in 1996?",
+    "options": ["Tickle Me Elmo","Buzz Lightyear","Beanie Babies","Polly Pocket"],
+    "correctIndex": 0,
+    "funFact": "It cost thirty dollars in shops and was resold for over a thousand at the peak of the panic."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which console came with an analogue stick as standard?",
+    "options": ["Sega Saturn","Nintendo 64","PlayStation","3DO"],
+    "correctIndex": 1,
+    "funFact": "Its rival responded within a year by bolting two sticks onto a controller it had already shipped."
+  },
+  {
+    "tier": 3,
+    "prompt": "How many songs did the first iPod promise in your pocket?",
+    "options": ["100","500","1,000","5,000"],
+    "correctIndex": 2,
+    "funFact": "The slogan mattered more than the number — rivals were still quoting megabytes."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which decade did the compact disc first go on sale?",
+    "options": ["1990s","1970s","2000s","1980s"],
+    "correctIndex": 3,
+    "funFact": "The disc was reportedly sized to hold a whole symphony without turning it over."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the best-selling single of the 1990s worldwide?",
+    "options": ["Candle in the Wind 1997","...Baby One More Time","My Heart Will Go On","Wannabe"],
+    "correctIndex": 0,
+    "funFact": "Elton John's Diana tribute sold 33 million copies; he has never performed it again."
+  },
+  {
+    "tier": 4,
+    "prompt": "What did the first-ever SMS text message (1992) say?",
+    "options": ["Hello","Merry Christmas","Test","Happy New Year"],
+    "correctIndex": 1,
+    "funFact": "Engineer Neil Papworth sent it from a computer — phones couldn't type text yet."
+  },
+  {
+    "tier": 4,
+    "prompt": "Nintendo's Virtual Boy was notorious for…",
+    "options": ["Displaying only red","Costing under fifty","Selling out instantly","Using no cartridges"],
+    "correctIndex": 0,
+    "funFact": "It was discontinued within a year, and came with a warning about how long children could play."
+  },
+  {
+    "tier": 4,
+    "prompt": "What colour was the original Game Boy's screen?",
+    "options": ["Blue","Green","Grey","Amber"],
+    "correctIndex": 1,
+    "funFact": "The olive tint came from the cheap reflective display, not from any design decision."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was Pepsi's short-lived clear cola called?",
+    "options": ["Pepsi Ice","Pepsi Blue","Crystal Pepsi","Pepsi Light"],
+    "correctIndex": 2,
+    "funFact": "It tasted like cola but looked like lemonade, and shoppers found that combination unsettling."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the Mega Drive called in North America?",
+    "options": ["Sega Master System","Sega Saturn","Sega Mega CD","Sega Genesis"],
+    "correctIndex": 3,
+    "funFact": "The name changed because another company already held the European trademark."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the Furby advertised as doing over time?",
+    "options": ["Gradually speaking English","Recharging from sunlight","Connecting to a telephone","Changing colour with heat"],
+    "correctIndex": 0,
+    "funFact": "It was pre-programmed to shift languages on a timer; it never listened to a word you said."
+  },
+  {
+    "tier": 4,
+    "prompt": "The name \"SEGA\" was shortened from…",
+    "options": ["Sound Engineering","Service Games","Sega Enterprises","Second Generation"],
+    "correctIndex": 1,
+    "funFact": "The company began by supplying coin-operated machines to American military bases in Japan."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the Rubik's Cube originally called?",
+    "options": ["The Puzzle Box","The Magic Ball","The Magic Cube","The Twist Cube"],
+    "correctIndex": 2,
+    "funFact": "It was renamed for export, after its Hungarian inventor, when a toy firm licensed it."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the Nintendo Wii called before release?",
+    "options": ["Dolphin","Project Reality","Ultra 64","Revolution"],
+    "correctIndex": 3,
+    "funFact": "The final name was chosen to work in every language, and was mocked in every language."
+  }
+]

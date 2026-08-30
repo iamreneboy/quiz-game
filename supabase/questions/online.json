@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "What breed of dog is the \"Doge\" meme?",
+    "options": ["Corgi","Akita","Pomeranian","Shiba Inu"],
+    "correctIndex": 3,
+    "funFact": "The real dog, Kabosu, was a rescue from a Japanese puppy mill."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"LOL\" stand for?",
+    "options": ["Laughing out loud","Lots of love","Log off later","Loudly on line"],
+    "correctIndex": 0,
+    "funFact": "Countless parents have signed condolence texts \"LOL\" thinking it meant lots of love."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"BRB\" mean online?",
+    "options": ["Be right back","Bring roughly back","Been really busy","By the by"],
+    "correctIndex": 0,
+    "funFact": "It survived from chat rooms where leaving without warning read as walking out mid-sentence."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is a \"selfie\"?",
+    "options": ["A group portrait","A photo of yourself","A camera setting","A photo filter"],
+    "correctIndex": 1,
+    "funFact": "The word first appeared in an Australian online forum, in a post apologising for a blurry photo."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does adding a hashtag to a post do?",
+    "options": ["Deletes it later","Hides it from friends","Groups it by topic","Sends it privately"],
+    "correctIndex": 2,
+    "funFact": "No platform designed it — a user suggested borrowing the symbol from chat channels."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"DM\" stand for?",
+    "options": ["Data mode","Daily message","Double mention","Direct message"],
+    "correctIndex": 3,
+    "funFact": "Sliding into them is a phrase barely a decade old, and it already sounds dated."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is an emoji?",
+    "options": ["A small picture","A short video","A sound clip","A link preview"],
+    "correctIndex": 0,
+    "funFact": "The name is Japanese for \"picture character\" and has nothing to do with the word emotion."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does it mean for a post to \"go viral\"?",
+    "options": ["To be deleted","To spread rapidly","To be reported","To load slowly"],
+    "correctIndex": 1,
+    "funFact": "The metaphor is literal enough that epidemiologists study both with the same equations."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"IRL\" stand for?",
+    "options": ["In rare loops","I really like","In real life","Instantly reloaded"],
+    "correctIndex": 2,
+    "funFact": "The phrase implies the other place is not real, which fewer people would now agree with."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is a \"thread\" on social media?",
+    "options": ["A private group","A blocked user","A saved draft","A series of posts"],
+    "correctIndex": 3,
+    "funFact": "The word came from 1980s message boards, where replies were literally strung together."
+  },
+  {
+    "tier": 2,
+    "prompt": "The \"Distracted Boyfriend\" meme is originally what?",
+    "options": ["A movie still","A stock photo","A music video frame","A news photo"],
+    "correctIndex": 1,
+    "funFact": "The same models appear in dozens of stock photos, forming an accidental cinematic universe."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which platform's logo was a bird until 2023?",
+    "options": ["Snapchat","Telegram","Twitter","Tumblr"],
+    "correctIndex": 2,
+    "funFact": "The bird's official name was Larry, after basketball legend Larry Bird."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which platform is built around short vertical videos?",
+    "options": ["TikTok","Reddit","LinkedIn","Flickr"],
+    "correctIndex": 0,
+    "funFact": "It grew out of a lip-syncing app that was folded into it, taking its users along."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which platform is built around live game streaming?",
+    "options": ["Vimeo","Twitch","Flickr","Pinterest"],
+    "correctIndex": 1,
+    "funFact": "It began as a spin-off of a site where one man broadcast his entire life from a head camera."
+  },
+  {
+    "tier": 2,
+    "prompt": "A \"Rickroll\" sends you to a song by whom?",
+    "options": ["Rick James","Rick Springfield","Rick Astley","Rick Ross"],
+    "correctIndex": 2,
+    "funFact": "He has said he finds it funny, and re-recorded the song decades later to lean into it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which platform popularised the \"story\" that disappears?",
+    "options": ["Reddit","Tumblr","LinkedIn","Snapchat"],
+    "correctIndex": 3,
+    "funFact": "Every large rival copied the format within four years, mostly without changing the name."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which file format is used for short looping animations?",
+    "options": ["GIF","PNG","MP3","PDF"],
+    "correctIndex": 0,
+    "funFact": "It was designed in 1987 for slow modems, and outlived every format meant to replace it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which site is built around pinning images to boards?",
+    "options": ["Flickr","Pinterest","Imgur","DeviantArt"],
+    "correctIndex": 1,
+    "funFact": "It ran invite-only for its first two years, which is unusual for something that visual."
+  },
+  {
+    "tier": 2,
+    "prompt": "\"Doomscrolling\" means reading what, endlessly?",
+    "options": ["Old messages","Product reviews","Bad news","Terms of service"],
+    "correctIndex": 2,
+    "funFact": "The word spread in 2020, but the behaviour it names is as old as the rolling news ticker."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which chat app is organised into servers and voice channels?",
+    "options": ["Slack","Telegram","Signal","Discord"],
+    "correctIndex": 3,
+    "funFact": "It was built for gamers who needed to talk while playing, then everyone else moved in."
+  },
+  {
+    "tier": 3,
+    "prompt": "What was the first YouTube video about?",
+    "options": ["A cat playing piano","Elephants at the zoo","A dance tutorial","A video game"],
+    "correctIndex": 1,
+    "funFact": "\"Me at the zoo\" (2005) is 19 seconds long and still up."
+  },
+  {
+    "tier": 3,
+    "prompt": "Who coined the word \"meme\" in 1976?",
+    "options": ["Douglas Adams","Carl Sagan","Richard Dawkins","Marshall McLuhan"],
+    "correctIndex": 2,
+    "funFact": "He meant it as the cultural equivalent of a gene — cat pictures came later."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did YouTube launch?",
+    "options": ["2005","2007","2009","2011"],
+    "correctIndex": 0,
+    "funFact": "It was bought by Google within twenty months, before it had made any money at all."
+  },
+  {
+    "tier": 3,
+    "prompt": "The \"This is fine\" dog comes from which webcomic?",
+    "options": ["xkcd","Gunshow","Perry Bible Fellowship","Cyanide & Happiness"],
+    "correctIndex": 1,
+    "funFact": "In the full strip the dog melts — the calm two panels everyone shares are only the setup."
+  },
+  {
+    "tier": 3,
+    "prompt": "The Nyan Cat had a body made of what?",
+    "options": ["A doughnut","A waffle","A Pop-Tart","A pancake"],
+    "correctIndex": 2,
+    "funFact": "The animation and the song were made by two different people who had never worked together."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did Instagram launch?",
+    "options": ["2006","2008","2012","2010"],
+    "correctIndex": 3,
+    "funFact": "It started as a check-in app with photos bolted on, and everything else was stripped out."
+  },
+  {
+    "tier": 3,
+    "prompt": "The \"Harlem Shake\" videos used a track by which producer?",
+    "options": ["Baauer","Skrillex","Diplo","Flosstradamus"],
+    "correctIndex": 0,
+    "funFact": "The dance in the videos is not the Harlem Shake, and dancers from Harlem said so loudly."
+  },
+  {
+    "tier": 3,
+    "prompt": "\"Charlie bit my finger\" was uploaded to share with…",
+    "options": ["A news website","The boys' godfather","A school class","A camera forum"],
+    "correctIndex": 1,
+    "funFact": "It was set to public only because the family could not work out how to send a large file."
+  },
+  {
+    "tier": 3,
+    "prompt": "Grumpy Cat's expression was caused by…",
+    "options": ["A bad temper","The camera angle","A form of dwarfism","A rare eye colour"],
+    "correctIndex": 2,
+    "funFact": "Her owners insisted she was friendly; the face was simply the face she had."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did Wikipedia launch?",
+    "options": ["1997","1999","2003","2001"],
+    "correctIndex": 3,
+    "funFact": "It began as a side project to feed a slower encyclopaedia written only by experts."
+  },
+  {
+    "tier": 4,
+    "prompt": "As of 2020, the most-retweeted post ever was…",
+    "options": ["Ellen's Oscar selfie","A plea for chicken nuggets","An Obama quote","A Japanese billionaire's cash giveaway"],
+    "correctIndex": 3,
+    "funFact": "Yusaku Maezawa offered ¥100m to random retweeters — 4+ million obliged."
+  },
+  {
+    "tier": 4,
+    "prompt": "Keyboard Cat's original footage was recorded in which decade?",
+    "options": ["1980s","1990s","2000s","2010s"],
+    "correctIndex": 0,
+    "funFact": "Charlie Schmidt filmed his cat Fatso in 1984; the internet found it 23 years later."
+  },
+  {
+    "tier": 4,
+    "prompt": "The \"Success Kid\" photo was taken where?",
+    "options": ["On a beach","In a garden","At a party","In a kitchen"],
+    "correctIndex": 0,
+    "funFact": "He is not celebrating anything — he is about to eat a handful of sand."
+  },
+  {
+    "tier": 4,
+    "prompt": "What is the name of Reddit's mascot?",
+    "options": ["Reddy","Snoo","Alien","Karma"],
+    "correctIndex": 1,
+    "funFact": "The name is a pun on \"what's new\", which is roughly what the whole site is for."
+  },
+  {
+    "tier": 4,
+    "prompt": "The \"Dancing Baby\" animation spread in which decade?",
+    "options": ["1970s","1980s","1990s","2000s"],
+    "correctIndex": 2,
+    "funFact": "It was a sample file bundled with 3D software, forwarded by email until it reached television."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was YouTube originally built to be?",
+    "options": ["A file host","A photo album","A gaming site","A dating site"],
+    "correctIndex": 3,
+    "funFact": "Nobody uploaded any dating videos, so the founders opened it to whatever people had."
+  },
+  {
+    "tier": 4,
+    "prompt": "The hashtag was first proposed by a user of which platform?",
+    "options": ["Twitter","Flickr","MySpace","Digg"],
+    "correctIndex": 0,
+    "funFact": "The company initially thought it looked too technical for ordinary people to bother with."
+  },
+  {
+    "tier": 4,
+    "prompt": "The first photograph put on the web showed…",
+    "options": ["A cat","A comedy band","A sunset","A circuit board"],
+    "correctIndex": 1,
+    "funFact": "They were a group of physicists at CERN, and the web was barely a year old at the time."
+  },
+  {
+    "tier": 4,
+    "prompt": "The \"Numa Numa\" video used a song by which band?",
+    "options": ["Eiffel 65","Aqua","O-Zone","Cascada"],
+    "correctIndex": 2,
+    "funFact": "The song is Romanian, and the man in the video was filming himself in his bedroom."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was Twitter originally called?",
+    "options": ["Chirp","Status","Friendstalker","twttr"],
+    "correctIndex": 3,
+    "funFact": "Vowels were dropped to fit a five-character text short code, the way other services did then."
+  }
+]

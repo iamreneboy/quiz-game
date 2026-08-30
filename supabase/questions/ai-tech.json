@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "What does \"www\" stand for in a web address?",
+    "options": ["World Web Window","Wide World Web","Web World Wide","World Wide Web"],
+    "correctIndex": 3,
+    "funFact": "Its inventor Tim Berners-Lee later said the double-u name was a mistake — nine syllables for three letters."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"AI\" stand for?",
+    "options": ["Artificial Intelligence","Automated Intelligence","Advanced Interface","Applied Computation"],
+    "correctIndex": 0,
+    "funFact": "The term was coined for a 1956 workshop at Dartmouth College."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"USB\" stand for?",
+    "options": ["Universal Serial Bus","United System Board","Universal Storage Box","Unified Serial Base"],
+    "correctIndex": 0,
+    "funFact": "Its designer has said the reversible plug was dropped to halve the cost of the connector."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"PDF\" stand for?",
+    "options": ["Public Document Format","Portable Document Format","Printed Document File","Personal Data Folder"],
+    "correctIndex": 1,
+    "funFact": "The format was designed so a page would print identically on any machine — the \"paper\" was the point."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which company makes the iPhone?",
+    "options": ["Samsung","Nokia","Apple","Sony"],
+    "correctIndex": 2,
+    "funFact": "The first model could not copy and paste text, and had no app store for its first year."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does GPS help a device work out?",
+    "options": ["Its battery level","Its screen size","Its storage space","Its location"],
+    "correctIndex": 3,
+    "funFact": "It works by timing signals from satellites, so a receiver needs an extremely accurate clock."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"CPU\" stand for?",
+    "options": ["Central Processing Unit","Computer Power Utility","Central Program Unit","Core Processing Unit"],
+    "correctIndex": 0,
+    "funFact": "Modern ones spend most of their time waiting for memory rather than actually calculating."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is the small picture representing an app called?",
+    "options": ["A widget","An icon","A cursor","A pixel"],
+    "correctIndex": 1,
+    "funFact": "The desktop metaphor of files, folders and a trash can came out of Xerox research in the 1970s."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which key combination usually copies text?",
+    "options": ["Ctrl + X","Ctrl + V","Ctrl + C","Ctrl + Z"],
+    "correctIndex": 2,
+    "funFact": "Cut, copy and paste sit next to each other on the keyboard for exactly that reason."
+  },
+  {
+    "tier": 1,
+    "prompt": "What does \"URL\" stand for?",
+    "options": ["Universal Reading Link","Unified Resource Locator","User Registered Location","Uniform Resource Locator"],
+    "correctIndex": 3,
+    "funFact": "The double slash after the colon serves no purpose; its inventor has publicly apologised for it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company created ChatGPT?",
+    "options": ["Google","OpenAI","Meta","Anthropic"],
+    "correctIndex": 1,
+    "funFact": "Anthropic — maker of Claude — was founded by former OpenAI researchers."
+  },
+  {
+    "tier": 2,
+    "prompt": "In which decade was the first email sent?",
+    "options": ["1960s","1980s","1970s","1990s"],
+    "correctIndex": 2,
+    "funFact": "Ray Tomlinson sent it in 1971 and picked the @ sign to separate user from machine."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company owns the Android operating system?",
+    "options": ["Google","Nokia","Microsoft","Samsung"],
+    "correctIndex": 0,
+    "funFact": "It began as a startup aimed at digital cameras, and was bought for a reported fifty million dollars."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company created the PlayStation?",
+    "options": ["Sega","Sony","Nintendo","Atari"],
+    "correctIndex": 1,
+    "funFact": "It started as a CD add-on for a Nintendo console; the deal collapsed and the add-on became a rival."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company created the Java programming language?",
+    "options": ["International Business Machines","Oracle Corporation","Sun Microsystems","Netscape Communications"],
+    "correctIndex": 2,
+    "funFact": "Oracle owns it now, but only because it bought the company that built it, years after the fact."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which social network was started in a Harvard dorm room?",
+    "options": ["Twitter","LinkedIn","MySpace","Facebook"],
+    "correctIndex": 3,
+    "funFact": "For its first months you needed a university email address to sign up at all."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company makes the Kindle e-reader?",
+    "options": ["Amazon","Google","Kobo","Rakuten"],
+    "correctIndex": 0,
+    "funFact": "The screen is not a screen in the usual sense — it moves physical particles and then switches off."
+  },
+  {
+    "tier": 2,
+    "prompt": "In which decade did the World Wide Web open to the public?",
+    "options": ["1970s","1990s","1980s","2000s"],
+    "correctIndex": 1,
+    "funFact": "The proposal was written in 1989 and its manager’s only comment was \"vague, but exciting\"."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company sells Photoshop?",
+    "options": ["Corel","Autodesk","Adobe","Macromedia"],
+    "correctIndex": 2,
+    "funFact": "Two brothers wrote it to display greyscale images on a Mac, then licensed it rather than sell it outright."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which company made the first commercially successful web browser?",
+    "options": ["Microsoft","Apple","Sun Microsystems","Netscape"],
+    "correctIndex": 3,
+    "funFact": "Its internal codename was Mozilla, which outlived the company and became a browser of its own."
+  },
+  {
+    "tier": 3,
+    "prompt": "What was Google originally called?",
+    "options": ["PageFinder","BackRub","SearchPlus","Googol"],
+    "correctIndex": 1,
+    "funFact": "The name referred to the \"back links\" the engine analyzed. It lasted about a year."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which AI defeated Go world champion Lee Sedol in 2016?",
+    "options": ["Deep Blue","Watson","AlphaGo","Stockfish"],
+    "correctIndex": 2,
+    "funFact": "Move 37 in game two was so unusual that commentators initially assumed it was a mistake."
+  },
+  {
+    "tier": 3,
+    "prompt": "Who is credited with writing the first computer program?",
+    "options": ["Ada Lovelace","Grace Hopper","Alan Turing","Charles Babbage"],
+    "correctIndex": 0,
+    "funFact": "The machine it was written for was never built, so the program went unrun for over a century."
+  },
+  {
+    "tier": 3,
+    "prompt": "Who founded Microsoft with Paul Allen?",
+    "options": ["Steve Ballmer","Bill Gates","Steve Wozniak","Gordon Moore"],
+    "correctIndex": 1,
+    "funFact": "The company was founded in Albuquerque, not Seattle, and moved north four years later."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did the iPhone first go on sale?",
+    "options": ["2005","2006","2007","2008"],
+    "correctIndex": 2,
+    "funFact": "It shipped with no third-party apps at all; developers were told to write websites instead."
+  },
+  {
+    "tier": 3,
+    "prompt": "Who invented the World Wide Web?",
+    "options": ["Vint Cerf","Marc Andreessen","Robert Kahn","Tim Berners-Lee"],
+    "correctIndex": 3,
+    "funFact": "He gave the whole thing away royalty-free, which is the reason anyone could build on it."
+  },
+  {
+    "tier": 3,
+    "prompt": "Moore's Law describes the doubling of what?",
+    "options": ["Transistors on a chip","Processor clock speed","Hard disk capacity","Network bandwidth"],
+    "correctIndex": 0,
+    "funFact": "It was never a law of physics — it was an observation in a magazine article, later treated as a target."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which language was created by Guido van Rossum?",
+    "options": ["Ruby","Python","Perl","Lua"],
+    "correctIndex": 1,
+    "funFact": "He wrote it over a Christmas break as a hobby project, and named it after a comedy troupe."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year did IBM's Deep Blue beat Garry Kasparov?",
+    "options": ["1993","1995","1997","1999"],
+    "correctIndex": 2,
+    "funFact": "Kasparov had beaten the same machine a year earlier, and demanded a rematch that never happened."
+  },
+  {
+    "tier": 3,
+    "prompt": "What is the binary number 1010 in decimal?",
+    "options": ["Eight","Twelve","Six","Ten"],
+    "correctIndex": 3,
+    "funFact": "Each place is worth double the one to its right, so 1010 is simply eight plus two."
+  },
+  {
+    "tier": 4,
+    "prompt": "The first computer \"bug\" was literally what, found in the Harvard Mark II?",
+    "options": ["A beetle","A fly","A cockroach","A moth"],
+    "correctIndex": 3,
+    "funFact": "The 1947 moth was taped into the logbook with the note \"first actual case of bug being found\"."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the first item ever sold on eBay?",
+    "options": ["A broken laser pointer","A Beanie Baby","A guitar","A wristwatch"],
+    "correctIndex": 0,
+    "funFact": "The founder emailed the buyer to check it was intentional — he collected broken laser pointers."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the first message sent over ARPANET?",
+    "options": ["LO","HELLO","TEST","READY"],
+    "correctIndex": 0,
+    "funFact": "They were typing LOGIN when the system crashed, so the first network message was accidental."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was Amazon nearly called instead?",
+    "options": ["Relentless","Cadabra","Bookmart","Aardvark"],
+    "correctIndex": 1,
+    "funFact": "A lawyer heard it as \"cadaver\" over the phone, which ended that idea quickly."
+  },
+  {
+    "tier": 4,
+    "prompt": "The name \"Bluetooth\" comes from a…",
+    "options": ["Swedish radio brand","Dutch cable maker","Danish king","Finnish engineer"],
+    "correctIndex": 2,
+    "funFact": "The logo is his initials in runes, which is why it looks like nothing else on your phone."
+  },
+  {
+    "tier": 4,
+    "prompt": "How many bytes are in a kibibyte?",
+    "options": ["1,000","1,004","1,020","1,024"],
+    "correctIndex": 3,
+    "funFact": "The awkward name exists because disk makers count in thousands and operating systems do not."
+  },
+  {
+    "tier": 4,
+    "prompt": "The first webcam was pointed at what, in Cambridge?",
+    "options": ["A coffee pot","A fish tank","A bicycle rack","A front door"],
+    "correctIndex": 0,
+    "funFact": "Researchers were tired of walking downstairs to find it empty; the pot later sold at auction."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which company turned down buying Google for about $1 million?",
+    "options": ["Yahoo","Excite","Lycos","AltaVista"],
+    "correctIndex": 1,
+    "funFact": "Its chief executive thought a search engine that sent people away too fast was bad for business."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the first product Nokia ever made?",
+    "options": ["Rubber boots","Television sets","Paper","Telephone cable"],
+    "correctIndex": 2,
+    "funFact": "It started as a pulp mill in 1865, and the rubber boots came decades later — those are real too."
+  },
+  {
+    "tier": 4,
+    "prompt": "What does the brand name \"Wi-Fi\" actually stand for?",
+    "options": ["Wireless Fidelity","Wide Frequency","Wireless Filter","Nothing at all"],
+    "correctIndex": 3,
+    "funFact": "A branding firm invented it to echo Hi-Fi; the \"wireless fidelity\" slogan was bolted on afterwards."
+  }
+]

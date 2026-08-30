@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "Which movie features the line \"I'll be back\"?",
+    "options": ["RoboCop","The Terminator","Die Hard","Predator"],
+    "correctIndex": 1,
+    "funFact": "Schwarzenegger lobbied to say \"I will be back\" — he thought the contraction sounded weak."
+  },
+  {
+    "tier": 1,
+    "prompt": "In Finding Nemo, what kind of fish is Dory?",
+    "options": ["Clownfish","Angelfish","Blue tang","Pufferfish"],
+    "correctIndex": 2,
+    "funFact": "After the film, demand for blue tangs spiked so hard that marine biologists issued warnings."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which school does Harry Potter attend?",
+    "options": ["Hogwarts","Durmstrang","Beauxbatons","Ilvermorny"],
+    "correctIndex": 0,
+    "funFact": "Durmstrang and Beauxbatons arrive in the fourth book; the American school was invented years later."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is Luke Skywalker's home planet?",
+    "options": ["Naboo","Tatooine","Endor","Hoth"],
+    "correctIndex": 1,
+    "funFact": "Its desert scenes were shot in Tunisia, where a real town called Tataouine lent the name."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which animated film features a snowman named Olaf?",
+    "options": ["Moana","Tangled","Frozen","Encanto"],
+    "correctIndex": 2,
+    "funFact": "Olaf was rewritten late in production; an earlier version of him was the villain’s sidekick."
+  },
+  {
+    "tier": 1,
+    "prompt": "In Jurassic Park, which animals are brought back to life?",
+    "options": ["Mammoths","Sabre-toothed cats","Giant sloths","Dinosaurs"],
+    "correctIndex": 3,
+    "funFact": "Only fifteen minutes of the film contain dinosaurs, and barely six of those are computer-generated."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which superhero is also known as the Dark Knight?",
+    "options": ["Batman","Iron Man","Daredevil","Green Arrow"],
+    "correctIndex": 0,
+    "funFact": "His creators briefly gave him blond hair and a red suit before settling on the bat."
+  },
+  {
+    "tier": 1,
+    "prompt": "Who plays Captain Jack Sparrow?",
+    "options": ["Orlando Bloom","Johnny Depp","Javier Bardem","Geoffrey Rush"],
+    "correctIndex": 1,
+    "funFact": "The studio panicked at the performance and asked whether the character was meant to be drunk."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which sitcom is set around a coffee shop called Central Perk?",
+    "options": ["Seinfeld","Frasier","Friends","Cheers"],
+    "correctIndex": 2,
+    "funFact": "The orange sofa was found in the studio basement, not bought — it had been in storage for years."
+  },
+  {
+    "tier": 1,
+    "prompt": "In The Lion King, what is Simba's father called?",
+    "options": ["Scar","Rafiki","Zazu","Mufasa"],
+    "correctIndex": 3,
+    "funFact": "Simba is simply Swahili for \"lion\" — several of the film's names come straight out of the language."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which series is set at the Dunder Mifflin Paper Company?",
+    "options": ["Parks and Recreation","30 Rock","Brooklyn Nine-Nine","The Office"],
+    "correctIndex": 3,
+    "funFact": "The US version was adapted from a UK original that ran only 14 episodes."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed both Inception and Oppenheimer?",
+    "options": ["Christopher Nolan","Denis Villeneuve","Ridley Scott","James Cameron"],
+    "correctIndex": 0,
+    "funFact": "Nolan famously avoids using a smartphone or email."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed Pulp Fiction?",
+    "options": ["Quentin Tarantino","Martin Scorsese","Robert Rodriguez","Brian De Palma"],
+    "correctIndex": 0,
+    "funFact": "He wrote it while living in Amsterdam, which is why a character opens the film talking about it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which studio made Toy Story?",
+    "options": ["DreamWorks","Pixar","Illumination","Blue Sky"],
+    "correctIndex": 1,
+    "funFact": "It was the first feature film animated entirely on computers, and it nearly got cancelled midway."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed the 1979 film Alien?",
+    "options": ["Brian De Palma","James Cameron","Ridley Scott","John Carpenter"],
+    "correctIndex": 2,
+    "funFact": "The sequel went to James Cameron, who pitched it by writing \"ALIEN\" and adding an S as a dollar sign."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which actor plays Tony Stark in the Marvel films?",
+    "options": ["Chris Evans","Mark Ruffalo","Chris Hemsworth","Robert Downey Jr."],
+    "correctIndex": 3,
+    "funFact": "The studio resisted for months; the director fought for him, then let him improvise most of the dialogue."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed The Grand Budapest Hotel?",
+    "options": ["Wes Anderson","Spike Jonze","Sofia Coppola","Noah Baumbach"],
+    "correctIndex": 0,
+    "funFact": "The hotel exterior is a model, filmed outdoors so the daylight on it would look real."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which series follows the Crawley family at an English country estate?",
+    "options": ["Peaky Blinders","Downton Abbey","Bridgerton","The Crown"],
+    "correctIndex": 1,
+    "funFact": "The house is a real one, and its owners still live in a private wing while filming goes on."
+  },
+  {
+    "tier": 2,
+    "prompt": "Who directed Spirited Away?",
+    "options": ["Isao Takahata","Makoto Shinkai","Hayao Miyazaki","Mamoru Hosoda"],
+    "correctIndex": 2,
+    "funFact": "He has announced his retirement at least five separate times and gone back to work after each."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which studio's logo is a mountain ringed by stars?",
+    "options": ["Universal","Warner Bros.","Columbia","Paramount"],
+    "correctIndex": 3,
+    "funFact": "The founder sketched it from memory of a mountain near his childhood home in Utah."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which show's 1983 finale drew over 105 million US viewers?",
+    "options": ["Cheers","Seinfeld","M*A*S*H","Dallas"],
+    "correctIndex": 2,
+    "funFact": "It held the record for most-watched broadcast until the 2010 Super Bowl."
+  },
+  {
+    "tier": 3,
+    "prompt": "What is the highest-grossing film of all time (unadjusted)?",
+    "options": ["Avengers: Endgame","Titanic","Star Wars: The Force Awakens","Avatar"],
+    "correctIndex": 3,
+    "funFact": "Avatar lost the crown to Endgame in 2019, then re-releases in China put it back on top."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which film was the first non-English winner of Best Picture?",
+    "options": ["Parasite","Roma","Amour","Life Is Beautiful"],
+    "correctIndex": 0,
+    "funFact": "It won in 2020, ninety-two ceremonies in — and took Director, Screenplay and International Feature too."
+  },
+  {
+    "tier": 3,
+    "prompt": "Blade Runner was adapted from a novel by which author?",
+    "options": ["Isaac Asimov","Philip K. Dick","William Gibson","Arthur C. Clarke"],
+    "correctIndex": 1,
+    "funFact": "He died months before release, having seen only twenty minutes of test footage."
+  },
+  {
+    "tier": 3,
+    "prompt": "How many Academy Awards did Titanic win?",
+    "options": ["Nine","Ten","Eleven","Twelve"],
+    "correctIndex": 2,
+    "funFact": "Only two other films have matched that total, and no film has ever beaten it."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which actor has won the most Best Actor Oscars?",
+    "options": ["Jack Nicholson","Marlon Brando","Tom Hanks","Daniel Day-Lewis"],
+    "correctIndex": 3,
+    "funFact": "He took three, and between two of them he left acting entirely to train as a shoemaker."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which Star Wars film reached cinemas first?",
+    "options": ["A New Hope","The Empire Strikes Back","The Phantom Menace","Return of the Jedi"],
+    "correctIndex": 0,
+    "funFact": "It carried no episode number in 1977; the \"Episode IV\" crawl was added for a re-release."
+  },
+  {
+    "tier": 3,
+    "prompt": "The film Jaws was based on a novel by whom?",
+    "options": ["Michael Crichton","Peter Benchley","Stephen King","Thomas Harris"],
+    "correctIndex": 1,
+    "funFact": "He spent his later years campaigning for shark conservation, saying he regretted the panic."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which film franchise features the character Ethan Hunt?",
+    "options": ["James Bond","The Bourne series","Mission: Impossible","John Wick"],
+    "correctIndex": 2,
+    "funFact": "The first five instalments each had a different director, which is rare for a series that long."
+  },
+  {
+    "tier": 3,
+    "prompt": "In which year was the first Academy Awards ceremony held?",
+    "options": ["1919","1939","1949","1929"],
+    "correctIndex": 3,
+    "funFact": "It lasted fifteen minutes, the winners were announced three months early, and tickets cost five dollars."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which 1927 film won the first Academy Award for Best Picture?",
+    "options": ["Wings","Sunrise","Metropolis","The Jazz Singer"],
+    "correctIndex": 0,
+    "funFact": "Wings is the only fully silent film ever to win Best Picture."
+  },
+  {
+    "tier": 4,
+    "prompt": "In The Matrix, how is Neo first told to \"follow the white rabbit\"?",
+    "options": ["A phone call","A message on his computer","A dream","Graffiti on a wall"],
+    "correctIndex": 1,
+    "funFact": "Seconds later, a rabbit tattoo appears at his door — the film's first big reality glitch."
+  },
+  {
+    "tier": 4,
+    "prompt": "In Jaws, the mechanical shark was nicknamed…",
+    "options": ["Bruce","Nigel","Clive","Trevor"],
+    "correctIndex": 0,
+    "funFact": "It broke down so often that the shark is barely shown, which is why the film is frightening."
+  },
+  {
+    "tier": 4,
+    "prompt": "Who was originally cast as Marty McFly in Back to the Future?",
+    "options": ["Corey Feldman","Eric Stoltz","Johnny Depp","C. Thomas Howell"],
+    "correctIndex": 1,
+    "funFact": "He shot for over a month before being replaced, and a few of his takes survive in the finished film."
+  },
+  {
+    "tier": 4,
+    "prompt": "Indiana Jones shoots the swordsman in Raiders because Harrison Ford was…",
+    "options": ["Behind schedule","Injured on set","Ill with dysentery","Improvising a joke"],
+    "correctIndex": 2,
+    "funFact": "The scripted fight would have taken three days; he suggested the gun so he could go back to bed."
+  },
+  {
+    "tier": 4,
+    "prompt": "The Wilhelm scream was first heard in a film of which decade?",
+    "options": ["1970s","1960s","1940s","1950s"],
+    "correctIndex": 3,
+    "funFact": "It has since been dropped into hundreds of films, usually as a private joke between sound editors."
+  },
+  {
+    "tier": 4,
+    "prompt": "What was the blood in the Psycho shower scene?",
+    "options": ["Chocolate syrup","Tomato ketchup","Red poster paint","Beetroot juice"],
+    "correctIndex": 0,
+    "funFact": "The film was shot in black and white, so what mattered was how it ran, not what colour it was."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which actor turned down the role of Neo in The Matrix?",
+    "options": ["Brad Pitt","Will Smith","Nicolas Cage","Val Kilmer"],
+    "correctIndex": 1,
+    "funFact": "He made Wild Wild West instead, and has said publicly that he would have ruined the part."
+  },
+  {
+    "tier": 4,
+    "prompt": "The horse head in The Godfather was…",
+    "options": ["A rubber prop","A carved model","A real horse head","A papier-mâché head"],
+    "correctIndex": 2,
+    "funFact": "It came from a dog-food plant, and the actor was not told what would be under the sheet."
+  },
+  {
+    "tier": 4,
+    "prompt": "Which film was the first released with a Dolby Digital soundtrack?",
+    "options": ["Terminator 2","Jurassic Park","Star Wars","Batman Returns"],
+    "correctIndex": 3,
+    "funFact": "The data was printed in the gaps between the sprocket holes, on film that also carried the old analogue track."
+  }
+]
