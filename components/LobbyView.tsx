@@ -5,6 +5,7 @@ import { avatarEmoji } from '@/lib/avatars';
 import { joinUrl } from '@/lib/qr';
 import { useOrigin } from '@/lib/useOrigin';
 import JoinQr from '@/components/host/JoinQr';
+import PlayerConnection from '@/components/PlayerConnection';
 
 /**
  * The lobby's readable half (spec §7). The Pixi start line carries the
@@ -55,6 +56,7 @@ export default function LobbyView({
               {p.is_host && (
                 <span className="text-xs font-bold text-amber-400">{p.is_playing ? 'Host' : 'MC'}</span>
               )}
+              <PlayerConnection playerId={p.id} />
             </li>
           ))}
         </ul>

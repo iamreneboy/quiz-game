@@ -5,6 +5,7 @@ import { avatarEmoji } from '@/lib/avatars';
 import { useWorldView } from '@/lib/world/useWorldView';
 import { useStaging } from '@/lib/staging/useStaging';
 import LowerThird from './LowerThird';
+import PlayerConnection from './PlayerConnection';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const OFFSCREEN_ARROW = { left: '◀', right: '▶', top: '▲', bottom: '▼' } as const;
@@ -73,6 +74,7 @@ export default function TrackReadout({ code }: { code: string }) {
                     {OFFSCREEN_ARROW[off.direction]}
                   </span>
                 )}
+                <PlayerConnection playerId={s.player_id} />
               </li>
             );
           })}
