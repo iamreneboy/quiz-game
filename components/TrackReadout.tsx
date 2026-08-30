@@ -5,6 +5,7 @@ import { avatarEmoji } from '@/lib/avatars';
 import { useWorldView } from '@/lib/world/useWorldView';
 import { useStaging } from '@/lib/staging/useStaging';
 import LowerThird from './LowerThird';
+import PlayerConnection from './PlayerConnection';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const OFFSCREEN_ARROW = { left: '◀', right: '▶', top: '▲', bottom: '▼' } as const;
@@ -17,6 +18,9 @@ const OFFSCREEN_ARROW = { left: '◀', right: '▶', top: '▲', bottom: '▼' }
 export default function TrackReadout({ code }: { code: string }) {
   const room = useGameStore(s => s.room);
   const standings = useGameStore(s => s.standings);
+  // The rail is built from standings, which carry no `joined_late` — the mark
+  // is a property of the PLAYER, so it is looked up in the roster.
+  const players = useGameStore(s => s.players);
   const offscreen = useWorldView(s => s.offscreenPlayerIds);
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId : null;
   const deltas = useStaging(s => s.deltas);
@@ -71,6 +75,16 @@ export default function TrackReadout({ code }: { code: string }) {
                     title={`Outside the current camera shot (${off.direction})`}
                   >
                     {OFFSCREEN_ARROW[off.direction]}
+                  </span>
+                )}
+                <PlayerConnection playerId={s.player_id} />
+                {players.find(p => p.id === s.player_id)?.joined_late && (
+                  <span
+                    data-testid="late-badge"
+                    className="shrink-0 text-xs font-bold text-neon-cyan"
+                    title="Joined after the race started"
+                  >
+                    late
                   </span>
                 )}
               </li>

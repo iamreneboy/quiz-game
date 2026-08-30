@@ -1,6 +1,18 @@
 export type Phase = 'lobby'|'countdown'|'read'|'answer'|'reveal'|'track'|'results';
 export type Tier = 1|2|3|4;
-export interface PlayerPublic { id: string; nickname: string; avatar: string; color: string; is_host: boolean; is_playing: boolean; }
+export interface PlayerPublic {
+  id: string; nickname: string; avatar: string; color: string;
+  is_host: boolean; is_playing: boolean;
+  /**
+   * Consecutive host reports that did NOT list this player (M3 P3a). 0 means
+   * present as of the last report; `drop_reports()` (20) or more means dropped.
+   * Optional — absent against a pre-0009 database, and folded to 0 by every
+   * reader, which is the only safe guess.
+   */
+  absent_reports?: number;
+  /** True for a player who joined after the race started (PRD §4). */
+  joined_late?: boolean;
+}
 export interface QuestionPublic { category: string; tier: Tier; prompt: string; options: string[]; }
 export interface Standing {
   player_id: string; nickname: string; avatar: string; color: string;
@@ -55,6 +67,12 @@ export interface RoomInfo {
   paused_remaining_ms?: number|null;
   /** The tiebreak, or null. Absent against a pre-0007 database. */
   sudden_death?: SuddenDeathInfo | null;
+  /**
+   * When the host last reported the roster (M3 P3a). Null until the first
+   * report, absent against a pre-0009 database. P3a writes it and reads it
+   * nowhere; M3 P3b's host-absence sweep is its consumer.
+   */
+  host_seen_at?: string | null;
 }
 export interface RoomState { room: RoomInfo; players: PlayerPublic[]; question: QuestionPublic|null; reveal: RevealPayload|null; standings: Standing[]|null; }
 
@@ -109,4 +127,20 @@ export interface Award {
   value: number;
   /** Always at least one. More than one means the award is shared. */
   winners: AwardWinner[];
+}
+
+/**
+ * What `join_room` returns (M3 P3a).
+ *
+ * `reclaimed` is true when an existing dropped player's run was handed back
+ * rather than a new player created — the caller's session is that racer's
+ * session, answers and all (ADR-0050).
+ */
+export interface JoinResult {
+  room_id: string;
+  player_id: string;
+  player_key: string;
+  player: PlayerPublic;
+  /** Absent against a pre-0009 database, where every join was a new player. */
+  reclaimed?: boolean;
 }

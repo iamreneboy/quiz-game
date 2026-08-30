@@ -75,3 +75,5 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0046](0046-a-rematch-is-the-same-room-reset.md) | A rematch is the same room, reset | M3 P2b |
 | [0047](0047-returning-to-the-lobby-is-a-cue.md) | Returning to the lobby is a cue | M3 P2b |
 | [0048](0048-the-join-announcement-survives-an-unready-channel.md) | The join announcement survives an unready channel | M3 (P2a debt) |
+| [0049](0049-presence-is-reported-by-the-host.md) | Presence is reported by the host, and "dropped" is a count of missed reports | M3 P3a |
+| [0050](0050-the-door-reopens-inside-join-room.md) | The door reopens inside `join_room` — reclaim and late join are one function | M3 P3a |

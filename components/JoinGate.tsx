@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabaseClient';
 import { saveSession } from '@/lib/session';
+import type { JoinResult } from '@/lib/types';
 import { AVATARS, COLORS } from '@/lib/avatars';
 import { DURATION, EASE } from '@/lib/presentation/tokens';
 import Panel from '@/components/ui/Panel';
@@ -35,7 +36,10 @@ export default function JoinGate({ code, onJoined }: { code: string; onJoined: (
       p_code: code, p_nickname: nickname, p_avatar: avatar, p_color: color,
     });
     if (err) { setError(err.message); setBusy(false); return; }
-    saveSession(code, { roomId: data.room_id, playerId: data.player_id, playerKey: data.player_key });
+    const result = data as JoinResult;
+    saveSession(code, {
+      roomId: result.room_id, playerId: result.player_id, playerKey: result.player_key,
+    });
     onJoined();
   }
 

@@ -4,6 +4,8 @@ import { useGameStore } from '@/lib/store';
 import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useRoomRuntimes } from '@/lib/useRoomRuntimes';
 import { useHostDriver } from '@/lib/useHostDriver';
+import { useHostPresenceReporter } from '@/lib/useHostPresenceReporter';
+import { useLateJoinerMaterialize } from '@/lib/useLateJoinerMaterialize';
 import { loadSession, subscribeSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
 import type { PlayerPublic, RoomState } from '@/lib/types';
@@ -40,7 +42,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   );
   const room = useGameStore(s => s.room);
   const applyState = useGameStore(s => s.applyState);
-  const channel = useRoomChannel(code);
+  const channel = useRoomChannel(code, 'player');
   const driver = useHostDriver(code, channel);
 
   /**
@@ -74,6 +76,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   }, []);
 
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
+  const hostKey = typeof window !== 'undefined' ? loadSession(code)?.hostKey ?? null : null;
+  useHostPresenceReporter(hostKey);
+  useLateJoinerMaterialize(code);
 
   useRoomRuntimes(code, 'player');
 

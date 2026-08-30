@@ -5,6 +5,7 @@ import { avatarEmoji } from '@/lib/avatars';
 import { joinUrl } from '@/lib/qr';
 import { useOrigin } from '@/lib/useOrigin';
 import JoinQr from '@/components/host/JoinQr';
+import PlayerConnection from '@/components/PlayerConnection';
 
 /**
  * The lobby's readable half (spec §7). The Pixi start line carries the
@@ -54,6 +55,17 @@ export default function LobbyView({
               <span className="text-sm font-semibold">{p.nickname}</span>
               {p.is_host && (
                 <span className="text-xs font-bold text-amber-400">{p.is_playing ? 'Host' : 'MC'}</span>
+              )}
+              <PlayerConnection playerId={p.id} />
+              {p.joined_late && (
+                <span
+                  data-testid="late-badge"
+                  className="shrink-0 rounded-full bg-neon-cyan/15 px-1.5 py-0.5
+                    font-display text-[10px] font-semibold uppercase tracking-[0.14em]
+                    text-neon-cyan"
+                >
+                  Joined late
+                </span>
               )}
             </li>
           ))}
