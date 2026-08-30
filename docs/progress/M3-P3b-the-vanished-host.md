@@ -1,6 +1,6 @@
 # M3 P3b — The vanished host
 
-- **Status:** Complete. Every local gate green except one browser test that flaked under full-suite load and passes in isolation — named and analysed under Verification results rather than re-run into a green line.
+- **Status:** Complete. `0010_the_vanished_host.sql` applied to the cloud project and verified there by direct query; the two-context specs re-run green against it. Every local gate green except one browser test that flaked under full-suite load and passes in isolation — named and analysed under Verification results rather than re-run into a green line.
 - **Completed:** 2026-08-30
 - **Spec:** `docs/superpowers/specs/2026-08-29-m3-host-power-polish-roadmap.md` (§3 "P3 — Continuity", the remaining two bullets)
 - **Plan:** `docs/superpowers/plans/2026-08-30-m3-p3b-the-vanished-host.md`
@@ -193,6 +193,44 @@ headed run** and is *not* this phase's: `app/room/[code]/page.tsx:131` renders
 `className={\`relative z-10 ${isHost ? 'pb-16' : ''}\`}` from a
 `typeof window !== 'undefined'` read, so server and client markup differ. It
 predates P3b and was left alone.
+
+## Cloud application
+
+`0010_the_vanished_host.sql` was applied to `niznfbabmixesfvxlypi` after the
+branch merged:
+
+```
+npx -y supabase@latest db query --linked --file supabase/migrations/0010_the_vanished_host.sql
+```
+
+Verified by direct query rather than by `supabase migration list --linked`
+(which understates what is applied — `db query --linked --file` does not write
+the migration history table):
+
+```
+ fns | trg | anon_end_room_now | anon_sweep
+-----+-----+-------------------+------------
+   7 |   1 | f                 | t
+```
+
+All seven functions present, the `rooms_purge_expired` trigger in place, and the
+`end_room_now` revoke holding on cloud exactly as it does locally.
+
+**Then the two-context browser specs were re-run pointed at the cloud project**
+— `.env.local` swapped to the cloud block, `npm run dev` restarted by
+Playwright's `webServer`:
+
+```
+npx playwright test e2e/host-absence.spec.ts e2e/presence.spec.ts --workers=1
+  5 passed (3.1m)
+```
+
+This mattered more here than in most phases: M3 P2a's `player_joined` bug was a
+latency-ordering fault that only a remote database exposed (ADR-0048), and this
+phase adds three timing-sensitive client loops — the sweep interval, the
+report-then-resume ordering, and the elected caller re-reading presence each
+tick. All three hold across a real `ap-northeast-1` round trip. `.env.local` was
+restored to the local stack afterwards.
 
 ## Notes for phases that inherit this work
 
