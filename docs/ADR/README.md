@@ -74,3 +74,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0045](0045-awards-are-fetched-not-broadcast.md) | Awards are fetched, not broadcast | M3 P2b |
 | [0046](0046-a-rematch-is-the-same-room-reset.md) | A rematch is the same room, reset | M3 P2b |
 | [0047](0047-returning-to-the-lobby-is-a-cue.md) | Returning to the lobby is a cue | M3 P2b |
+| [0048](0048-the-join-announcement-survives-an-unready-channel.md) | The join announcement survives an unready channel | M3 (P2a debt) |
