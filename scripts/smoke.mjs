@@ -1060,4 +1060,94 @@ await rpcFails('join_room',
   { p_code: rc.code, p_nickname: 'Latecomer', p_avatar: 'cat', p_color: '#fff' },
   /race has finished/i);
 
+// -- late join: a spectator until the next round start, then a racer at zero
+// Two categories, not one: the bank holds exactly two rows per (category,
+// tier), so a single-category room would exhaust tier 1 on the first race and
+// the rematch at the end of this block would legitimately refuse (ADR-0046).
+const lj = await rpc('create_room', {
+  p_timer_seconds: 5, p_categories: ['fuel', 'online'], p_tier_counts: [2, 0, 0, 0],
+});
+await rpc('join_room', {
+  p_code: lj.code, p_nickname: 'Marshal', p_avatar: 'robot', p_color: '#f59e0b',
+  p_host_key: lj.host_key, p_is_playing: false,
+});
+const ljA = await rpc('join_room', {
+  p_code: lj.code, p_nickname: 'Early1', p_avatar: 'duck', p_color: '#38bdf8',
+});
+await rpc('join_room', {
+  p_code: lj.code, p_nickname: 'Early2', p_avatar: 'cat', p_color: '#a78bfa',
+});
+// The answer key, read while the draw is still open (it locks at start_game).
+// Early1 must win OUTRIGHT: perfect_first_place_tie is a tie at the TOP on
+// (correct, speed, streak), not a perfect score, so a field where nobody ever
+// answers is a three-way tie and the last track opens SUDDEN DEATH instead of
+// the results this block goes on to rematch from.
+const ljDraw = await rpc('get_room_draw', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+
+await rpc('start_game', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // read 1
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // answer 1
+await rpc('submit_answer', {
+  p_room_id: lj.room_id, p_player_key: ljA.player_key, p_round: 1,
+  p_choice_index: ljDraw.questions[0].correct_index,
+});
+
+const ljLate = await rpc('join_room', {
+  p_code: lj.code, p_nickname: 'Tardy', p_avatar: 'cat', p_color: '#22d3ee',
+});
+assert.equal(ljLate.reclaimed, false);
+assert.equal(ljLate.player.is_playing, false, 'spectator on arrival');
+assert.equal(ljLate.player.joined_late, true);
+
+// A spectator may not answer, whatever they try.
+await rpcFails('submit_answer',
+  { p_room_id: lj.room_id, p_player_key: ljLate.player_key, p_round: 1, p_choice_index: 0 },
+  /spectators cannot answer/i);
+
+// ...and is not on the board yet.
+const ljRound1 = await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+assert.equal(ljRound1.phase, 'reveal');
+assert.equal(ljRound1.payload.standings.filter(s => s.nickname === 'Tardy').length, 0,
+  'a spectator is not in the standings');
+
+// The next round start materialises them, at zero.
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // track 1
+const ljRead2 = await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+assert.equal(ljRead2.phase, 'read');
+assert.equal(ljRead2.round, 2);
+const ljState = await rpc('get_room_state', { p_code: lj.code });
+const tardy = ljState.players.find(p => p.nickname === 'Tardy');
+assert.equal(tardy.is_playing, true, 'materialised at the round start');
+assert.equal(tardy.joined_late, true, 'and still marked, per PRD §4');
+
+// They race round 2 like anybody else.
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // answer 2
+await rpc('submit_answer', {
+  p_room_id: lj.room_id, p_player_key: ljLate.player_key, p_round: 2, p_choice_index: 0,
+});
+await rpc('submit_answer', {
+  p_room_id: lj.room_id, p_player_key: ljA.player_key, p_round: 2,
+  p_choice_index: ljDraw.questions[1].correct_index,
+});
+const ljReveal2 = await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+assert.ok(ljReveal2.payload.standings.some(s => s.nickname === 'Tardy'),
+  'a materialised late joiner is on the board');
+
+// The MC never joined late and is never materialised — is_playing stays false.
+assert.equal(ljState.players.find(p => p.nickname === 'Marshal').is_playing, false,
+  'a deliberate MC is not a late joiner');
+assert.equal(ljState.players.find(p => p.id === ljA.player_id).joined_late, false);
+
+// A new race clears the mark.
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // track 2
+await rpc('advance_phase', { p_room_id: lj.room_id, p_host_key: lj.host_key }); // results
+await rpc('rematch', {
+  p_room_id: lj.room_id, p_host_key: lj.host_key,
+  p_timer_seconds: null, p_categories: null, p_tier_counts: null,
+});
+await rpc('start_game', { p_room_id: lj.room_id, p_host_key: lj.host_key });
+const ljFresh = await rpc('get_room_state', { p_code: lj.code });
+assert.equal(ljFresh.players.find(p => p.nickname === 'Tardy').joined_late, false,
+  'nobody joined THIS race late');
+
 console.log('✅ P3a presence smoke passed');

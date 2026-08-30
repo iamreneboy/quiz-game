@@ -251,3 +251,142 @@ begin
 end $$;
 
 grant execute on all functions in schema public to anon, authenticated;
+
+-- ============ materialize_late_joiners ============
+-- PRD §4: a late joiner "materializes on the track at the start of the next
+-- round with 0 correct answers". Nothing else changes about them — the mark
+-- stays, because the room is meant to see it.
+create or replace function materialize_late_joiners(p_room_id uuid) returns void
+language sql volatile set search_path = public as $$
+  update players set is_playing = true
+    where room_id = p_room_id and joined_late and not is_playing;
+$$;
+
+-- ============ advance_phase ============
+-- Byte-identical to 0007_the_tiebreak.sql except for ONE added block, marked
+-- below.
+create or replace function advance_phase(p_room_id uuid, p_host_key uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_phase text;
+  v_round int;
+  v_status text := 'playing';
+  v_ends timestamptz;
+  v_contenders uuid[];
+  v_winner uuid;
+  v_is_tiebreak boolean;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status = 'finished' then raise exception 'game finished'; end if;
+  if v_room.status <> 'playing' then raise exception 'game not started'; end if;
+
+  v_round := v_room.current_round;
+  v_is_tiebreak := v_room.sudden_death_round is not null
+    and v_room.current_round = v_room.sudden_death_round;
+
+  case v_room.phase
+    when 'countdown' then v_phase := 'read';
+    when 'read'      then v_phase := 'answer';
+    when 'answer' then
+      v_phase := 'reveal';
+      if v_is_tiebreak then
+        select a.player_id into v_winner
+        from answers a
+        where a.room_id = p_room_id
+          and a.round = v_room.sudden_death_round
+          and a.is_correct
+          and a.player_id = any(v_room.sudden_death_contenders)
+        order by a.time_remaining_ms desc, a.player_id asc
+        limit 1;
+        update rooms set sudden_death_winner_id = v_winner where id = p_room_id;
+      end if;
+    when 'reveal' then
+      if v_is_tiebreak then
+        v_phase := 'results'; v_status := 'finished';
+      else
+        v_phase := 'track';
+      end if;
+    when 'track' then
+      if v_room.current_round >= v_room.total_rounds then
+        v_contenders := perfect_first_place_tie(p_room_id, v_room.total_rounds);
+        if v_room.sudden_death_round is null
+           and v_room.reserve_question_id is not null
+           and coalesce(array_length(v_contenders, 1), 0) >= 2 then
+          v_phase := 'read';
+          v_round := v_room.total_rounds + 1;
+          insert into room_questions (room_id, round, question_id)
+          values (p_room_id, v_round, v_room.reserve_question_id)
+          on conflict (room_id, round) do update set question_id = excluded.question_id;
+          update rooms set sudden_death_round = v_round,
+            sudden_death_contenders = v_contenders
+          where id = p_room_id;
+        else
+          v_phase := 'results'; v_status := 'finished';
+        end if;
+      else
+        v_phase := 'read'; v_round := v_room.current_round + 1;
+      end if;
+    else raise exception 'cannot advance from phase %', v_room.phase;
+  end case;
+
+  -- ===== M3 P3a: the ONLY change from 0007 =====
+  -- A READ inside the drawn track is a round start, and PRD §4 says that is
+  -- when a late joiner materialises. The `v_round <= total_rounds` bound is
+  -- what excludes the TIEBREAK: it sits one round past the finish line and
+  -- belongs to the contenders (ADR-0043), so a spectator must not walk into it.
+  --
+  -- skip_question deliberately does NOT do this. A skip REUSES the round number
+  -- (ADR-0038) — it is the same round with a different question, already under
+  -- way for everybody else — so a late joiner waits for the next real one.
+  if v_phase = 'read' and v_round <= v_room.total_rounds then
+    perform materialize_late_joiners(p_room_id);
+  end if;
+  -- ===== end of the change =====
+
+  v_ends := case v_phase
+    when 'read'    then now() + interval '3 seconds'
+    when 'answer'  then now() + make_interval(secs => v_room.timer_seconds)
+    when 'reveal'  then now() + interval '5 seconds'
+    when 'track'   then now() + interval '4 seconds'
+    when 'results' then now() + make_interval(secs => ceremony_ms()::double precision / 1000)
+    else null
+  end;
+
+  update rooms set phase = v_phase, current_round = v_round,
+    status = v_status, phase_ends_at = v_ends
+  where id = p_room_id returning * into v_room;
+
+  return phase_event(v_room);
+end $$;
+
+-- ============ start_game ============
+-- Byte-identical to 0002_rpcs.sql except for ONE added statement.
+--
+-- A new race means nobody joined THIS one late and nobody has missed a report
+-- of it yet. It matters most after a rematch (ADR-0046), which returns the room
+-- to the lobby with last race's players still carrying last race's marks.
+create or replace function start_game(p_room_id uuid, p_host_key uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_room rooms;
+  v_players int;
+begin
+  select * into v_room from rooms where id = p_room_id for update;
+  if not found or v_room.host_key <> p_host_key then raise exception 'invalid host key'; end if;
+  if v_room.status <> 'lobby' then raise exception 'game already started'; end if;
+  select count(*) into v_players from players where room_id = p_room_id and is_playing;
+  if v_players < 2 then raise exception 'need at least 2 players'; end if;
+
+  -- M3 P3a: the only change from 0002.
+  update players set joined_late = false, absent_reports = 0 where room_id = p_room_id;
+
+  update rooms set status = 'playing', phase = 'countdown', current_round = 1,
+    phase_ends_at = now() + interval '3 seconds'
+  where id = p_room_id returning * into v_room;
+
+  return phase_event(v_room);
+end $$;
+
+grant execute on all functions in schema public to anon, authenticated;

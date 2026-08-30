@@ -57,6 +57,16 @@ export default function LobbyView({
                 <span className="text-xs font-bold text-amber-400">{p.is_playing ? 'Host' : 'MC'}</span>
               )}
               <PlayerConnection playerId={p.id} />
+              {p.joined_late && (
+                <span
+                  data-testid="late-badge"
+                  className="shrink-0 rounded-full bg-neon-cyan/15 px-1.5 py-0.5
+                    font-display text-[10px] font-semibold uppercase tracking-[0.14em]
+                    text-neon-cyan"
+                >
+                  Joined late
+                </span>
+              )}
             </li>
           ))}
         </ul>

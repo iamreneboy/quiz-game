@@ -26,8 +26,10 @@ export default function GameView({ code }: { code: string }) {
   const spectating = useStaging(s => s.spectating);
   const suddenDeath = useStaging(s => s.suddenDeath);
   const standings = useGameStore(s => s.standings);
+  const players = useGameStore(s => s.players);
   const revealSteps = useStaging(s => s.reveal);
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
+  const joinedLate = !!players.find(p => p.id === myId)?.joined_late;
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const rows =
@@ -112,7 +114,9 @@ export default function GameView({ code }: { code: string }) {
             <p className="text-center text-sm text-ink-mute">
               {suddenDeath
                 ? 'This one is between the tied racers.'
-                : 'You’re watching this one.'}
+                : joinedLate
+                  ? 'You’re in from the next question — watch this one.'
+                  : 'You’re watching this one.'}
             </p>
           )}
           {room.phase === 'reveal' && question && reveal && (
