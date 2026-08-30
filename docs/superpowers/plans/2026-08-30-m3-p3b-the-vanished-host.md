@@ -134,7 +134,7 @@ section.
     changed something, **SQL `null` when it did not**
   - `phase_event` and `get_room_state` gain `host_absent`
 
-- [ ] **Step 1: Write the failing smoke assertions**
+- [x] **Step 1: Write the failing smoke assertions**
 
 Append to `scripts/smoke.mjs`, after P3a's section:
 
@@ -230,7 +230,7 @@ assert.equal(await rpc('sweep_host_absence', { p_room_id: vh.room_id }), null,
 console.log('✅ P3b host-absence smoke passed');
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```
 node scripts/smoke.mjs
@@ -239,7 +239,7 @@ node scripts/smoke.mjs
 Expected: FAIL at `host_absence_pause_ms` with
 `Could not find the function public.host_absence_pause_ms in the schema cache`.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 Create `supabase/migrations/0010_the_vanished_host.sql`:
 
@@ -475,14 +475,14 @@ end $$;
 grant execute on all functions in schema public to anon, authenticated;
 ```
 
-- [ ] **Step 4: Apply it and reload the schema cache**
+- [x] **Step 4: Apply it and reload the schema cache**
 
 ```bash
 docker exec -i supabase_db_quiz-game psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/0010_the_vanished_host.sql
 docker exec supabase_db_quiz-game psql -U postgres -d postgres -c "notify pgrst, 'reload schema';"
 ```
 
-- [ ] **Step 5: Run the smoke test**
+- [x] **Step 5: Run the smoke test**
 
 ```
 node scripts/smoke.mjs
@@ -493,7 +493,7 @@ exercised by P0's, P2a's and P2b's sections), then
 `✅ P3b host-absence smoke passed`. The run is ~10 seconds longer than before,
 by design.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/migrations/0010_the_vanished_host.sql scripts/smoke.mjs
@@ -517,7 +517,7 @@ git commit -m "feat(p3b): the server sweeps a vanished host on its own heartbeat
   - `isHostAbsent(room): boolean` in `lib/pause.ts`
   - `applyPhaseEvent` carries `host_absent` onto the room
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/pause.test.ts`:
 
@@ -548,7 +548,7 @@ The shared `room()` factory at the top of that file needs the new field to be
 assignable; because it spreads `Partial<RoomInfo>`, adding `host_absent` to
 `RoomInfo` in Step 3 is enough — no change to the factory.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```
 npx vitest run tests/pause.test.ts
@@ -556,7 +556,7 @@ npx vitest run tests/pause.test.ts
 
 Expected: FAIL — `"isHostAbsent" is not exported by "lib/pause.ts"`.
 
-- [ ] **Step 3: Widen the types**
+- [x] **Step 3: Widen the types**
 
 In `lib/types.ts`, add to `PhaseEvent`, immediately after
 `paused_remaining_ms`:
@@ -575,7 +575,7 @@ In `lib/types.ts`, add to `PhaseEvent`, immediately after
 and the identical field, with a one-line comment pointing at the same ADR, to
 `RoomInfo` immediately after its `paused_remaining_ms`.
 
-- [ ] **Step 4: Carry it in the store**
+- [x] **Step 4: Carry it in the store**
 
 In `lib/store.ts`, inside `applyPhaseEvent`'s `next.room` object, immediately
 after the `paused_remaining_ms` line:
@@ -588,7 +588,7 @@ after the `paused_remaining_ms` line:
         host_absent: e.host_absent ?? false,
 ```
 
-- [ ] **Step 5: Read it in `lib/pause.ts`**
+- [x] **Step 5: Read it in `lib/pause.ts`**
 
 Add to `PausableRoom`:
 
@@ -615,7 +615,7 @@ export function isHostAbsent(
 }
 ```
 
-- [ ] **Step 6: Run the test and commit**
+- [x] **Step 6: Run the test and commit**
 
 ```bash
 npx vitest run tests/pause.test.ts
@@ -638,7 +638,7 @@ git commit -m "feat(p3b): host_absent on the wire and in the store"
 - Produces:
   `electSweeper(snap: PresenceSnapshot, hostPlayerId: string | null, myPlayerId: string | null): boolean`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/hostAbsence.test.ts`:
 
@@ -692,7 +692,7 @@ describe('electSweeper', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```
 npx vitest run tests/hostAbsence.test.ts
@@ -700,7 +700,7 @@ npx vitest run tests/hostAbsence.test.ts
 
 Expected: FAIL — `"electSweeper" is not exported by "lib/presence.ts"`.
 
-- [ ] **Step 3: Write the function**
+- [x] **Step 3: Write the function**
 
 Append to `lib/presence.ts`:
 
@@ -736,7 +736,7 @@ export function electSweeper(
 `snap.present` is already sorted by `applyPresence`, so `candidates[0]` is the
 lowest-sorted candidate; the test's `agrees with itself` case is what pins that.
 
-- [ ] **Step 4: Run and commit**
+- [x] **Step 4: Run and commit**
 
 ```bash
 npx vitest run tests/hostAbsence.test.ts
@@ -759,7 +759,7 @@ git commit -m "feat(p3b): one client sweeps, elected from the presence map"
   `usePresence`, `PRESENCE_REPORT_MS` (P3a); `useGameStore.applyPhaseEvent`.
 - Produces: `useHostAbsenceSweep(channel: RealtimeChannel | null, myPlayerId: string | null): void`
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 Create `lib/useHostAbsenceSweep.ts`:
 
@@ -830,7 +830,7 @@ unlike the host reporter: an immediate sweep on every mount would fire a burst
 of RPCs every time a room's status changes. The threshold is nine seconds; a
 first call three seconds in costs nothing.
 
-- [ ] **Step 2: Mount it**
+- [x] **Step 2: Mount it**
 
 In `app/room/[code]/page.tsx`:
 
@@ -847,7 +847,7 @@ could never be elected anyway, and a room whose only remaining surface is a
 stage view is left paused until somebody arrives — recorded as a known limit in
 ADR-0051.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 ```bash
 npx tsc --noEmit
@@ -870,7 +870,7 @@ git commit -m "feat(p3b): the elected client watches for a vanished host"
 - Produces: no new export. `useHostPresenceReporter` resumes an absence pause
   after the heartbeat that clears it.
 
-- [ ] **Step 1: Add the auto-resume**
+- [x] **Step 1: Add the auto-resume**
 
 In `lib/useHostPresenceReporter.ts`, replace the `report` closure and the
 effect's dependency list:
@@ -930,7 +930,7 @@ with `import type { RealtimeChannel } from '@supabase/supabase-js';`,
 `import type { PhaseEvent } from './types';` added, and `channel` appended to
 the effect's dependency array.
 
-- [ ] **Step 2: Pass the channel**
+- [x] **Step 2: Pass the channel**
 
 In `app/room/[code]/page.tsx`, change the call added in P3a:
 
@@ -938,7 +938,7 @@ In `app/room/[code]/page.tsx`, change the call added in P3a:
   useHostPresenceReporter(hostKey, channel);
 ```
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 ```bash
 npx tsc --noEmit
@@ -960,7 +960,7 @@ git commit -m "feat(p3b): a returning host resumes the show it interrupted"
 - Produces: `PauseCard` renders two stories, distinguished by
   `data-reason="host" | "absence"`.
 
-- [ ] **Step 1: Rewrite the card**
+- [x] **Step 1: Rewrite the card**
 
 Replace `components/PauseCard.tsx` in full:
 
@@ -1030,7 +1030,7 @@ both headline and body change together when a deliberate pause becomes an
 absence pause, so no `key` churn is needed — the region re-announces on its own.
 Verify this in Step 2 rather than assuming it.
 
-- [ ] **Step 2: Verify live, headed**
+- [x] **Step 2: Verify live, headed**
 
 Run `npm run dev` and open three surfaces on one room: host, a joiner, and
 `/stage/<CODE>` — all in separate browser profiles. Start the race, get into an
@@ -1045,7 +1045,7 @@ ring resumes at the number it froze at, it does not restart.
 Then, separately: press Pause on the host's strip and confirm the card reads
 **Paused** with `data-reason="host"`, and that nothing auto-resumes it.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 npx tsc --noEmit
@@ -1067,7 +1067,7 @@ git commit -m "feat(p3b): the pause card tells the room which pause it is"
 - Produces: `purge_rooms() -> int` and a statement-level `before insert` trigger
   on `rooms` that calls it.
 
-- [ ] **Step 1: Write the failing smoke assertions**
+- [x] **Step 1: Write the failing smoke assertions**
 
 Append to the P3b section in `scripts/smoke.mjs`, before its `console.log`:
 
@@ -1093,7 +1093,7 @@ The 24-hour boundary itself cannot be crossed from this harness — the anon rol
 has no table grants, so `created_at` cannot be backdated through an RPC. Verify
 it once by hand instead, in Step 4, and record the result in the progress doc.
 
-- [ ] **Step 2: Append the purge to the migration**
+- [x] **Step 2: Append the purge to the migration**
 
 Append to `supabase/migrations/0010_the_vanished_host.sql`:
 
@@ -1144,7 +1144,7 @@ create trigger rooms_purge_expired
 grant execute on all functions in schema public to anon, authenticated;
 ```
 
-- [ ] **Step 3: Re-apply, reload, run the smoke test**
+- [x] **Step 3: Re-apply, reload, run the smoke test**
 
 ```bash
 docker exec -i supabase_db_quiz-game psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/0010_the_vanished_host.sql
@@ -1154,7 +1154,7 @@ node scripts/smoke.mjs
 
 Expected: every section passes.
 
-- [ ] **Step 4: Verify the boundary by hand**
+- [x] **Step 4: Verify the boundary by hand**
 
 The harness cannot backdate a room, so cross the line directly against the local
 stack once:
@@ -1184,7 +1184,7 @@ docker exec supabase_db_quiz-game psql -U postgres -d postgres -c "
 Expected: `after_insert` is 1 — every stale room went, and only the new one
 remains. Record both outputs in the progress doc.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations/0010_the_vanished_host.sql scripts/smoke.mjs
@@ -1203,7 +1203,7 @@ git commit -m "feat(p3b): rooms are purged 24h after creation"
 - Modify: `docs/progress/CURRENT.md`
 - Create: `docs/progress/M3-P3b-the-vanished-host.md`
 
-- [ ] **Step 1: Write the Playwright spec**
+- [x] **Step 1: Write the Playwright spec**
 
 Create `e2e/host-absence.spec.ts`:
 
@@ -1354,7 +1354,7 @@ test('a deliberate pause is never auto-resumed out from under the host', async (
 });
 ```
 
-- [ ] **Step 2: Run it, headed**
+- [x] **Step 2: Run it, headed**
 
 ```
 npx playwright test e2e/host-absence.spec.ts --workers=1 --headed
@@ -1365,7 +1365,7 @@ Expected: 2 passed. If the first test never sees the card, check in order:
 host), then `sweep_host_absence` is firing on the joiner, then that it is
 returning non-null (`node scripts/smoke.mjs` isolates the server half).
 
-- [ ] **Step 3: Run the whole floor**
+- [x] **Step 3: Run the whole floor**
 
 ```bash
 npx tsc --noEmit
@@ -1378,7 +1378,7 @@ npm run test:e2e -- --workers=1
 Expected: silent, zero problems, every unit test passing, a clean build, and the
 whole Playwright suite green at `--workers=1`.
 
-- [ ] **Step 4: Write ADR-0051**
+- [x] **Step 4: Write ADR-0051**
 
 Create `docs/ADR/0051-a-vanished-host-is-swept-by-any-client.md`:
 
@@ -1462,7 +1462,7 @@ heartbeat that clears it, and never resumes a deliberate one (ADR-0052's
   deliberate trade against a five-minute test.
 ```
 
-- [ ] **Step 5: Write ADR-0052**
+- [x] **Step 5: Write ADR-0052**
 
 Create `docs/ADR/0052-the-wires-fifth-opening.md`:
 
@@ -1537,7 +1537,7 @@ shipped.
   supersedes.
 ```
 
-- [ ] **Step 6: Index the ADRs**
+- [x] **Step 6: Index the ADRs**
 
 Append to `docs/ADR/README.md`:
 
@@ -1546,7 +1546,7 @@ Append to `docs/ADR/README.md`:
 | [0052](0052-the-wires-fifth-opening.md) | The wire's fifth opening — `host_absent`, derived and never stored | M3 P3b |
 ```
 
-- [ ] **Step 7: Write the phase record and update the tracker**
+- [x] **Step 7: Write the phase record and update the tracker**
 
 Create `docs/progress/M3-P3b-the-vanished-host.md` in the shape of
 `docs/progress/M3-P2b-the-aftermath.md`: scope, what was built, deviations,
@@ -1574,7 +1574,7 @@ Then edit `docs/progress/CURRENT.md`:
 - Add a Notes bullet for the keyless-RPC precedent and one for the auto-resume
   ordering.
 
-- [ ] **Step 8: Commit, merge, push, clean up**
+- [x] **Step 8: Commit, merge, push, clean up**
 
 ```bash
 git add e2e/host-absence.spec.ts docs/ADR/0051-a-vanished-host-is-swept-by-any-client.md docs/ADR/0052-the-wires-fifth-opening.md docs/ADR/README.md docs/progress/M3-P3b-the-vanished-host.md docs/progress/CURRENT.md
@@ -1586,7 +1586,7 @@ git worktree remove <path>
 git branch -d <branch>
 ```
 
-- [ ] **Step 9: Apply the migration to the cloud project**
+- [x] **Step 9: Apply the migration to the cloud project**
 
 ```bash
 npx -y supabase@latest db query --linked --file supabase/migrations/0010_the_vanished_host.sql
