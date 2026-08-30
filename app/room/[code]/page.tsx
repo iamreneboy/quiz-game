@@ -1,12 +1,12 @@
 'use client';
-import { Suspense, use, useCallback, useSyncExternalStore } from 'react';
+import { Suspense, use, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useGameStore } from '@/lib/store';
 import { useRoomChannel } from '@/lib/useRoomChannel';
 import { useRoomRuntimes } from '@/lib/useRoomRuntimes';
 import { useHostDriver } from '@/lib/useHostDriver';
 import { loadSession, subscribeSession } from '@/lib/session';
 import { supabase } from '@/lib/supabaseClient';
-import type { RoomState } from '@/lib/types';
+import type { PlayerPublic, RoomState } from '@/lib/types';
 import JoinGate from '@/components/JoinGate';
 import LobbyView from '@/components/LobbyView';
 import GameView from '@/components/GameView';
@@ -42,6 +42,37 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const applyState = useGameStore(s => s.applyState);
   const channel = useRoomChannel(code);
   const driver = useHostDriver(code, channel);
+
+  /**
+   * The joiner's `player_joined` broadcast is the ONLY thing that ever tells
+   * the host a player arrived — there is no server-side realtime and no poll —
+   * so it must not be issued into the void.
+   *
+   * Two ways it used to be: `handleJoined` is a click-handler closure that
+   * spans an awaited RPC, so the `channel` it captured can predate the
+   * subscription completing (a stale null that stays null however ready the
+   * real channel becomes); and the channel can still be connecting when the
+   * announcement is ready to go. The ref answers the first, the outbox the
+   * second. Locally the handshake is ~10ms and neither ever bit; against a
+   * remote project it is a round trip and both did. See ADR-0048.
+   */
+  const channelRef = useRef(channel);
+  const pendingAnnounce = useRef<PlayerPublic | null>(null);
+
+  useEffect(() => {
+    channelRef.current = channel;
+    const me = pendingAnnounce.current;
+    if (!channel || !me) return;
+    pendingAnnounce.current = null;
+    channel.send({ type: 'broadcast', event: 'player_joined', payload: me });
+  }, [channel]);
+
+  const announce = useCallback((me: PlayerPublic) => {
+    const ready = channelRef.current;
+    if (ready) ready.send({ type: 'broadcast', event: 'player_joined', payload: me });
+    else pendingAnnounce.current = me;
+  }, []);
+
   const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
 
   useRoomRuntimes(code, 'player');
@@ -54,7 +85,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       applyState(data as RoomState);
       const session = loadSession(code);
       const me = (data as RoomState).players.find(p => p.id === session?.playerId);
-      if (me) channel?.send({ type: 'broadcast', event: 'player_joined', payload: me });
+      if (me) announce(me);
     }
   }
 

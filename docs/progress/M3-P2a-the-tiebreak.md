@@ -156,6 +156,12 @@ regression; re-run before concluding otherwise.
   visible. Left open deliberately: it is a cloud/realtime configuration question
   that predates this phase and would have been equally broken before it. The
   cloud schema is correct; what is unproven is a two-device game against cloud.
+  **Correction (2026-08-30):** the observation was right, the attribution was
+  wrong — Realtime on the cloud project was never misconfigured. The joiner was
+  never putting the broadcast on the wire, because `handleJoined` announced
+  through a click-handler closure that had captured `channel` before the
+  subscription completed. Fixed and verified cross-client against cloud; see
+  [ADR-0048](../ADR/0048-the-join-announcement-survives-an-unready-channel.md).
 
 ## Exit criteria (roadmap §3, P2 — minus the two P2b owns)
 
