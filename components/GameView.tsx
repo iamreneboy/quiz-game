@@ -30,7 +30,7 @@ export default function GameView({ code }: { code: string }) {
   const revealSteps = useStaging(s => s.reveal);
   const myId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
   const joinedLate = !!players.find(p => p.id === myId)?.joined_late;
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<{ round: number; message: string } | null>(null);
 
   const rows =
     reveal && question
@@ -72,7 +72,7 @@ export default function GameView({ code }: { code: string }) {
       p_room_id: room.id, p_player_key: session.playerKey,
       p_round: room.round, p_choice_index: i,
     });
-    if (error) setSubmitError(error.message);
+    if (error) setSubmitError({ round: room.round, message: error.message });
   }
 
   if (room.phase === 'countdown') {
@@ -132,7 +132,9 @@ export default function GameView({ code }: { code: string }) {
             <RevealPanel reveal={reveal} question={question} steps={revealSteps} />
           )}
           {room.phase === 'track' && <TrackReadout code={code} />}
-          {submitError && <p className="text-center text-sm text-wrong">{submitError}</p>}
+          {submitError?.round === round && (
+            <p className="text-center text-sm text-wrong">{submitError.message}</p>
+          )}
         </>
       }
     />
