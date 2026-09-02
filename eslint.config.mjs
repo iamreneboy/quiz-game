@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "supabase/.temp/**",
     ".claude/worktrees/**",
+    // Claude Design's exported canvas: a vendored preview harness, not app code.
+    "docs/background-redesign/**",
   ]),
 ]);
 

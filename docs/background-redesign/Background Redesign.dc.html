@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="./mock/nightRace.js"></script>
+  <script src="./mock/render.js"></script>
+  <style>
+    body { margin: 0; background: #05060f; color: #eaeeff; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; }
+    a { color: #35f2ff; } a:hover { color: #c6ff4a; }
+    canvas { display: block; }
+  </style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 56px 40px 96px; display: flex; flex-direction: column; gap: 56px;">
+
+  <header style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: end;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'Chakra Petch', sans-serif; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #767eb9; font-weight: 600;">Circuit Break · background redesign</div>
+      <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 52px; line-height: 0.98; letter-spacing: -0.03em; font-weight: 700; text-wrap: pretty;">Depth by value, not by detail.</h1>
+      <p style="margin: 0; font-size: 17px; line-height: 1.5; color: #a6adde; text-wrap: pretty;">Same world, same tokens, same five-layer contract. The far ground is painted in the sky's own colours at partial alpha, the mid ground in <code style="font-family: 'Chakra Petch', monospace; color: #eaeeff;">night</code>, the near ground in <code style="font-family: 'Chakra Petch', monospace; color: #eaeeff;">abyss</code>/<code style="font-family: 'Chakra Petch', monospace; color: #eaeeff;">void</code>, and every layer dissolves into fog at its base. Silhouettes get roof profiles from one seeded layout that both the body layer and its lights layer read.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; line-height: 1.45; color: #a6adde;">
+      <div style="background: rgba(18,23,52,0.55); border: 1px solid rgba(43,51,112,0.5); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #ff5d73; font-weight: 600;">What's wrong today</div>
+        <div>Every zone is the same blocky-rect skyline with a palette swap. One depth cue (size). Hard bases on every layer. Zones don't escalate, they recolour.</div>
+      </div>
+      <div style="background: rgba(18,23,52,0.55); border: 1px solid rgba(43,51,112,0.5); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #3ce69b; font-weight: 600;">The move</div>
+        <div>Three value tiers (haze → night → void), fog bands, drawn roof profiles, one accent hue per zone that the mood grade can push. Zero new tokens, zero new assets, same texture budget.</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div style="border-top: 2px solid #ffb43d; padding-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 15px;">01 · Office park — <span style="color: #a6adde;">ordinary</span></div>
+      <div style="font-size: 14px; line-height: 1.45; color: #a6adde;">Horizontal and hushed. Low campus blocks lit by whole floors (a cleaning crew, not a party), sodium lamp pools, hedges and cars in near-black, two ridges of hills with a treeline. Accent: <code style="color: #ffb43d;">warning</code>. Motion: a slow breathing of the lit floors.</div>
+    </div>
+    <div style="border-top: 2px solid #ff4fd8; padding-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 15px;">02 · Neon city — <span style="color: #a6adde;">electric</span></div>
+      <div style="font-size: 14px; line-height: 1.45; color: #a6adde;">Vertical and dense. Three depths of towers with setbacks, slants and spires; signs, crowns and spire-tips in cyan/magenta/lime that bleed onto the street; an elevated overpass with a lamp string in the foreground. Accent: the three neons. Motion: signage pulses.</div>
+    </div>
+    <div style="border-top: 2px solid #ffd166; padding-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 15px;">03 · Stadium — <span style="color: #a6adde;">arena</span></div>
+      <div style="font-size: 14px; line-height: 1.45; color: #a6adde;">The race is <em>inside</em> the bowl: one continuous grandstand that tiles seamlessly — canopy, two raked tiers, a crowd of thousands, vomitories, a gold LED ribbon, flood masts fanning light down. Accent: <code style="color: #ffd166;">gold</code> + <code style="color: #d5dcee;">silver</code>. Motion: camera flashes, masts sweep.</div>
+    </div>
+  </div>
+
+  <sc-for list="{{ shots }}" as="s" hint-placeholder-count="3">
+    <section data-screen-label="{{ s.label }}" style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+        <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -0.01em;">{{ s.title }}</h2>
+        <div style="font-size: 12px; color: #767eb9; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;">{{ s.meta }}</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: start;">
+        <div style="position: relative; border-radius: 12px; overflow: hidden; background: #0a0c1c; aspect-ratio: 16 / 9;">
+          <canvas data-shot="{{ s.id }}" data-kind="full" style="width: 100%; height: 100%;"></canvas>
+          <sc-if value="{{ s.overlay }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 48px;">
+              <div style="width: 62%; background: rgba(18,23,52,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(43,51,112,0.5); border-radius: 20px; padding: 26px 30px; display: flex; flex-direction: column; gap: 10px; box-shadow: inset 0 0 0 2px rgba(255,180,61,0.22);">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #767eb9; font-weight: 600;">Final question · Rewind</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-size: 26px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 600; text-wrap: pretty;">Which year did the first web browser with inline images ship?</div>
+                <div style="font-size: 12px; color: #a6adde;">Panel is <code>bg-night/55</code> — the app's most common card ground — to show the grade never pushes ink below its floor.</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 11px; color: #767eb9; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;">Phone strip · 28vh · high</div>
+            <div style="border-radius: 10px; overflow: hidden; background: #0a0c1c; aspect-ratio: 390 / 236;">
+              <canvas data-shot="{{ s.id }}" data-kind="strip" style="width: 100%; height: 100%;"></canvas>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 11px; color: #767eb9; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;">Reduced profile · core layers only · static</div>
+            <div style="border-radius: 10px; overflow: hidden; background: #0a0c1c; aspect-ratio: 16 / 9;">
+              <canvas data-shot="{{ s.id }}" data-kind="reduced" style="width: 100%; height: 100%;"></canvas>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #a6adde; text-wrap: pretty;">{{ s.note }}</p>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+
+  <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; border-top: 1px solid rgba(43,51,112,0.5); padding-top: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.55; color: #a6adde;">
+      <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 600; color: #eaeeff;">Deliverables</h2>
+      <div><a href="deliverable/lib/world/content/nightRace.ts">lib/world/content/nightRace.ts</a> — drop-in replacement. Same exports, same <code>WorldDefinition</code> shape, 5 layers per zone / 2 core, ambient only on rich layers, all colours from <code>COLOR</code>. Every mockup above is this exact file drawn through a Canvas2D stand-in for Pixi <code>Graphics</code> (<a href="mock/render.js">mock/render.js</a>) and composited with <code>ParallaxLayer.update</code>'s math.</div>
+      <div><strong style="color: #eaeeff;">Token additions: none.</strong> Atmosphere comes from alpha over existing tokens; the one derived colour (<code>mix()</code> inside gradient bands) already existed in the current file. <code>tests/tokens.test.ts</code> and the a11y palette are untouched.</div>
+      <div><strong style="color: #eaeeff;">Tests:</strong> <code>tests/worldDefinition.test.ts</code> stays green unchanged — no count or ordering rule needed to move.</div>
+      <div><strong style="color: #eaeeff;">Texture budget:</strong> sky tiles drop from 1600×900 to 1024×900 (the gradient is horizontally uniform; stars repeat at 1024 world units without a visible seam). Per-zone tile pixels: office 2.4M, city 3.7M, stadium 3.2M — at or under the current 4.1M each.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.55; color: #a6adde;">
+      <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 600; color: #eaeeff;">Optional second step</h2>
+      <div><strong style="color: #eaeeff;">Sky seam at wide spans (fixed for free here).</strong> At the 14-segment span a 900-unit sky is 387px tall on a 1080 canvas, so the clear colour showed above it. Every sky now opens in <code>abyss</code> — the canvas clear — so the join is invisible. No renderer change.</div>
+      <div><strong style="color: #eaeeff;">Grade.ts.</strong> The neutral grade tints with <code>void</code>, which flattens the new value separation as the game progresses. Consider <code>night</code> at the same alphas for the neutral hue so the vignette darkens without desaturating, and let the final-question hue key off the zone: <code>neonMagenta</code> in the city, <code>gold</code> at a lower peak (≈0.24) in the stadium, so the arena grades hot instead of pink.</div>
+      <div><strong style="color: #eaeeff;">zones.ts.</strong> Widen <code>ZONE_OVERLAP</code> from 0.12 to 0.18 — with fog bands on both sides a longer crossfade reads as weather rolling in rather than a dissolve. Boundaries and the reduced-profile hard switch stay as they are.</div>
+      <div><strong style="color: #eaeeff;">body gradient.</strong> Unchanged. The page's <code>dusk</code> top-glow and 14% magenta corner already sit between the office and city skies; the stadium's <code>silver</code> light dome is inside the canvas only, which is where it should be.</div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;profile&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;high&quot;,&quot;reduced&quot;],&quot;default&quot;:&quot;high&quot;,&quot;tsType&quot;:&quot;'high' | 'reduced'&quot;,&quot;section&quot;:&quot;Camera&quot;},&quot;span&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1600,&quot;min&quot;:800,&quot;max&quot;:4480,&quot;step&quot;:80,&quot;unit&quot;:&quot;world units&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Camera&quot;},&quot;showRacers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Camera&quot;}}">
+class Component extends DCLogic {
+  shots() {
+    const L = 8 * 320;
+    const p = this.props.profile ?? 'high';
+    const racers = this.props.showRacers ?? true;
+    const span = this.props.span ?? 1600;
+    const seg = 8;
+    const w = (op, nc, st) => ({ officePark: op, neonCity: nc, stadium: st });
+    return [
+      { id: 'op', label: 'Office park', title: '01 · Office park', meta: 'progress 0.15 · neutral grade', note: 'Reduced keeps the sky and the campus — the composition holds with two layers because the fog band and lit edge live on the core layer, not the rich one.',
+        centerX: L * 0.15, weights: w(1, 0, 0), grade: CB.gradeState(0.15, 0), overlay: false },
+      { id: 'nc', label: 'Neon city', title: '02 · Neon city', meta: 'progress 0.5 · neutral grade', note: 'Far towers are haze at 55% — the same value as the sky bottom — so they sit behind the fog instead of on top of it. Dim silver windows are static on core; only signage pulses.',
+        centerX: L * 0.5, weights: w(0, 1, 0), grade: CB.gradeState(0.5, 0), overlay: false },
+      { id: 'st', label: 'Stadium', title: '03 · Stadium', meta: 'progress 0.85 · neutral grade', note: 'One grandstand tile, 1800 units, seamless. Reduced is the stand and the sky; the flashes, ribbon and masts are what the phone gives up.',
+        centerX: L * 0.85, weights: w(0, 0, 1), grade: CB.gradeState(0.85, 0), overlay: false },
+      { id: 'xf', label: 'Crossfade', title: 'Crossfade · office park → neon city', meta: 'boundary 1/3 · 50/50 weights', note: 'Both zones at half alpha. Fog bands on both sides mean the join reads as weather, not a dissolve; the office lamps hand off to the neon bleed.',
+        centerX: L / 3, weights: w(0.5, 0.5, 0), grade: CB.gradeState(1 / 3, 0), overlay: false },
+      { id: 'fq', label: 'Final question', title: 'Final question · stadium under the neon grade', meta: 'escalation 1 · grade 0.92 · neonMagenta', note: 'The existing Grade.ts as-is. The stadium reads through it because its silver/gold accents are far from magenta — the grade colours the air, not the structure.',
+        centerX: L * 0.92, weights: w(0, 0, 1), grade: CB.gradeState(1, 1), overlay: true },
+    ].map(s => ({ ...s, profile: p, racers, span, seg }));
+  }
+  renderVals() { return { shots: this.shots() }; }
+  paint() {
+    if (!window.CB || !CB.render) return;
+    const byId = Object.fromEntries(this.shots().map(s => [s.id, s]));
+    document.querySelectorAll('canvas[data-shot]').forEach(cv => {
+      const s = byId[cv.dataset.shot]; if (!s) return;
+      const kind = cv.dataset.kind;
+      if (kind === 'strip') CB.render(cv, { width: 390, height: 236, dpr: 2, span: 800, centerX: s.centerX, weights: s.weights, profile: s.profile, grade: s.grade, segments: s.seg, racers: s.racers });
+      else if (kind === 'reduced') CB.render(cv, { width: 960, height: 540, dpr: 1, span: s.span, centerX: s.centerX, weights: s.weights, profile: 'reduced', grade: s.grade, segments: s.seg, racers: s.racers });
+      else CB.render(cv, { width: 1920, height: 1080, dpr: 1, span: s.span, centerX: s.centerX, weights: s.weights, profile: s.profile, grade: s.grade, segments: s.seg, racers: s.racers });
+    });
+  }
+  componentDidMount() { this.paint(); if (!window.CB?.render) this._t = setInterval(() => { if (window.CB?.render) { clearInterval(this._t); this.paint(); } }, 150); }
+  componentDidUpdate() { this.paint(); }
+  componentWillUnmount() { clearInterval(this._t); }
+}
+</script>
+</body>
+</html>

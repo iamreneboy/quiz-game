@@ -1,27 +1,10 @@
-/**
- * The night-race world (PRD §8): office park -> neon city -> stadium.
- *
- * Every draw function runs ONCE at init to bake a tile texture; nothing here is
- * called per frame. Randomness is seeded so a tile looks the same on every
- * client and across reloads.
- *
- * Depth is carried by VALUE, not by detail: far silhouettes are painted in the
- * sky's own colours at partial alpha (atmospheric perspective), the mid ground
- * in `night`, the near ground in `abyss`/`void`, and every layer dissolves at
- * its base into a fog band so nothing sits on a hard line. Silhouettes get
- * roof profiles (parapet, setback, slant, spire) from a seeded layout that
- * both the body layer and its lights layer read, so lights always land on the
- * building that owns them.
- *
- * Every sky opens in `abyss` — the canvas clear colour — so a wide camera that
- * runs off the top of the sky tile shows no seam.
- */
-import type { Graphics } from 'pixi.js';
-import { COLOR } from '@/lib/presentation/tokens';
-import type { LayerDrawContext, WorldDefinition, ZoneSpec } from '../definition';
+// Browser mirror of deliverable/lib/world/content/nightRace.ts (types stripped, COLOR inlined).
+window.CB = window.CB || {};
+(() => {
+const COLOR = { void: 0x05060f, abyss: 0x0a0c1c, night: 0x121734, dusk: 0x1c2350, haze: 0x2b3370, neonCyan: 0x35f2ff, neonMagenta: 0xff4fd8, neonLime: 0xc6ff4a, correct: 0x3ce69b, wrong: 0xff5d73, warning: 0xffb43d, gold: 0xffd166, silver: 0xd5dcee, bronze: 0xe08a4c };
 
 /** Deterministic 0..1 sequence — a tiny LCG, seeded per layer. */
-function seeded(seed: number): () => number {
+function seeded(seed) {
   let state = seed >>> 0;
   return () => {
     state = (state * 1664525 + 1013904223) >>> 0;
@@ -29,8 +12,8 @@ function seeded(seed: number): () => number {
   };
 }
 
-function mix(a: number, b: number, t: number): number {
-  const ch = (v: number, shift: number) => (v >> shift) & 0xff;
+function mix(a, b, t) {
+  const ch = (v, shift) => (v >> shift) & 0xff;
   const r = Math.round(ch(a, 16) + (ch(b, 16) - ch(a, 16)) * t);
   const gr = Math.round(ch(a, 8) + (ch(b, 8) - ch(a, 8)) * t);
   const bl = Math.round(ch(a, 0) + (ch(b, 0) - ch(a, 0)) * t);
@@ -38,7 +21,7 @@ function mix(a: number, b: number, t: number): number {
 }
 
 /** Vertical gradient band, colour AND alpha interpolated top -> bottom. */
-function band(g: Graphics, x: number, y: number, w: number, h: number, top: number, bottom: number, steps: number, aTop: number, aBottom: number): void {
+function band(g, x, y, w, h, top, bottom, steps, aTop, aBottom) {
   for (let i = 0; i < steps; i++) {
     const t = i / (steps - 1);
     g.rect(x, y + (h * i) / steps, w, h / steps + 1).fill({ color: mix(top, bottom, t), alpha: aTop + (aBottom - aTop) * t });
@@ -46,12 +29,12 @@ function band(g: Graphics, x: number, y: number, w: number, h: number, top: numb
 }
 
 /** Ground fog rising from a tile's bottom edge — the base of every layer dissolves. */
-function fog(g: Graphics, ctx: LayerDrawContext, depth: number, color: number, alpha: number): void {
+function fog(g, ctx, depth, color, alpha) {
   band(g, 0, ctx.height - depth, ctx.width, depth, color, color, 8, 0, alpha);
 }
 
 /** Sky: abyss -> zone top -> zone bottom, sparse stars, and a light-pollution glow at the horizon. */
-function sky(g: Graphics, ctx: LayerDrawContext, top: number, bottom: number, glow: number, glowAlpha: number, stars: number, seed: number): void {
+function sky(g, ctx, top, bottom, glow, glowAlpha, stars, seed) {
   const { width: W, height: H } = ctx;
   band(g, 0, 0, W, H * 0.3, COLOR.abyss, top, 6, 1, 1);
   band(g, 0, H * 0.3, W, H * 0.7, top, bottom, 16, 1, 1);
@@ -66,57 +49,29 @@ function sky(g: Graphics, ctx: LayerDrawContext, top: number, bottom: number, gl
 }
 
 /** A soft glow: three nested rects at falling alpha. */
-function halo(g: Graphics, x: number, y: number, w: number, h: number, color: number, alpha: number): void {
+function halo(g, x, y, w, h, color, alpha) {
   g.rect(x - 6, y - 6, w + 12, h + 12).fill({ color, alpha: alpha * 0.08 });
   g.rect(x - 3, y - 3, w + 6, h + 6).fill({ color, alpha: alpha * 0.18 });
   g.rect(x, y, w, h).fill({ color, alpha });
 }
 
-interface Building {
-  x: number;
-  w: number;
-  h: number;
-  /** 0..1 — picks the roof profile. */
-  roof: number;
-  side: -1 | 1;
-  cols: number;
-  rows: number;
-  lit: boolean[];
-  antenna: boolean;
-  tank: boolean;
-  a1: number;
-  a2: number;
-}
 
-interface SkylineOpts {
-  minW: number;
-  maxW: number;
-  minH: number;
-  maxH: number;
-  gapMin: number;
-  gapVar: number;
-  cellX: number;
-  cellY: number;
-  litProb: number;
-  /** Caps the roof roll so a zone can forbid spires (office park). */
-  roofMax: number;
-}
 
 /** Glass starts below the roof line: lower for a setback (the wide tier), tighter otherwise. */
-function glassTop(b: Building, H: number): number {
+function glassTop(b, H) {
   return H - b.h + (b.roof >= 0.4 && b.roof < 0.7 ? b.h * 0.28 : b.h * 0.1) + 8;
 }
 
 /** Deterministic building layout, shared by a zone's body layer and its lights layer. */
-function skyline(seed: number, W: number, H: number, o: SkylineOpts): Building[] {
+function skyline(seed, W, H, o) {
   const r = seeded(seed);
-  const list: Building[] = [];
+  const list = [];
   let x = 10;
   for (;;) {
     const w = o.minW + r() * (o.maxW - o.minW);
     if (x + w > W - 10) break;
     const h = H * (o.minH + r() * (o.maxH - o.minH));
-    const b: Building = {
+    const b = {
       x, w, h,
       roof: r() * o.roofMax,
       side: r() < 0.5 ? -1 : 1,
@@ -138,7 +93,7 @@ function skyline(seed: number, W: number, H: number, o: SkylineOpts): Building[]
   return list;
 }
 
-function body(g: Graphics, b: Building, H: number, color: number, alpha: number): void {
+function body(g, b, H, color, alpha) {
   const top = H - b.h;
   if (b.roof < 0.4) {
     g.rect(b.x, top, b.w, b.h).fill({ color, alpha });
@@ -177,7 +132,7 @@ function body(g: Graphics, b: Building, H: number, color: number, alpha: number)
   }
 }
 
-function glass(g: Graphics, b: Building, H: number, o: SkylineOpts, color: number, alpha: number, litOnly: boolean, wx: number, wy: number): void {
+function glass(g, b, H, o, color, alpha, litOnly, wx, wy) {
   const y0 = glassTop(b, H);
   for (let ry = 0; ry < b.rows; ry++) {
     for (let cx = 0; cx < b.cols; cx++) {
@@ -195,19 +150,19 @@ function glass(g: Graphics, b: Building, H: number, o: SkylineOpts, color: numbe
 /* Zone 1 — office park. Horizontal, quiet, sodium-warm. Late-shift lights.   */
 /* -------------------------------------------------------------------------- */
 
-const CAMPUS: SkylineOpts = {
+const CAMPUS = {
   minW: 90, maxW: 210, minH: 0.28, maxH: 0.58, gapMin: 26, gapVar: 60,
   cellX: 16, cellY: 18, litProb: 0.16, roofMax: 0.7,
 };
 
-function tree(g: Graphics, x: number, base: number, s: number, color: number, alpha: number): void {
+function tree(g, x, base, s, color, alpha) {
   g.rect(x - 2 * s, base - 22 * s, 4 * s, 22 * s).fill({ color, alpha });
   g.ellipse(x, base - 34 * s, 16 * s, 14 * s).fill({ color, alpha });
   g.ellipse(x - 10 * s, base - 26 * s, 12 * s, 10 * s).fill({ color, alpha });
   g.ellipse(x + 11 * s, base - 27 * s, 11 * s, 10 * s).fill({ color, alpha });
 }
 
-const officePark: ZoneSpec = {
+const officePark = {
   id: 'officePark',
   skyTop: COLOR.night,
   skyBottom: COLOR.dusk,
@@ -330,16 +285,16 @@ const officePark: ZoneSpec = {
 /* Zone 2 — neon city. Vertical, dense, saturated. Three depths of towers.    */
 /* -------------------------------------------------------------------------- */
 
-const FAR_TOWERS: SkylineOpts = {
+const FAR_TOWERS = {
   minW: 26, maxW: 70, minH: 0.35, maxH: 1, gapMin: 4, gapVar: 22,
   cellX: 10, cellY: 12, litProb: 0, roofMax: 1,
 };
-const MID_TOWERS: SkylineOpts = {
+const MID_TOWERS = {
   minW: 50, maxW: 130, minH: 0.32, maxH: 0.92, gapMin: 10, gapVar: 40,
   cellX: 11, cellY: 13, litProb: 0.14, roofMax: 1,
 };
 
-const neonCity: ZoneSpec = {
+const neonCity = {
   id: 'neonCity',
   skyTop: COLOR.void,
   skyBottom: COLOR.haze,
@@ -451,7 +406,7 @@ const neonCity: ZoneSpec = {
 
 const BAY = 300;
 
-const stadium: ZoneSpec = {
+const stadium = {
   id: 'stadium',
   skyTop: COLOR.abyss,
   skyBottom: COLOR.dusk,
@@ -507,7 +462,7 @@ const stadium: ZoneSpec = {
         }
         g.rect(0, roofY - 3, W, 3).fill({ color: COLOR.silver, alpha: 0.45 });
         // Upper tier (flood-lit, so lighter) and lower tier (in the canopy's shadow), raked rows as bands.
-        const tiers: [number, number, number, number][] = [
+        const tiers = [
           [roofY + 40, H * 0.5, COLOR.dusk, COLOR.night],
           [H * 0.56, H * 0.84, COLOR.night, COLOR.dusk],
         ];
@@ -607,7 +562,7 @@ const stadium: ZoneSpec = {
   ],
 };
 
-export const NIGHT_RACE: WorldDefinition = {
+const NIGHT_RACE = {
   id: 'night-race',
   zones: [officePark, neonCity, stadium],
   road: {
@@ -617,3 +572,7 @@ export const NIGHT_RACE: WorldDefinition = {
     finish: COLOR.silver,
   },
 };
+
+window.CB.NIGHT_RACE = NIGHT_RACE;
+window.CB.COLOR = COLOR;
+})();
