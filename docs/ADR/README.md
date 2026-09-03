@@ -82,3 +82,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0053](0053-the-bank-is-generated-data.md) | The question bank is generated data, and it ships as an upsert | M3 P4 |
 | [0054](0054-the-grid-rolls-up-on-the-servers-countdown.md) | The grid rolls up on the server's countdown | M3 P5a |
 | [0055](0055-ink-mute-is-an-accessibility-floor.md) | The ink scale has an accessibility floor, and it is enforced | M3 P5b |
+| [0056](0056-backdrop-depth-is-value-not-detail.md) | Backdrop depth is carried by value, not detail | post-M3 |
