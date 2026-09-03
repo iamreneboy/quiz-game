@@ -93,10 +93,32 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     else pendingAnnounce.current = me;
   }, []);
 
-  const isHost = typeof window !== 'undefined' && !!loadSession(code)?.hostKey;
-  const hostKey = typeof window !== 'undefined' ? loadSession(code)?.hostKey ?? null : null;
+  /**
+   * Same tri-state-avoidance as `hasSession` above: `isHost`/`hostKey`/
+   * `myPlayerId` used to branch on `typeof window !== 'undefined'` directly
+   * in render, which is the textbook hydration mismatch — the server always
+   * sees `false`/`null`, but a returning host's first client render already
+   * sees the real localStorage value, so React logs a mismatch before
+   * recovering. Each snapshot returns a primitive (not the session object
+   * itself, which `loadSession` re-parses fresh every call) so
+   * `useSyncExternalStore`'s reference check actually settles.
+   */
+  const isHost = useSyncExternalStore(
+    subscribeSession,
+    useCallback(() => !!loadSession(code)?.hostKey, [code]),
+    () => false,
+  );
+  const hostKey = useSyncExternalStore(
+    subscribeSession,
+    useCallback(() => loadSession(code)?.hostKey ?? null, [code]),
+    () => null,
+  );
   useHostPresenceReporter(hostKey, channel);
-  const myPlayerId = typeof window !== 'undefined' ? loadSession(code)?.playerId ?? null : null;
+  const myPlayerId = useSyncExternalStore(
+    subscribeSession,
+    useCallback(() => loadSession(code)?.playerId ?? null, [code]),
+    () => null,
+  );
   useHostAbsenceSweep(channel, myPlayerId);
   useLateJoinerMaterialize(code);
 
