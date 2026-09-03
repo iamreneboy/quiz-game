@@ -58,7 +58,7 @@ import { blockX, podiumAnchors, podiumBlocks } from './podium';
 import type { WorldScene } from './render/WorldScene';
 import { useWorldView } from './useWorldView';
 import { allowanceFor, initialBudgetFor, stepBudget, type BudgetState } from './vfxBudget';
-import { gradeState, quantizeZoneWeights, zoneWeights } from './zones';
+import { dominantZone, gradeState, quantizeZoneWeights, zoneWeights } from './zones';
 import { photoFinishFor } from '@/lib/ceremony/photoFinish';
 
 /** Cue types the world acts on. P1 owned the camera set; P2 adds the drama set. */
@@ -289,7 +289,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       metrics,
       // Reduced profile switches zones hard instead of crossfading (spec §9).
       zones: profile === 'reduced' ? quantizeZoneWeights(blended) : blended,
-      grade: gradeState(progress, escalation),
+      grade: gradeState(progress, escalation, dominantZone(blended)),
       avatars,
       allowance,
       localPlayerId,

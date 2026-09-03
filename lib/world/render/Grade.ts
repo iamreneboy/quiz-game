@@ -6,10 +6,23 @@
 import { Graphics } from 'pixi.js';
 import { COLOR } from '@/lib/presentation/tokens';
 import type { Profile } from '@/lib/presentation/profile';
-import type { GradeState } from '../zones';
+import type { GradeHue, GradeState } from '../zones';
 import type { Viewport } from '../geometry';
 
 const GRADIENT_STEPS = 8;
+
+// Stadium peaks lower than city (0.24 vs 0.34) so the arena's gold reads as
+// heat rather than matching the city wash's punch (ADR-0056).
+const HUE_COLOR: Record<GradeHue, number> = {
+  neutral: COLOR.night,
+  city: COLOR.neonMagenta,
+  stadium: COLOR.gold,
+};
+const HUE_PEAK_FACTOR: Record<GradeHue, number> = {
+  neutral: 0.5,
+  city: 0.34,
+  stadium: 0.24,
+};
 
 export class Grade {
   readonly graphic = new Graphics();
@@ -22,8 +35,8 @@ export class Grade {
     if (key === this.lastKey) return;
     this.lastKey = key;
 
-    const color = grade.hue === 'neon' ? COLOR.neonMagenta : COLOR.void;
-    const peak = grade.intensity * (grade.hue === 'neon' ? 0.34 : 0.5);
+    const color = HUE_COLOR[grade.hue];
+    const peak = grade.intensity * HUE_PEAK_FACTOR[grade.hue];
     this.graphic.clear();
 
     // Ladder (spec §9): high gets a vignette-style gradient, reduced a flat tint.

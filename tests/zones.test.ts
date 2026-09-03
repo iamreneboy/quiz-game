@@ -58,31 +58,37 @@ describe('zoneWeights', () => {
 
 describe('gradeState', () => {
   it('starts subdued and deepens across the game', () => {
-    const start = gradeState(0, 0);
-    const end = gradeState(1, 0);
+    const start = gradeState(0, 0, 'officePark');
+    const end = gradeState(1, 0, 'officePark');
     expect(start.intensity).toBeLessThan(end.intensity);
     expect(start.hue).toBe('neutral');
   });
 
-  it('goes neon and near-maximum for the final question', () => {
-    const final = gradeState(0.9, 1);
-    expect(final.hue).toBe('neon');
-    expect(final.intensity).toBeGreaterThan(gradeState(0.9, 0).intensity);
+  it('goes hot and near-maximum for the final question', () => {
+    const final = gradeState(0.9, 1, 'neonCity');
+    expect(final.hue).toBe('city');
+    expect(final.intensity).toBeGreaterThan(gradeState(0.9, 0, 'neonCity').intensity);
     expect(final.intensity).toBeLessThanOrEqual(1);
+  });
+
+  it('keys the escalation hue off the dominant zone', () => {
+    expect(gradeState(0.9, 1, 'officePark').hue).toBe('city');
+    expect(gradeState(0.9, 1, 'neonCity').hue).toBe('city');
+    expect(gradeState(0.9, 1, 'stadium').hue).toBe('stadium');
   });
 
   it('is monotonic in escalation', () => {
     let previous = -1;
     for (let e = 0; e <= 1; e += 0.1) {
-      const value = gradeState(0.4, e).intensity;
+      const value = gradeState(0.4, e, 'stadium').intensity;
       expect(value).toBeGreaterThanOrEqual(previous);
       previous = value;
     }
   });
 
   it('clamps inputs outside 0..1', () => {
-    expect(gradeState(-3, -3)).toEqual(gradeState(0, 0));
-    expect(gradeState(9, 9)).toEqual(gradeState(1, 1));
+    expect(gradeState(-3, -3, 'stadium')).toEqual(gradeState(0, 0, 'stadium'));
+    expect(gradeState(9, 9, 'stadium')).toEqual(gradeState(1, 1, 'stadium'));
   });
 });
 

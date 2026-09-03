@@ -42,10 +42,18 @@ export function zoneWeights(worldX: number, metrics: TrackMetrics): ZoneWeights 
   return weights;
 }
 
+/**
+ * `neutral` tints toward `night`; `city`/`stadium` are the final-question
+ * wash, keyed off the dominant zone so it grades hot in the arena rather than
+ * overriding the stadium's gold/silver identity with the city's magenta
+ * (ADR-0056). `officePark` has no accent of its own, so it takes the city's.
+ */
+export type GradeHue = 'neutral' | 'city' | 'stadium';
+
 export interface GradeState {
   /** 0..1 overlay strength. */
   intensity: number;
-  hue: 'neutral' | 'neon';
+  hue: GradeHue;
 }
 
 const GRADE_FLOOR = 0.22;
@@ -53,25 +61,31 @@ const GRADE_RANGE = 0.38;
 const GRADE_PEAK = 0.92;
 
 /**
- * @param progress   0..1 through the game (round / total_rounds)
- * @param escalation 0..1 from the director; 1 during the final question
- */
-export function gradeState(progress: number, escalation: number): GradeState {
-  const p = clamp01(progress);
-  const e = clamp01(escalation);
-  const base = GRADE_FLOOR + GRADE_RANGE * p;
-  return { intensity: base + (GRADE_PEAK - base) * e, hue: e > 0 ? 'neon' : 'neutral' };
-}
-
-/**
  * Reduced profile: collapse a crossfade to a hard switch at the boundary, so
  * only one zone's layers ever draw (spec §9 ladder). Ties go to the earlier
  * zone, which keeps the switch stable as the camera creeps forward.
  */
-export function quantizeZoneWeights(weights: ZoneWeights): ZoneWeights {
+export function dominantZone(weights: ZoneWeights): ZoneId {
   let dominant: ZoneId = ZONE_ORDER[0];
   for (const zone of ZONE_ORDER) {
     if (weights[zone] > weights[dominant]) dominant = zone;
   }
-  return { officePark: 0, neonCity: 0, stadium: 0, [dominant]: 1 };
+  return dominant;
+}
+
+/**
+ * @param progress   0..1 through the game (round / total_rounds)
+ * @param escalation 0..1 from the director; 1 during the final question
+ * @param zone       the dominant zone at the camera's current position
+ */
+export function gradeState(progress: number, escalation: number, zone: ZoneId): GradeState {
+  const p = clamp01(progress);
+  const e = clamp01(escalation);
+  const base = GRADE_FLOOR + GRADE_RANGE * p;
+  const hue: GradeHue = e === 0 ? 'neutral' : zone === 'stadium' ? 'stadium' : 'city';
+  return { intensity: base + (GRADE_PEAK - base) * e, hue };
+}
+
+export function quantizeZoneWeights(weights: ZoneWeights): ZoneWeights {
+  return { officePark: 0, neonCity: 0, stadium: 0, [dominantZone(weights)]: 1 };
 }

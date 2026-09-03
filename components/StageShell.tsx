@@ -48,13 +48,13 @@ export default function StageShell({
       {beat === 'track' ? (
         <>
           <div />
-          <div className="space-y-4">{outcome}</div>
+          <div className="min-w-0 space-y-4">{outcome}</div>
         </>
       ) : (
         <>
           <div className="flex flex-col items-center gap-4">{header}</div>
           <div className="flex flex-col justify-center">{question}</div>
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <AnimatePresence initial={false}>{options}</AnimatePresence>
             {outcome}
           </div>
