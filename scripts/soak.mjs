@@ -97,17 +97,28 @@ const { client: hostClient, ch: hostChannel } = await subscribe(null);
 
 // ---- The host loop ---------------------------------------------------------
 const startedAt = Date.now();
-const drift = [];
+const offsets = [];
 let sent = 0;
 
 async function advance(fn, args) {
   const evt = await rpc(fn, args);
   sent++;
   // PRD §9: "clients render the countdown against server time offset, so
-  // displayed timers drift < 250ms". The event carries both, so the drift a
-  // client would render is measurable directly.
+  // displayed timers drift < 250ms". Note *offset*: lib/serverTime.ts's
+  // `noteServerTime` sets `offsetMs = server_now - Date.now()` on every phase
+  // event and `msUntil` renders against it, so the raw local-vs-server gap is
+  // precisely the quantity the client CANCELS — asserting on it measures this
+  // machine's clock skew plus one-way latency, neither of which a player sees.
+  // Against a local stack both are ~0 and the mistake is invisible; against the
+  // cloud project it reads ~900ms on a box whose clock is a few hundred ms off
+  // UTC, and fails a budget the app is actually meeting.
+  //
+  // What survives the correction, and therefore what a player sees as a timer
+  // that jumps between phases, is the VARIATION in that offset. A constant
+  // offset is cancelled exactly; only its spread is visible. So record the
+  // signed offset and hold the spread to the 250ms budget.
   if (evt.ends_at && evt.server_now) {
-    drift.push(Math.abs(Date.now() - new Date(evt.server_now).getTime()));
+    offsets.push(new Date(evt.server_now).getTime() - Date.now());
   }
   await hostChannel.send({ type: 'broadcast', event: 'phase', payload: evt });
   return evt;
@@ -116,9 +127,15 @@ async function advance(fn, args) {
 let evt = await advance('start_game', { p_room_id: room.room_id, p_host_key: room.host_key });
 
 while (evt.phase !== 'results') {
-  const wait = evt.ends_at ? new Date(evt.ends_at).getTime() - Date.now() : 0;
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-
+  // Answers go in DURING the window, before the wait, not after it. Submitting
+  // at `ends_at` leaves only submit_answer's 300ms grace
+  // (supabase/migrations/0002_rpcs.sql:322) to cover the round trip: invisible
+  // against a local stack at ~1ms, fatal against the cloud project at ~100ms
+  // RTT, where ten concurrent calls overrun the grace and the run dies with
+  // `submit_answer: too late`. A real player taps inside the window regardless.
+  // Speed points shift, but not the standings: the Fairness Law sorts on
+  // `correct` first and the staircase below makes every racer's count distinct,
+  // so speed_points is never reached as a tiebreak here.
   if (evt.phase === 'answer') {
     // A staircase: racer i is correct on every round after i, so the ten final
     // scores are 12, 11, 10 … 3 — all distinct. That is deliberate. Spreading
@@ -137,6 +154,10 @@ while (evt.phase !== 'results') {
       })
     ));
   }
+
+  const wait = evt.ends_at ? new Date(evt.ends_at).getTime() - Date.now() : 0;
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+
   evt = await advance('advance_phase', { p_room_id: room.room_id, p_host_key: room.host_key });
 }
 
@@ -168,9 +189,12 @@ const nominal = 3 + ROUNDS * (3 + TIMER_SECONDS + 5 + 4);
 assert.ok(elapsedMs < (nominal + 60) * 1000,
   `run took ${(elapsedMs / 1000).toFixed(1)}s against a ${nominal}s nominal`);
 
-// 3. Timer drift stays inside PRD §9's 250ms.
-const worstDrift = Math.max(...drift);
-assert.ok(worstDrift < 250, `worst clock drift ${worstDrift}ms`);
+// 3. Timer drift stays inside PRD §9's 250ms — measured as the SPREAD of the
+//    server-time offset (see `advance`), which is the part lib/serverTime.ts
+//    cannot cancel and therefore the part a player sees.
+const offsetSpread = Math.max(...offsets) - Math.min(...offsets);
+assert.ok(offsetSpread < 250,
+  `server-time offset varied by ${offsetSpread}ms across ${offsets.length} events`);
 
 // 4. Every client agrees on the final standings.
 //
@@ -194,5 +218,6 @@ await Promise.all([
 console.log(`✅ soak passed — ${PLAYERS} players, ${ROUNDS} rounds`);
 console.log(`   phase broadcasts sent: ${sent}`);
 console.log(`   broadcasts received:   ${received.map(r => r.length).join(', ')}`);
-console.log(`   worst clock drift:     ${worstDrift}ms  (PRD §9 budget: 250ms)`);
+console.log(`   offset spread:         ${offsetSpread}ms  (PRD §9 budget: 250ms)`);
+console.log(`   raw offset range:      ${Math.min(...offsets)}..${Math.max(...offsets)}ms  (cancelled by lib/serverTime.ts)`);
 console.log(`   wall clock:            ${(elapsedMs / 1000).toFixed(1)}s`);
