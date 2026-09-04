@@ -11,6 +11,14 @@ next milestone is v1.
 - **Since then, outside any phase:** the night-race backdrop was redesigned
   (`0712f0b`) and has now been **verified live through the real renderer**
   (2026-09-03) — see the backdrop note below and [ADR-0056](../ADR/0056-backdrop-depth-is-value-not-detail.md).
+  A seventh category, **`coffee-is-life`** ("Coffee is Life", `🫘`), was added
+  (2026-09-04): 40 questions in `supabase/questions/coffee-is-life.json`,
+  wired into `CATEGORY_KEYS`/`CATEGORY_LABELS` and `lib/rank.ts`'s
+  `CATEGORIES`, delivered via `supabase/migrations/0012_coffee_is_life.sql`
+  and applied to both the local stack and the cloud project
+  (`niznfbabmixesfvxlypi`) — verified live with a per-category count query.
+  The bank is now 280 questions; `npm test` (742 passed) and the validator
+  both stay green.
 - **Deployment (verified 2026-09-04, not assumed):** the app has been live on
   Vercel since **2026-08-25**, deployed from GitHub (`iamreneboy/quiz-game`) via
   the Git integration — there is no `.vercel` directory locally and no Vercel CLI

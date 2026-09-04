@@ -19,4 +19,5 @@ export const CATEGORIES = [
   { key: 'rewind', label: 'Rewind', emoji: '📼' },
   { key: 'online', label: 'Extremely Online', emoji: '🐸' },
   { key: 'fuel', label: 'Fuel', emoji: '☕' },
+  { key: 'coffee-is-life', label: 'Coffee is Life', emoji: '🫘' },
 ];

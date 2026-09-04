@@ -1,0 +1,282 @@
+[
+  {
+    "tier": 1,
+    "prompt": "What does caffeine block in your brain to fight fatigue?",
+    "options": ["Adenosine", "Dopamine", "Serotonin", "Cortisol"],
+    "correctIndex": 0,
+    "funFact": "Caffeine is shaped closely enough to sit in the same receptors as adenosine — without switching them on. The fatigue is still there; you just stop receiving the message."
+  },
+  {
+    "tier": 1,
+    "prompt": "What is \"3-in-1\" coffee?",
+    "options": ["A single-origin pour-over", "An instant coffee, creamer and sugar sachet", "A triple espresso shot", "A cold brew concentrate"],
+    "correctIndex": 1,
+    "funFact": "It's how most Filipinos actually drink coffee — no shame in the sachet."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which brewing method uses full immersion for about four minutes?",
+    "options": ["Pour-over", "French press", "Espresso machine", "Moka pot"],
+    "correctIndex": 1,
+    "funFact": "Heavy body, some sediment, and the hardest brewer to ruin."
+  },
+  {
+    "tier": 1,
+    "prompt": "A latte is built from two espresso shots and mostly what?",
+    "options": ["Whipped cream", "Cold foam", "Chocolate syrup", "Steamed milk"],
+    "correctIndex": 3,
+    "funFact": "Two shots plus 240 ml steamed milk with about 1 cm of foam is the café's house default."
+  },
+  {
+    "tier": 1,
+    "prompt": "A coffee bean starts out as a seed inside what?",
+    "options": ["A root", "A flower", "A leaf", "A fruit"],
+    "correctIndex": 3,
+    "funFact": "How you remove the fruit around the seed decides most of the final flavour."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which grind size does espresso need?",
+    "options": ["Coarse", "Medium", "Fine", "Medium-coarse"],
+    "correctIndex": 2,
+    "funFact": "Espresso only has about 25 seconds of contact time, so it needs the finest grind of any method."
+  },
+  {
+    "tier": 1,
+    "prompt": "Barako coffee comes from which of the four commercial coffee species?",
+    "options": ["Arabica", "Robusta", "Excelsa", "Liberica"],
+    "correctIndex": 3,
+    "funFact": "Barako isn't a brand or roast level — it's a distinct species, and the Philippines is one of the few places that grows it commercially."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which Philippine town saw the country's first coffee planted, in 1740?",
+    "options": ["Lipa, Batangas", "Baguio", "Sagada", "Davao"],
+    "correctIndex": 0,
+    "funFact": "A Spanish friar planted it — coffee reached the Philippines the same way it reached most producing countries: through empire."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which brewer is the only one that actually makes real espresso?",
+    "options": ["Moka pot", "French press", "Espresso machine", "Pour-over"],
+    "correctIndex": 2,
+    "funFact": "9 bars of pressure in 25 seconds — nothing else on the list reaches that, which is also why nothing else can make a real latte."
+  },
+  {
+    "tier": 1,
+    "prompt": "Which brew method needs the coarsest grind?",
+    "options": ["Espresso", "Pour-over", "French press / cold brew", "Drip"],
+    "correctIndex": 2,
+    "funFact": "The longer water sits with the grounds, the coarser the grind needs to be — cold brew steeps for up to 18 hours."
+  },
+  {
+    "tier": 2,
+    "prompt": "About how long does caffeine take to reach peak effect?",
+    "options": ["5 minutes", "2 hours", "4 hours", "45 minutes"],
+    "correctIndex": 3,
+    "funFact": "Its half-life is about 5 hours, so a 3pm cup is still half in your system at 8pm."
+  },
+  {
+    "tier": 2,
+    "prompt": "For long-haul drivers, coffee is described in the deck as the closest thing to what?",
+    "options": ["A performance enhancer", "A sleep aid", "A social lubricant", "A safety device"],
+    "correctIndex": 3,
+    "funFact": "Drowsy driving is measurably as dangerous as drunk driving, and two cups cuts incident rates on long hauls."
+  },
+  {
+    "tier": 2,
+    "prompt": "Coffeehouses in London earned what nickname in the 1600s?",
+    "options": ["Penny universities", "Bean houses", "Steam parlors", "Java clubs"],
+    "correctIndex": 0,
+    "funFact": "For the price of a coffee, anyone could sit in on the day's news and debate it."
+  },
+  {
+    "tier": 2,
+    "prompt": "Robusta accounts for roughly what share of the world's coffee crop?",
+    "options": ["10%", "25%", "40%", "60%"],
+    "correctIndex": 2,
+    "funFact": "It's bold, rubbery, has roughly double Arabica's caffeine, and makes a great crema."
+  },
+  {
+    "tier": 2,
+    "prompt": "What ended the Philippines' run as a top coffee exporter in the 1880s?",
+    "options": ["A price crash", "A trade embargo", "A hurricane season", "Leaf rust"],
+    "correctIndex": 3,
+    "funFact": "The Philippines was the world's 4th largest coffee exporter until leaf rust wiped out the crop by 1889 — the crown never came back."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which processing method dries the whole cherry in the sun, fruit still on, for weeks?",
+    "options": ["Washed", "Natural", "Honey", "Wet-hulled"],
+    "correctIndex": 1,
+    "funFact": "It's the riskier method to get right, but it produces heavy, sweet, berry-and-wine notes."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which roast level sits at the lowest temperature and highest acidity?",
+    "options": ["Dark", "Medium-dark", "Medium", "Light"],
+    "correctIndex": 3,
+    "funFact": "Light roast isn't under-roasted — it's roasted to keep the origin's own flavour, which is where specialty coffee lives."
+  },
+  {
+    "tier": 2,
+    "prompt": "In the standard espresso shot recipe, how many grams of coffee go in?",
+    "options": ["7 g", "12 g", "18 g", "25 g"],
+    "correctIndex": 2,
+    "funFact": "18 g in, 36 g out, in about 27 seconds — those three numbers are 90% of pulling a shot."
+  },
+  {
+    "tier": 2,
+    "prompt": "Which drink is built \"upside down,\" with syrup and milk poured before the espresso shots?",
+    "options": ["Cappuccino", "Americano", "Caramel macchiato", "Latte"],
+    "correctIndex": 2,
+    "funFact": "Vanilla, milk, then shots poured on top, caramel drizzle to finish — which is why it's \"marked,\" or macchiato."
+  },
+  {
+    "tier": 2,
+    "prompt": "The 2–4pm energy slump many office workers feel is described in the deck as what?",
+    "options": ["A sign of poor sleep", "A real circadian dip", "A caffeine withdrawal symptom", "A myth"],
+    "correctIndex": 1,
+    "funFact": "It's a real dip in the body clock, not weak will — coffee flattens it rather than fixing anything broken."
+  },
+  {
+    "tier": 3,
+    "prompt": "Roughly what daily caffeine amount is considered the safe adult limit?",
+    "options": ["100 mg", "250 mg", "400 mg", "600 mg"],
+    "correctIndex": 2,
+    "funFact": "That's roughly four cups a day."
+  },
+  {
+    "tier": 3,
+    "prompt": "Caffeine was on the Olympic Committee's banned substance list until what year?",
+    "options": ["1988", "1996", "2004", "2012"],
+    "correctIndex": 2,
+    "funFact": "Research links caffeine to a 2–4% endurance boost — enough that it was once treated as performance-enhancing."
+  },
+  {
+    "tier": 3,
+    "prompt": "Coffee reached which three regions as smuggled seedlings in the 1700s, becoming plantations?",
+    "options": ["Java, Caribbean, Brazil", "Kenya, India, Vietnam", "Mexico, Cuba, Hawaii", "China, Korea, Japan"],
+    "correctIndex": 0,
+    "funFact": "Every coffee-producing country today traces its first seedlings to somebody's colonial project."
+  },
+  {
+    "tier": 3,
+    "prompt": "Excelsa, the rarest of the four commercial coffee species, makes up about what share of the world crop?",
+    "options": ["Under 1%", "About 5%", "About 15%", "About 25%"],
+    "correctIndex": 0,
+    "funFact": "It's tart and dark-fruited; in the Philippines it's grown in Sulu and Basilan."
+  },
+  {
+    "tier": 3,
+    "prompt": "What actually determines how coarse or fine a coffee grind should be?",
+    "options": ["The roast level", "The bean's species", "The altitude it was grown at", "How long the water stays in contact with it"],
+    "correctIndex": 3,
+    "funFact": "Espresso has about 25 seconds of contact time, so it needs a fine grind; cold brew steeps for 16 hours, so it needs a coarse one."
+  },
+  {
+    "tier": 3,
+    "prompt": "Which of these is true about dark roast coffee, according to the deck?",
+    "options": ["It has more caffeine than light roast", "It has slightly less caffeine than light roast", "It has no caffeine", "It has exactly the same caffeine as any roast"],
+    "correctIndex": 1,
+    "funFact": "Roasting burns off a small amount of caffeine, so dark roast is not \"stronger\" in caffeine — a common myth the deck sets out to kill."
+  },
+  {
+    "tier": 3,
+    "prompt": "According to the deck's milk-steaming rule, what temperature should steamed milk stop at?",
+    "options": ["45–50°C", "75–80°C", "85–90°C", "60–65°C"],
+    "correctIndex": 3,
+    "funFact": "Past 70°C, milk tastes scalded and won't foam again — the jug itself becomes too hot to hold at the right stopping point."
+  },
+  {
+    "tier": 3,
+    "prompt": "How many separate historical attempts to ban coffee does the deck list — all of which failed?",
+    "options": ["2", "4", "6", "8"],
+    "correctIndex": 1,
+    "funFact": "Mecca in 1511, Ottoman Istanbul, Sweden in 1746, and Prussia under Frederick the Great all tried and failed to outlaw it."
+  },
+  {
+    "tier": 3,
+    "prompt": "In what year did the phrase \"coffee break\" enter the language?",
+    "options": ["1929", "1952", "1968", "1975"],
+    "correctIndex": 1,
+    "funFact": "It started as an advertising slogan, not a workers' right."
+  },
+  {
+    "tier": 3,
+    "prompt": "Kapeng alamid is coffee made from beans that passed through which animal?",
+    "options": ["A civet", "A goat", "An elephant", "A monkey"],
+    "correctIndex": 0,
+    "funFact": "The beans are eaten and passed by a wild civet, then washed, dried, and sold for thousands a kilo."
+  },
+  {
+    "tier": 4,
+    "prompt": "Beyond the chemistry, what does the deck call coffee's most honest social function?",
+    "options": ["The most socially acceptable excuse to stop working and talk to someone", "A status signal", "A substitute for alcohol at work events", "A productivity requirement"],
+    "correctIndex": 0,
+    "funFact": "Chemistry explains attention and mood — it doesn't explain why \"let's grab coffee\" is the easiest excuse there is to talk to someone."
+  },
+  {
+    "tier": 4,
+    "prompt": "Coffee first appeared as food, not a drink — how was it consumed in the 800s in the Ethiopian highlands?",
+    "options": ["Boiled into a broth", "Chewed", "Ground into flour for bread", "Fermented into wine"],
+    "correctIndex": 1,
+    "funFact": "Coffee started as food, chewed rather than brewed, centuries before Yemen's roasting and brewing."
+  },
+  {
+    "tier": 4,
+    "prompt": "How is an Americano built, according to the deck's recipe?",
+    "options": ["Two shots plus 180 ml hot water", "One shot plus 120 ml hot water", "Two shots plus 240 ml hot water", "Three shots plus 90 ml hot water"],
+    "correctIndex": 0,
+    "funFact": "Pouring the water first, under the crema, is how you keep the crema — if that matters to you."
+  },
+  {
+    "tier": 4,
+    "prompt": "How is a frappe built, according to the deck's recipe?",
+    "options": ["Two shots, 120 ml milk, a full cup of ice and sauce, blended", "One shot, 60 ml milk, blended with sugar", "Three shots poured over crushed ice", "Two shots, no milk, shaken with ice"],
+    "correctIndex": 0,
+    "funFact": "It's the best-selling drink in most Philippine cafés — cold drinks are where local cafés make their money."
+  },
+  {
+    "tier": 4,
+    "prompt": "About how many kilograms of coffee does the average person in Finland drink per year?",
+    "options": ["4 kg", "8 kg", "12 kg", "16 kg"],
+    "correctIndex": 2,
+    "funFact": "That's roughly four cups a day for every person, including babies — the Philippines drinks roughly 1 kg per person by comparison."
+  },
+  {
+    "tier": 4,
+    "prompt": "What everyday piece of technology was invented so researchers wouldn't climb the stairs to an empty coffee pot?",
+    "options": ["The vending machine", "The smart fridge", "The electric kettle", "The webcam"],
+    "correctIndex": 3,
+    "funFact": "In 1991, the first webcam ever built was pointed at a coffee pot in Cambridge."
+  },
+  {
+    "tier": 4,
+    "prompt": "Composer Ludwig van Beethoven reportedly counted out exactly how many coffee beans per cup, every morning?",
+    "options": ["40", "50", "60", "100"],
+    "correctIndex": 2,
+    "funFact": "The deck calls him \"the first documented coffee snob.\""
+  },
+  {
+    "tier": 4,
+    "prompt": "Coffee is the world's second most-traded commodity, after which one?",
+    "options": ["Gold", "Oil", "Wheat", "Cotton"],
+    "correctIndex": 1,
+    "funFact": "Around 2.25 billion cups of coffee are drunk every day worldwide."
+  },
+  {
+    "tier": 4,
+    "prompt": "Decaf coffee is not caffeine-free — about how much caffeine does a cup still carry?",
+    "options": ["0 mg", "2–5 mg", "20–25 mg", "50 mg"],
+    "correctIndex": 1,
+    "funFact": "\"Decaffeinated\" is not the same claim as \"caffeine-free.\""
+  },
+  {
+    "tier": 4,
+    "prompt": "What's the correct way to judge when steamed milk is ready, according to the deck?",
+    "options": ["Swirl it so it pours glossy, like wet paint, not stiff bubbles", "Spoon off the foam to check thickness", "Time it to exactly 10 seconds regardless of sound", "Heat until it stops steaming"],
+    "correctIndex": 0,
+    "funFact": "Stiff bubbles mean the milk was stretched too long — good microfoam pours like wet paint."
+  }
+]
