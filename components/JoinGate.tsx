@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabaseClient';
 import { saveSession } from '@/lib/session';
-import type { JoinResult } from '@/lib/types';
+import type { JoinResult, PlayerPublic } from '@/lib/types';
 import { AVATARS, COLORS } from '@/lib/avatars';
 import { DURATION, EASE } from '@/lib/presentation/tokens';
 import Panel from '@/components/ui/Panel';
@@ -23,7 +23,14 @@ function HudCorners() {
   );
 }
 
-export default function JoinGate({ code, onJoined }: { code: string; onJoined: () => void }) {
+/**
+ * `onJoined` is handed the racer `join_room` itself returned — the room route
+ * announces from it rather than from a second read, so the announcement that
+ * tells the host somebody arrived (ADR-0048) cannot be lost to a failed one.
+ */
+export default function JoinGate({
+  code, onJoined,
+}: { code: string; onJoined: (player: PlayerPublic) => void }) {
   const [nickname, setNickname] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[1].key);
   const [color, setColor] = useState(COLORS[1]);
@@ -40,7 +47,7 @@ export default function JoinGate({ code, onJoined }: { code: string; onJoined: (
     saveSession(code, {
       roomId: result.room_id, playerId: result.player_id, playerKey: result.player_key,
     });
-    onJoined();
+    onJoined(result.player);
   }
 
   return (

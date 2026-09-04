@@ -83,3 +83,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0054](0054-the-grid-rolls-up-on-the-servers-countdown.md) | The grid rolls up on the server's countdown | M3 P5a |
 | [0055](0055-ink-mute-is-an-accessibility-floor.md) | The ink scale has an accessibility floor, and it is enforced | M3 P5b |
 | [0056](0056-backdrop-depth-is-value-not-detail.md) | Backdrop depth is carried by value, not detail | post-M3 |
+| [0057](0057-room-state-lands-in-server-time-order.md) | Room state lands in server-time order, or not at all | post-M3 (P2a/P6a debt) |

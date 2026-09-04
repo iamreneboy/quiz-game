@@ -1,5 +1,6 @@
 'use client';
 import { Suspense, use, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { DURATION, EASE } from '@/lib/presentation/tokens';
 import { useGameStore } from '@/lib/store';
@@ -22,8 +23,9 @@ import PerfOverlay from '@/components/PerfOverlay';
 import TensionFrame from '@/components/TensionFrame';
 import HostControlStrip from '@/components/HostControlStrip';
 import PauseCard from '@/components/PauseCard';
+import Button from '@/components/ui/Button';
 
-type Stage = 'unknown' | 'gate' | 'connecting' | 'lobby' | 'game' | 'results';
+type Stage = 'unknown' | 'gate' | 'connecting' | 'missing' | 'lobby' | 'game' | 'results';
 
 /**
  * How long each stage takes to LEAVE.
@@ -35,7 +37,7 @@ type Stage = 'unknown' | 'gate' | 'connecting' | 'lobby' | 'game' | 'results';
  * from `ends_at` and has to be present from its first frame (ADR-0030).
  */
 const EXIT_MS: Record<Stage, number> = {
-  unknown: 0, gate: 0, connecting: 0, lobby: DURATION.beat, game: 0, results: 0,
+  unknown: 0, gate: 0, connecting: 0, missing: 0, lobby: DURATION.beat, game: 0, results: 0,
 };
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
@@ -58,7 +60,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     useCallback(() => !!loadSession(code), [code]),
     () => null,
   );
+  const router = useRouter();
   const room = useGameStore(s => s.room);
+  const roomMissing = useGameStore(s => s.roomMissing);
   const applyState = useGameStore(s => s.applyState);
   const channel = useRoomChannel(code, 'player');
   const driver = useHostDriver(code, channel);
@@ -124,16 +128,21 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   useRoomRuntimes(code, 'player');
 
-  async function handleJoined() {
+  async function handleJoined(me: PlayerPublic) {
     // No setHasSession here: JoinGate has already called saveSession, which
     // notified the store above.
-    const { data } = await supabase.rpc('get_room_state', { p_code: code });
-    if (data) {
-      applyState(data as RoomState);
-      const session = loadSession(code);
-      const me = (data as RoomState).players.find(p => p.id === session?.playerId);
-      if (me) announce(me);
-    }
+    //
+    // Announced from `join_room`'s own result, BEFORE the read below and
+    // regardless of how it goes: this broadcast is the only thing that tells
+    // the host a player arrived (ADR-0048), and it used to be reachable only
+    // through a second RPC that could fail.
+    announce(me);
+    const { data, error } = await supabase.rpc('get_room_state', { p_code: code });
+    // Checked rather than discarded, but not recovered from here: the channel's
+    // own resync is what guarantees the state arrives (lib/useRoomChannel.ts).
+    // This read only pulls the new racer into the roster a round trip sooner.
+    if (error || !data) return;
+    applyState(data as RoomState);
   }
 
   let stage: Stage = 'unknown';
@@ -141,8 +150,34 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   if (hasSession === null) {
     stage = 'unknown';
   } else if (!hasSession) {
+    // Deliberately ahead of the missing-room notice: a browser with no session
+    // has a join form to be told "room not found" BY, and `join_room` says so
+    // inline. The notice below is for the case that has no other voice — a
+    // session for a room that is gone, which used to spin on "Connecting…"
+    // for as long as the page was open.
     stage = 'gate';
     content = <JoinGate code={code} onJoined={handleJoined} />;
+  } else if (!room && roomMissing) {
+    stage = 'missing';
+    content = (
+      <main
+        data-testid="room-missing"
+        className="mx-auto grid min-h-screen w-full max-w-md place-items-center gap-6 px-6 text-center"
+      >
+        <div className="space-y-4">
+          <p className="font-display text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-ink-mute">
+            No such room
+          </p>
+          <p className="font-display text-display font-black tracking-[0.2em] text-ink-dim">{code}</p>
+          <p className="text-ink-dim">
+            It may have finished, or the code may be a typo.
+          </p>
+          <Button variant="ghost" onClick={() => router.push('/')}>
+            Back to the start
+          </Button>
+        </div>
+      </main>
+    );
   } else if (!room) {
     stage = 'connecting';
     content = <main className="grid min-h-screen place-items-center text-ink-dim">Connecting…</main>;
