@@ -17,16 +17,23 @@ next milestone is v1.
   installed, which is why earlier passes of this file wrongly read as "never
   deployed". 31 production deployments; the three most recent all report
   `success`; the newest (`6246422213`, 2026-09-03T14:49:10Z) is at `82a7fbe`,
-  which **is current `main` HEAD** — production is not behind the repo. Project
-  alias `quiz-game-iamreneboys-projects.vercel.app`. The cloud Supabase project
-  `niznfbabmixesfvxlypi` is **active, not paused**: its REST API answers in ~50ms
-  and `rooms`, `players` and `questions` all return 200. Both of these were
-  previously recorded here as blockers; neither is one. **But see the deployment
-  protection item under Tech debt — the site is live and gated, which is a
-  different problem from not being live.**
+  which **is current `main` HEAD** — production is not behind the repo.
+
+  **The production URL is `https://quiz-game-tau-pearl.vercel.app`** — public, no
+  login, verified serving this app. Do not substitute a guessed hostname: the
+  URLs in the GitHub deployment records are *generated deployment URLs* and are
+  gated by design, and both `quiz-game.vercel.app` and `circuit-break.vercel.app`
+  belong to unrelated projects. Recover it with
+  `gh api repos/iamreneboy/quiz-game --jq .homepage`; see the Tech debt note.
+
+  The cloud Supabase project `niznfbabmixesfvxlypi` is **active, not paused**:
+  its REST API answers in ~50ms and `rooms`, `players` and `questions` all
+  return 200. The deployed bundle points at it. Both the "paused project" and
+  "never deployed" blockers previously recorded here were false.
 - **Next:** v1. No M3 phase is active; see the roadmap spec for what comes after.
-  The remaining launch work is the four P5b measurements below, three of which
-  are now gated on deployment protection rather than on infrastructure.
+  The remaining launch work is the four P5b measurements below. **None of them
+  are infrastructure-blocked any more** — they need a human, a phone, and a
+  stopwatch against `https://quiz-game-tau-pearl.vercel.app`.
 
 ## Active task
 
@@ -86,13 +93,20 @@ None.
 - **Four M3 P5b measurements need a second human or the cloud dashboard and were deferred rather than faked.** Every PRD §11 criterion already has a recorded local/automated measurement (see [`M3-P5b-launch-readiness.md`](M3-P5b-launch-readiness.md)'s scorecard); these four sharpen it further and were agreed with the user as follow-ups, not blockers:
   - **The screen-reader pass by hand** — Narrator or NVDA, walking the nine surfaces `docs/superpowers/plans/2026-08-30-m3-p5b-launch-readiness.md`'s Task 4 Step 3 lists, writing down what was actually heard.
   - **The soak run against the cloud project** — ~~restore the paused free-tier project from the Supabase dashboard first, then~~ the project is **already active** (verified 2026-09-04), so this is just `npm run soak` pointed at it, then watch one real browser alongside a live cloud-backed game. One unknown the run will settle: whether the cloud `questions` table is actually seeded. It could not be checked from here — `questions` has RLS enabled (`supabase/migrations/0001_schema.sql:60`) with no anon `select` policy, so an anon count returns `*/0` whether the bank is loaded or empty. If the soak fails at question assignment, seed it with `supabase/seed.sql` (regenerate via `node scripts/build-questions-sql.mjs`) before assuming a logic bug.
-  - **The phone check** — a real mid-range phone against the deployed Vercel site (~~cloud Supabase restored~~ — already active): resolved profile, tap responsiveness, visible stutter. **Blocked by deployment protection until the item below is resolved.**
-  - **The human timing run** — someone who hasn't been in this codebase, stopwatch, no instructions, landing page to a second device joined. The machine floor is measured (7.8s); the human number and where they hesitated is not. **Blocked by deployment protection until the item below is resolved.**
+  - **The phone check** — a real mid-range phone against the deployed Vercel site (~~cloud Supabase restored~~ — already active): resolved profile, tap responsiveness, visible stutter. Use the production domain **https://quiz-game-tau-pearl.vercel.app** (see the deployment note above) — it is public, no login required. Not blocked.
+  - **The human timing run** — someone who hasn't been in this codebase, stopwatch, no instructions, landing page to a second device joined. The machine floor is measured (7.8s); the human number and where they hesitated is not. Use the production domain **https://quiz-game-tau-pearl.vercel.app** (see the deployment note above) — it is public, no login required. Not blocked.
 
-- **OPEN — Vercel deployment protection gates the production site, so nobody but the account owner can reach it (found 2026-09-04).** Both reachable URLs — the project alias `quiz-game-iamreneboys-projects.vercel.app` and the deployment-specific URL from the latest GitHub deployment status — answer an unauthenticated `GET /` with `302 → https://vercel.com/sso-api?url=…&nonce=…`, setting a `_vercel_sso_nonce` cookie: the signature of Vercel Authentication, not a routing or build fault. The build itself is fine (deployment state `success`), so this is a project *setting*, not a code change. **Why it matters beyond the two measurements above:** the join link players scan is built from `window.location.origin` (`lib/qr.ts:41`, `lib/useOrigin.ts:17`), so it inherits whatever host the host loaded — a gated production origin means every QR code sends players to a Vercel login page for an account they don't have. That defeats the whole second-device premise of the game. Fix is in the Vercel dashboard (Project → Settings → Deployment Protection): production needs to be public. Standard Protection leaves the production domain open while still gating previews, which is very likely the setting wanted here. Two things could not be checked from this machine and should be confirmed in the same visit: (a) that the protection setting is scoped as expected rather than set to "All Deployments", and (b) that the project's `NEXT_PUBLIC_SUPABASE_URL` / `ANON_KEY` env vars point at cloud `niznfbabmixesfvxlypi` and not at a localhost stack — the gated site can't be fetched to inspect its bundle, and no Vercel CLI is installed to read the config.
+- **NOT A DEFECT — Vercel deployment protection is configured correctly; an earlier version of this entry claimed otherwise and was wrong (resolved 2026-09-04).** Kept, rather than deleted, because the wrong conclusion is easy to reach a second time. The project's **production domain is `https://quiz-game-tau-pearl.vercel.app`**, verified public and unauthenticated: `/`, `/host/new` and `/room/TEST` all return 200, and the served `<title>Circuit Break</title>` matches `app/layout.tsx:22`. Protection is **Vercel Authentication + Standard Protection**, which is the correct setting for this project and needs no change.
 
-- **The player-track phone overflow is CLOSED (2026-09-03).** Both `StageShell` grid items (`components/StageShell.tsx`'s track-beat `outcome` div and the shared options/outcome div) now carry `min-w-0`, so the rail's `overflow-x-auto` (`components/TrackReadout.tsx:39`) finally has an ancestor willing to shrink instead of a grid item's default `min-width: auto` propagating the rail's min-content width up into `main`. Verified live, not just re-read: a throwaway Playwright spec at 390×844 measured `documentElement.scrollWidth === clientWidth === 390` through countdown, reveal and the TRACK beat (previously 448 vs 375). **The `LowerThird` "FINAL QUEST" clipping was the same root cause, confirmed rather than assumed:** a two-question race driven to the real run-up TRACK beat (the one that actually carries the `final-question` escalation per ADR-0021 — a one-question race's callout fires before COUNTDOWN, before `StageShell` even mounts, so it can't reproduce this) rendered the full "FINAL QUESTION" two-line headline with its right edge at 366px inside the 390px viewport, zero console errors.
-- **The final-question grade's stadium-accent erasure is CLOSED (2026-09-03).** Applied `docs/background-redesign/NOTES.md`'s proposed fix exactly: `zones.ts`'s `GradeState.hue` is now `'neutral' | 'city' | 'stadium'`, keyed off a new `dominantZone(weights)` helper (the same reduction `quantizeZoneWeights` already did, now shared) computed from the zone blend `lib/world/runtime.ts` already had in hand. `Grade.ts` maps `city` → `neonMagenta` at the old 0.34 peak factor, `stadium` → `gold` at a lower 0.24 peak so the arena grades hot rather than pink, and `neutral` → `night` (was `void`) per the same note. `ZONE_OVERLAP` was deliberately left at 0.12 — NOTES.md's other suggestion, widening it to 0.18, is argued against by [ADR-0056](../ADR/0056-backdrop-depth-is-value-not-detail.md)'s crossfade consequence. `tests/zones.test.ts` updated for the new signature and hue values; `npx tsc --noEmit`, `npm run lint` and `npm test` (742 passed) all clean. Not re-verified against the stadium branch with a live sweep — a lookup-table colour swap on an already-tested pure function was judged not to warrant repeating the 12-round sweep ADR-0056 recorded; the city branch was exercised live as part of the phone-overflow verification above with zero console errors.
+  The trap that produced the false positive: every URL discoverable from the GitHub deployment record is a *generated deployment URL* (`quiz-game-<hash>-iamreneboys-projects.vercel.app`), and Standard Protection gates those **by design** — the Vercel API name for the scope is literally `prod_deployment_urls_and_all_previews`, and the docs state that enabling it means "the production generated deployment URL becomes restricted" while production *domains* stay public. Probing those URLs, seeing `302 → vercel.com/sso-api`, and concluding the site is unreachable is wrong.
+
+  The production domain is also **not derivable by guessing the project name**: `quiz-game.vercel.app` and `circuit-break.vercel.app` both return 200 but are **other people's projects** (a create-react-app shell and a static Vite canvas game) — neither is this app, and either could be mistaken for it. Absent the Vercel CLI, the authoritative source is the GitHub repo's `homepage` field, which the Vercel integration keeps current:
+
+  ```
+  gh api repos/iamreneboy/quiz-game --jq .homepage
+  ```
+
+- **Cloud env vars confirmed from the deployed artifact (2026-09-04).** The production bundle served at `/host/new` contains `https://niznfbabmixesfvxlypi.supabase.co`, so `NEXT_PUBLIC_SUPABASE_URL` on Vercel points at the cloud project rather than a localhost stack. Verified by scanning the served `_next/static` chunks, not by trusting the dashboard.
 
 ## Intentionally skipped
 
