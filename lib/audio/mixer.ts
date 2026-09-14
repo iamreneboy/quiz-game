@@ -24,6 +24,11 @@ export interface Mixer {
   setBed(bed: MusicBed, escalated: boolean): void;
   setStemGain(stem: SoundId, gain: number, fadeMs?: number): void;
   play(id: SoundId): void;
+  /**
+   * Fetch and decode sounds ahead of their first play. Idempotent, never
+   * audible, and never required: `play` still creates a Howl on demand.
+   */
+  warm(ids: readonly SoundId[]): void;
   duck(ms: number): void;
   /** A duck with no known end — held until released. Independent of `duck(ms)`. */
   setSustainedDuck(on: boolean): void;
@@ -37,7 +42,7 @@ export interface Mixer {
  */
 const DEAD: Mixer = {
   dead: true,
-  unlock() {}, setBed() {}, setStemGain() {}, play() {},
+  unlock() {}, setBed() {}, setStemGain() {}, play() {}, warm() {},
   duck() {}, setSustainedDuck() {}, setMuted() {}, destroy() {},
 };
 
@@ -155,6 +160,12 @@ export function createMixer(): Mixer {
     play(id) {
       if (!unlocked) return;
       howlFor(id)?.play();
+    },
+
+    warm(ids) {
+      // `howlFor` constructs with `preload: true`, so creating the Howl IS the
+      // fetch and decode; an id already in the map is untouched.
+      for (const id of ids) howlFor(id);
     },
 
     duck(ms) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BED_STEMS, driveGain, stingFor, urgencyGain } from '@/lib/audio/design';
+import { BED_STEMS, CEREMONY_WARM, driveGain, stingFor, urgencyGain } from '@/lib/audio/design';
 import { SOUNDS } from '@/lib/audio/manifest';
 import type { Cue } from '@/lib/presentation/cues';
 
@@ -11,6 +11,14 @@ describe('stem tables', () => {
         expect(SOUNDS[id].loop).toBe(true);
       }
     }
+  });
+});
+
+describe('ceremony warm list', () => {
+  it('covers the ceremony bed and the podium sting, and nothing that is not a sound', () => {
+    for (const id of BED_STEMS.ceremony) expect(CEREMONY_WARM).toContain(id);
+    expect(CEREMONY_WARM).toContain(stingFor({ type: 'podium', tier: 'victory', top: [] }));
+    for (const id of CEREMONY_WARM) expect(SOUNDS[id]).toBeDefined();
   });
 });
 

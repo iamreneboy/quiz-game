@@ -66,12 +66,22 @@ export interface VfxAllowance {
    * cost the celebration its MOTION, not its existence.
    */
   confetti: number;
+  /**
+   * Strength of the podium's baked glows (place glows, winner halo, spotlight
+   * cone), 0..1. Never 0: like the confetti wash, the reduced ceremony keeps
+   * its light and loses only its motion.
+   */
+  ceremonyGlow: number;
+  /** Sparkle density around the winner's block, 0..1. */
+  sparkle: number;
+  /** false: the halo holds still and the light sweeps do not move. */
+  ceremonyMotion: boolean;
 }
 
 const ALLOWANCES: Record<VfxLevel, VfxAllowance> = {
-  full: { turboParticles: true, streakParticles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1, confetti: 1 },
-  lean: { turboParticles: false, streakParticles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5, confetti: 0.5 },
-  minimal: { turboParticles: false, streakParticles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5, confetti: 0 },
+  full: { turboParticles: true, streakParticles: true, trail: 1, streak: 1, maxStreakTier: 8, accent: 1, arena: 1, turbo: 1, confetti: 1, ceremonyGlow: 1, sparkle: 1, ceremonyMotion: true },
+  lean: { turboParticles: false, streakParticles: true, trail: 0.5, streak: 0.6, maxStreakTier: 5, accent: 0.6, arena: 0.5, turbo: 0.5, confetti: 0.5, ceremonyGlow: 0.6, sparkle: 0.5, ceremonyMotion: true },
+  minimal: { turboParticles: false, streakParticles: false, trail: 0, streak: 0.5, maxStreakTier: 3, accent: 0, arena: 0, turbo: 0.5, confetti: 0, ceremonyGlow: 0.35, sparkle: 0, ceremonyMotion: false },
 };
 
 export function allowanceFor(level: VfxLevel): VfxAllowance {

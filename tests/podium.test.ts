@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ceremonyStepsAt, BRONZE_AT, SILVER_AT, GOLD_AT, NO_CEREMONY, RISE_MS } from '@/lib/ceremony/beats';
+import { ceremonyStepsAt, BRONZE_AT, SILVER_AT, GOLD_AT, IMPACT_MS, NO_CEREMONY, RISE_MS } from '@/lib/ceremony/beats';
 import { trackMetrics, segmentToWorldX, type AnchorStanding } from '@/lib/world/geometry';
 import {
   BLOCK_HEIGHTS, BLOCK_ORDER, blockX, hasRisen, podiumAnchors, podiumBlocks, podiumX,
@@ -156,5 +156,20 @@ describe('podiumAnchors', () => {
     expect(anchors).toHaveLength(1);
     expect(anchors[0].x).toBe(blockX(1, metrics));
     expect(anchors[0].y).toBe(-BLOCK_HEIGHTS[1]);
+  });
+});
+
+describe('landing impact on a block', () => {
+  it('carries the beat\'s impact through, so the renderer decides nothing', () => {
+    const justLanded = ceremonyStepsAt(BRONZE_AT + RISE_MS);
+    const blocks = podiumBlocks(field(3), metrics, justLanded);
+    expect(blocks.find(b => b.place === 3)!.impact).toBe(1);
+    expect(blocks.find(b => b.place === 1)!.impact).toBe(0);
+  });
+
+  it('is zero once the last landing has faded', () => {
+    // `settled` is the exact instant gold lands, which is gold's impact PEAK.
+    const faded = ceremonyStepsAt(GOLD_AT + RISE_MS + IMPACT_MS);
+    for (const block of podiumBlocks(field(3), metrics, faded)) expect(block.impact).toBe(0);
   });
 });

@@ -95,6 +95,17 @@ export const AWARDS_AT = 7200;
  */
 export const RISE_MS = 460;
 
+/**
+ * How long a block's landing impact lasts once its rise completes: the dust
+ * ring and flare the renderer draws off `impact`.
+ *
+ * BOUNDED on purpose. A raw "milliseconds since landed" would grow every frame
+ * for the rest of the ceremony and defeat `sameSteps`, re-rendering every DOM
+ * consumer at 60fps over a settled podium. A value that decays to exactly 0
+ * and stays there costs nothing once the moment has passed.
+ */
+export const IMPACT_MS = 420;
+
 /** How far the photo-finish prelude has got. All zero when none is staged. */
 export interface PhotoSteps {
   /** The prelude card is on screen. False before the ceremony and after PHOTO_MS. */
@@ -111,6 +122,11 @@ export const NO_PHOTO: PhotoSteps = { open: false, tally: 0, resolved: false };
 export interface CeremonySteps {
   /** Per-place rise progress, linear 0..1. 1 == fully landed. */
   rise: Readonly<Record<1 | 2 | 3, number>>;
+  /**
+   * Per-place landing impact, linear 1..0 over IMPACT_MS from the instant the
+   * block's rise completes; 0 before landing and once faded.
+   */
+  impact: Readonly<Record<1 | 2 | 3, number>>;
   spotlight: boolean;
   confetti: boolean;
   /** The band retreats and the results board rises (P5b consumes this). */
@@ -123,11 +139,18 @@ export interface CeremonySteps {
 
 export const NO_CEREMONY: CeremonySteps = {
   rise: { 1: 0, 2: 0, 3: 0 },
+  impact: { 1: 0, 2: 0, 3: 0 },
   spotlight: false, confetti: false, board: false, awards: false, photo: NO_PHOTO,
 };
 
 function riseAt(elapsedMs: number, startAt: number): number {
   return Math.min(1, Math.max(0, (elapsedMs - startAt) / RISE_MS));
+}
+
+function impactAt(elapsedMs: number, startAt: number): number {
+  const sinceLanded = elapsedMs - (startAt + RISE_MS);
+  if (sinceLanded < 0) return 0;
+  return Math.max(0, 1 - sinceLanded / IMPACT_MS);
 }
 
 function photoAt(elapsedMs: number): PhotoSteps {
@@ -158,6 +181,11 @@ export function ceremonyStepsAt(elapsedMs: number, photoFinish = false): Ceremon
       2: riseAt(podium, SILVER_AT),
       1: riseAt(podium, GOLD_AT),
     },
+    impact: {
+      3: impactAt(podium, BRONZE_AT),
+      2: impactAt(podium, SILVER_AT),
+      1: impactAt(podium, GOLD_AT),
+    },
     spotlight: podium >= SPOTLIGHT_AT,
     confetti: podium >= CONFETTI_AT,
     board: podium >= BOARD_AT,
@@ -172,6 +200,9 @@ export function sameSteps(a: CeremonySteps, b: CeremonySteps): boolean {
     a.rise[1] === b.rise[1] &&
     a.rise[2] === b.rise[2] &&
     a.rise[3] === b.rise[3] &&
+    a.impact[1] === b.impact[1] &&
+    a.impact[2] === b.impact[2] &&
+    a.impact[3] === b.impact[3] &&
     a.spotlight === b.spotlight &&
     a.confetti === b.confetti &&
     a.board === b.board &&

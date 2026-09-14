@@ -8,10 +8,16 @@
  * sub-second and circular; confetti is viewport-wide, gravity-driven,
  * multi-second and rotating.
  *
- * The pool is allocated LAZILY, on the first frame that asks for confetti, so
- * the lobby and every round pay nothing for it.
+ * Every piece is a Sprite on Pixi's shared white texture, tinted: one
+ * texture means the whole burst is one draw batch, where 180 separate
+ * Graphics each carried their own geometry.
+ *
+ * The pool is allocated LAZILY by default, on the first frame that asks for
+ * confetti, so the lobby and every round pay nothing for it. `warm` is the
+ * head start (ADR-0058): the scene calls it in slices during the final round
+ * so the burst frame never allocates. Neither path depends on the other.
  */
-import { Container, Graphics } from 'pixi.js';
+import { Container, Sprite, Texture } from 'pixi.js';
 import { COLOR, RACER_COLORS } from '@/lib/presentation/tokens';
 import type { WorldFrameState } from '../frame';
 
@@ -23,7 +29,7 @@ const GRAVITY = 220;      // px/s^2
 const FLUTTER_HZ = 1.6;
 
 interface Piece {
-  sprite: Graphics;
+  sprite: Sprite;
   age: number;
   lifetimeMs: number;
   vx: number;
@@ -36,13 +42,23 @@ export class Confetti {
   readonly container = new Container();
   private pool: Piece[] = [];
   /** The static stand-in used when the budget forbids particles. */
-  private readonly wash = new Graphics();
+  private readonly wash = new Sprite(Texture.WHITE);
   private washAge = -1;
   private burstDone = false;
 
   constructor() {
+    this.wash.tint = COLOR.gold;
     this.container.addChild(this.wash);
     this.wash.visible = false;
+  }
+
+  /**
+   * Allocate up to `perFrame` more pieces toward the full pool. Returns true
+   * once the pool is complete. Sized so one call fits inside a frame's slack.
+   */
+  warm(perFrame = 30): boolean {
+    this.ensurePool(Math.min(MAX_PIECES, this.pool.length + perFrame));
+    return this.pool.length >= MAX_PIECES;
   }
 
   update(frame: WorldFrameState, dtMs: number): void {
@@ -129,7 +145,8 @@ export class Confetti {
    */
   private updateWash(dtMs: number, width: number, height: number): void {
     if (this.washAge < 0) {
-      this.wash.clear().rect(0, 0, width, height).fill({ color: COLOR.gold });
+      this.wash.width = width;
+      this.wash.height = height;
       this.wash.visible = true;
       this.washAge = 0;
     }
@@ -141,10 +158,10 @@ export class Confetti {
 
   private ensurePool(count: number): void {
     for (let i = this.pool.length; i < count; i++) {
-      const sprite = new Graphics();
-      sprite
-        .rect(-PIECE_WIDTH / 2, -PIECE_HEIGHT / 2, PIECE_WIDTH, PIECE_HEIGHT)
-        .fill({ color: 0xffffff });
+      const sprite = new Sprite(Texture.WHITE);
+      sprite.anchor.set(0.5);
+      sprite.width = PIECE_WIDTH;
+      sprite.height = PIECE_HEIGHT;
       sprite.visible = false;
       this.container.addChild(sprite);
       this.pool.push({
@@ -165,8 +182,8 @@ export class Confetti {
   }
 
   destroy(): void {
-    // `{ children: true }` alone strands every pooled Graphics' `_ownedContext`
-    // in Pixi v8 — the same trap render/Vfx.ts documents at its destroy().
-    this.container.destroy({ children: true, context: true, style: true, texture: false });
+    // `texture: false` is load-bearing: every piece shares Pixi's static
+    // `Texture.WHITE`, which must outlive this scene.
+    this.container.destroy({ children: true, texture: false });
   }
 }

@@ -19,6 +19,13 @@ export const BED_STEMS = {
 /** Stems held at silence unless the final-question escalation is active. */
 export const ESCALATION_STEMS: readonly SoundId[] = ['round-dread'];
 
+/**
+ * What the ceremony will play, fetched and decoded during the final round
+ * (ADR-0058) so the results cut never waits on the network. The bed and the
+ * podium sting; the rest of the ceremony is silence under the bed.
+ */
+export const CEREMONY_WARM: readonly SoundId[] = [...BED_STEMS.ceremony, 'fanfare'];
+
 /** The two stems the ANSWER tension ramp drives. Every other stem sits at 1. */
 export const DRIVE_STEM: SoundId = 'round-drive';
 export const URGENCY_STEM: SoundId = 'round-urgency';

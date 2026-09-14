@@ -175,6 +175,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): { destroy(): v
       const riseLimit = stackRiseLimit({ width: app.screen.width, height: app.screen.height });
       const anchors = fieldAnchors(state, metrics, ceremonySteps(state), riseLimit);
 
+      // The ceremony's head start (ADR-0058). `final-question` fires one beat
+      // before the final round's READ, and again in a reload's seed batch, so
+      // there is a whole round of quiet frames to spend on it. Independent of
+      // the choreography chain below, which still buffers the cue as drama.
+      if (cue.type === 'final-question') scene.warmCeremony();
+
       if (cue.type === 'phase-track') {
         choreo = beginSequence(choreo, anchors, now, profile);
       } else if (cue.type === 'phase-countdown') {

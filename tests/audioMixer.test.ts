@@ -14,6 +14,7 @@ describe('mixer without a browser audio device', () => {
       mixer.setBed('round', true);
       mixer.setStemGain('round-drive', 0.5, 120);
       mixer.play('correct');
+      mixer.warm(['ceremony-bed', 'fanfare']);
       mixer.duck(400);
       mixer.setMuted(true);
       mixer.destroy();

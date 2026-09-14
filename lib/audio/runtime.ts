@@ -8,7 +8,7 @@ import { on } from '@/lib/presentation/cueBus';
 import { SOUNDS } from './manifest';
 import { createMixer } from './mixer';
 import { applyCue, AUDIO_CUE_TYPES, endCatchUp, initialAudioState, type AudioState } from './state';
-import { DUCK_RELEASE_MS } from './design';
+import { CEREMONY_WARM, DUCK_RELEASE_MS } from './design';
 import { tierRank } from '@/lib/presentation/celebration';
 import { beatRemainingMs } from '@/lib/pause';
 import { useGameStore } from '@/lib/store';
@@ -49,6 +49,10 @@ export function startAudioRuntime(): () => void {
       const step = applyCue(state, cue);
       state = step.state;
       syncBed();
+
+      // The ceremony's head start (ADR-0058): a whole round early, and
+      // harmless on the seed batch of a reload that lands anywhere later.
+      if (cue.type === 'final-question') mixer.warm(CEREMONY_WARM);
 
       for (const id of step.stings) {
         mixer.play(id);

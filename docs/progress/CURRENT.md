@@ -19,6 +19,17 @@ next milestone is v1.
   (`niznfbabmixesfvxlypi`) — verified live with a per-category count query.
   The bank is now 280 questions; `npm test` (742 passed) and the validator
   both stay green.
+  **The podium ceremony got its eye candy** (2026-09-15): additive place
+  glows and a breathing winner's halo, a gradient spotlight cone with two
+  slowly sweeping shafts, a sparkle swarm, a landing ring and flare per block,
+  and a reflection below the horizon — all sprites on three baked textures,
+  no filters, gated by three new `VfxAllowance` fields. Confetti became
+  sprites on one shared texture. Textures, pools and the ceremony audio are
+  now **warmed during the final round** on the `final-question` cue, and
+  never required — see [ADR-0058](../ADR/0058-the-ceremony-is-warmed-never-required.md),
+  which also records the headed measurement (zero errors, ≤1 dropped frame
+  through the ceremony, board beat at the old renderer's baseline).
+  `npm test` is at 765.
 - **Deployment (verified 2026-09-04, not assumed):** the app has been live on
   Vercel since **2026-08-25**, deployed from GitHub (`iamreneboy/quiz-game`) via
   the Git integration — there is no `.vercel` directory locally and no Vercel CLI
@@ -75,6 +86,8 @@ work must respect, in more precise form than this file used to.
 ## Tech debt / known issues
 
 - ~~**A reload on a phase boundary can sit on stale staging until the next phase event**~~ and ~~**the player route hangs on "Connecting…" forever for an unknown or expired code**~~ — **both FIXED 2026-09-04, see [ADR-0057](../ADR/0057-room-state-lands-in-server-time-order.md).** One caution worth carrying: the first entry's recommended fix (re-fetch `get_room_state` after `SUBSCRIBED`) had been in `lib/useRoomChannel.ts` since `d885acb` — *three commits before M3 P2a observed the bug*. Re-fetching is necessary and was never sufficient; the ADR has what actually remained.
+
+- **The results board's DOM entrance drops frames on the stage view, and did before the podium work.** Measured 2026-09-15 on the headed sweep described in [ADR-0058](../ADR/0058-the-ceremony-is-warmed-never-required.md): the canvas holds 0–1 dropped frames per 120-frame window through the whole podium sequence, then 4–5 in the windows covering `BOARD_AT` (6.0–7.5s), on the OLD renderer as well as the new one. That is the stage layout re-splitting plus `ResultsTable`'s row stagger, not Pixi. Not visible as a stutter at 144Hz on this machine; worth a look on the phone check if the board's entrance ever reads as a hitch there.
 
 - **The sudden-death sting still reuses `final-sting`, and nobody has actually judged whether it should.** `lib/audio/design.ts`'s `case 'sudden-death': return 'final-sting'` shipped as a placeholder in M3 P2a. [`M3-P2b-the-aftermath.md`](M3-P2b-the-aftermath.md) explicitly handed the A/B judgement forward — "the sudden-death sting is STILL `final-sting` reused, and this phase did not judge it... Handed to M3 P5 — Polish & launch readiness. Do not let it disappear" — but neither M3-P5a nor M3-P5b revisited it. Needs a deliberate call: keep the shared sting, or give sudden death its own.
 

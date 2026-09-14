@@ -90,6 +90,12 @@ export interface PodiumBlock {
   height: number;
   /** Eased 0..1, briefly > 1 mid-landing (EASE.settle's overshoot). */
   riseProgress: number;
+  /**
+   * Landing impact, 1 the instant the block lands and fading to 0 over
+   * IMPACT_MS (lib/ceremony/beats.ts). Carried through unchanged: the
+   * renderer draws a dust ring and flare off it and decides nothing.
+   */
+  impact: number;
 }
 
 /**
@@ -110,6 +116,7 @@ export function podiumBlocks(
       x: blockX(place, metrics),
       height: BLOCK_HEIGHTS[place],
       riseProgress: easedRise(place, steps),
+      impact: steps.impact[place],
     };
   });
 }

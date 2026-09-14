@@ -13,6 +13,7 @@ import { layersForProfile, type WorldDefinition } from '../definition';
 import type { WorldFrameState } from '../frame';
 import type { ZoneId } from '../zones';
 import { Avatars, type AvatarPlayer } from './Avatars';
+import { clearCeremonyTextures } from './CeremonyTextures';
 import { Confetti } from './Confetti';
 import { Grade } from './Grade';
 import { ParallaxLayer } from './ParallaxLayer';
@@ -25,8 +26,10 @@ export class WorldScene {
   private readonly zoneLayers = new Map<ZoneId, ParallaxLayer[]>();
   private readonly grade: Grade;
   private readonly avatars: Avatars;
-  private readonly podium = new Podium();
+  private readonly podium: Podium;
   private readonly confetti = new Confetti();
+  /** Set by `warmCeremony`; cleared once every warm-up slice has run. */
+  private warming = false;
   private lastFrameAt = 0;
   private players: readonly AvatarPlayer[] = [];
   private track: TrackSurface | null = null;
@@ -47,6 +50,7 @@ export class WorldScene {
     }
 
     // Podium BELOW avatars, so a rig stands in front of (not behind) its block.
+    this.podium = new Podium(app);
     this.root.addChild(this.podium.container);
     this.avatars = new Avatars(app, profile);
     this.root.addChild(this.avatars.container);
@@ -66,6 +70,26 @@ export class WorldScene {
     this.players = players;
   }
 
+  /**
+   * Get the ceremony's textures, GPU uploads, pools and sparkles ready ahead
+   * of the results cut (ADR-0058). The work is sliced across the following
+   * frames by `applyFrame`, so no single frame pays for all of it. Safe to
+   * call more than once, and safe to never call: every consumer still builds
+   * what it needs on first use.
+   */
+  warmCeremony(): void {
+    this.warming = true;
+  }
+
+  private warmSlice(): void {
+    if (!this.podium.warmed) {
+      this.podium.warm();
+      return;
+    }
+    if (!this.confetti.warm()) return;
+    this.warming = false;
+  }
+
   applyFrame(frame: WorldFrameState): void {
     for (const [zoneId, layers] of this.zoneLayers) {
       const weight = frame.zones[zoneId];
@@ -79,10 +103,14 @@ export class WorldScene {
       this.track = new TrackSurface(this.definition, frame.metrics);
       this.trackSegments = frame.metrics.segments;
       this.root.addChildAt(this.track.container, this.root.getChildIndex(this.avatars.container));
+      // The reflection goes ABOVE the road (which is opaque below the
+      // horizon) and below the avatars; `addChildAt` re-slots it on a rebuild.
+      this.root.addChildAt(this.podium.reflection, this.root.getChildIndex(this.avatars.container));
     }
     this.track!.update(frame.camera, frame.viewport);
 
     this.podium.update(frame);
+    if (this.warming) this.warmSlice();
 
     // Same dt derivation as Avatars.apply, including the 64ms clamp that keeps
     // a backgrounded tab from teleporting every piece off screen on return.
@@ -105,6 +133,7 @@ export class WorldScene {
     this.track?.destroy();
     this.grade.destroy();
     this.podium.destroy();
+    clearCeremonyTextures(this.app);
     this.confetti.destroy();
     this.avatars.destroy();
     this.app.stage.removeChild(this.root);

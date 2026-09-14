@@ -130,3 +130,30 @@ describe('initialBudgetFor', () => {
     }
   });
 });
+
+describe('ceremony allowance', () => {
+  it('dims the podium glow down the ladder but never removes it', () => {
+    expect(allowanceFor('full').ceremonyGlow).toBe(1);
+    expect(allowanceFor('lean').ceremonyGlow).toBeLessThan(allowanceFor('full').ceremonyGlow);
+    expect(allowanceFor('minimal').ceremonyGlow).toBeLessThan(allowanceFor('lean').ceremonyGlow);
+    expect(allowanceFor('minimal').ceremonyGlow).toBeGreaterThan(0);
+  });
+
+  it('sheds sparkles with confetti, reaching zero only at minimal', () => {
+    expect(allowanceFor('full').sparkle).toBe(1);
+    expect(allowanceFor('lean').sparkle).toBe(0.5);
+    expect(allowanceFor('minimal').sparkle).toBe(0);
+  });
+
+  it('keeps the halo pulse and light sweeps still only at minimal', () => {
+    expect(allowanceFor('full').ceremonyMotion).toBe(true);
+    expect(allowanceFor('lean').ceremonyMotion).toBe(true);
+    expect(allowanceFor('minimal').ceremonyMotion).toBe(false);
+  });
+
+  it('gives the reduced profile a still glow, not no glow', () => {
+    const pinned = stepBudget(initialBudgetState, clean, 'reduced');
+    expect(allowanceFor(pinned.level).ceremonyMotion).toBe(false);
+    expect(allowanceFor(pinned.level).ceremonyGlow).toBeGreaterThan(0);
+  });
+});

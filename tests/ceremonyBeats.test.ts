@@ -3,7 +3,7 @@ import { elapsedIn } from '@/lib/staging/beats';
 import {
   AWARDS_AT, BOARD_AT, BRONZE_AT, CEREMONY_MS, CONFETTI_AT, GOLD_AT, NO_CEREMONY, NO_PHOTO,
   PHOTO_MS, PHOTO_RESOLVE_AT, PHOTO_TALLY_AT, PHOTO_TALLY_MS,
-  RISE_MS, SILVER_AT, SPOTLIGHT_AT, ceremonyStepsAt, sameSteps,
+  IMPACT_MS, RISE_MS, SILVER_AT, SPOTLIGHT_AT, ceremonyStepsAt, sameSteps,
 } from '@/lib/ceremony/beats';
 
 describe('ceremonyStepsAt — no photo finish', () => {
@@ -54,6 +54,7 @@ describe('ceremonyStepsAt — no photo finish', () => {
   it('is fully settled at the end of the beat and stays there', () => {
     const settled = {
       rise: { 1: 1, 2: 1, 3: 1 },
+      impact: { 1: 0, 2: 0, 3: 0 },
       spotlight: true, confetti: true, board: true, awards: true, photo: NO_PHOTO,
     };
     expect(ceremonyStepsAt(CEREMONY_MS)).toEqual(settled);
@@ -160,5 +161,36 @@ describe('sameSteps', () => {
 
   it('notices the awards beat landing, or the card would never appear', () => {
     expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, awards: true })).toBe(false);
+  });
+
+  it('notices a landing impact, or the flare would never be drawn', () => {
+    expect(sameSteps(NO_CEREMONY, { ...NO_CEREMONY, impact: { ...NO_CEREMONY.impact, 1: 0.5 } })).toBe(false);
+  });
+});
+
+describe('landing impact', () => {
+  it('is zero before a block lands and peaks the instant it does', () => {
+    expect(ceremonyStepsAt(BRONZE_AT + RISE_MS - 1).impact[3]).toBe(0);
+    expect(ceremonyStepsAt(BRONZE_AT + RISE_MS).impact[3]).toBe(1);
+  });
+
+  it('fades linearly to zero over IMPACT_MS and stays there', () => {
+    const landed = GOLD_AT + RISE_MS;
+    expect(ceremonyStepsAt(landed + IMPACT_MS / 2).impact[1]).toBeCloseTo(0.5, 5);
+    expect(ceremonyStepsAt(landed + IMPACT_MS).impact[1]).toBe(0);
+    expect(ceremonyStepsAt(landed + IMPACT_MS + 5000).impact[1]).toBe(0);
+  });
+
+  it('is bounded, so a settled ceremony compares equal frame to frame', () => {
+    expect(sameSteps(ceremonyStepsAt(CEREMONY_MS), ceremonyStepsAt(CEREMONY_MS + 16))).toBe(true);
+  });
+
+  it('has faded before the board takes over, so the flare never competes with it', () => {
+    expect(GOLD_AT + RISE_MS + IMPACT_MS).toBeLessThan(BOARD_AT);
+  });
+
+  it('shifts with the podium when a photo finish is staged', () => {
+    expect(ceremonyStepsAt(BRONZE_AT + RISE_MS, true).impact[3]).toBe(0);
+    expect(ceremonyStepsAt(PHOTO_MS + BRONZE_AT + RISE_MS, true).impact[3]).toBe(1);
   });
 });
