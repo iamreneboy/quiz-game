@@ -70,3 +70,21 @@ test.describe('with prefers-reduced-motion', () => {
     await expect(page.locator('html')).toHaveAttribute('data-profile', 'high');
   });
 });
+
+test.describe('on the stage view', () => {
+  // A phone or TV acting as the stage resolves its own profile like any other
+  // device (ADR-0004), so it needs the same way to override it (ADR-0059). The
+  // override is a per-device preference, not a room write — the stage stays
+  // read-only (ADR-0032).
+  test('the motion override is reachable and applies', async ({ page }) => {
+    await page.goto('/stage/ZZZZZ');
+    await expect(page.getByTestId('stage-missing')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Display settings' }).click();
+    await page.getByLabel('Motion').selectOption('high');
+    await expect(page.locator('html')).toHaveAttribute('data-profile', 'high');
+
+    await page.getByLabel('Motion').selectOption('reduced');
+    await expect(page.locator('html')).toHaveAttribute('data-profile', 'reduced');
+  });
+});

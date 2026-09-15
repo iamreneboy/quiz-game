@@ -85,3 +85,4 @@ What this makes easy, what it makes hard, what future work must respect.
 | [0056](0056-backdrop-depth-is-value-not-detail.md) | Backdrop depth is carried by value, not detail | post-M3 |
 | [0057](0057-room-state-lands-in-server-time-order.md) | Room state lands in server-time order, or not at all | post-M3 (P2a/P6a debt) |
 | [0058](0058-the-ceremony-is-warmed-never-required.md) | The ceremony is warmed on `final-question`, and never depends on it | post-M3 |
+| [0059](0059-the-stage-can-override-its-own-display-profile.md) | The stage view can override its own display profile | post-M3 |
