@@ -44,5 +44,12 @@ paints over the gear until the first tap. That tap unlocks audio (see
   write to the room.** Device-local preferences are allowed. Anything that
   reaches the channel, an RPC or another client is still out, and still enforced
   by composition, not by a guard.
+- **Checked on real hardware (2026-09-15):** two phones, a Poco F6 Pro and a
+  Realme 6 Pro, each used as the stage with *Full motion* chosen. Neither
+  stuttered. Both would have been locked at `minimal` before this change, so
+  the `coarsePointer && narrowViewport` rule is conservative for at least
+  these phones. `auto` stays as it is: ADR-0004 chose a safe default plus a
+  manual override, and this confirms the override is worth having rather than
+  that the default is wrong.
 - `e2e/settings.spec.ts` covers that the override is reachable and applies on
   the stage.
