@@ -176,7 +176,7 @@ const suddenDeath: Cue = {
 
 it('stings the tiebreak once it is live', () => {
   const live = endCatchUp(initialAudioState);
-  expect(applyCue(live, suddenDeath).stings).toEqual(['final-sting']);
+  expect(applyCue(live, suddenDeath).stings).toEqual(['sudden-death-sting']);
 });
 
 it('suppresses the tiebreak sting on a catch-up batch', () => {

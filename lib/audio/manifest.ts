@@ -28,6 +28,7 @@ export const SOUNDS = {
   'streak-5': { src: ['/audio/streak-5.webm', '/audio/streak-5.m4a'], durationMs: 550, loop: false },
   'streak-8': { src: ['/audio/streak-8.webm', '/audio/streak-8.m4a'], durationMs: 600, loop: false },
   'final-sting': { src: ['/audio/final-sting.webm', '/audio/final-sting.m4a'], durationMs: 600, loop: false },
+  'sudden-death-sting': { src: ['/audio/sudden-death-sting.webm', '/audio/sudden-death-sting.m4a'], durationMs: 600, loop: false },
   'fanfare': { src: ['/audio/fanfare.webm', '/audio/fanfare.m4a'], durationMs: 600, loop: false },
   'lobby-groove': { src: ['/audio/lobby-groove.webm', '/audio/lobby-groove.m4a'], durationMs: 8000, loop: true },
   'round-base': { src: ['/audio/round-base.webm', '/audio/round-base.m4a'], durationMs: 4000, loop: true },

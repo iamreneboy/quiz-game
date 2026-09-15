@@ -7,7 +7,7 @@
  */
 import { buffer, noise, normalize, renderLoop, reverb, seed, tone } from './dsp.mjs';
 
-const A2 = 110, C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196;
+const A2 = 110, C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196, EB3 = 155.56;
 const A3 = 220, B3 = 246.94, C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392;
 const A4 = 440, B4 = 493.88, C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99, A5 = 880, C6 = 1046.5;
 const BEAT = 0.5;
@@ -137,6 +137,22 @@ export const STINGS = {
     tone(b, { freq: D3, start: 0.02, dur: 0.55, gain: 0.3, wave: 'square', env: { a: 0.01, d: 0.38, s: 0.3, r: 0.14 } });
     noise(b, { dur: 0.6, gain: 0.3, cutoff: 1800, env: { a: 0.3, d: 0.2, s: 0.5, r: 0.14 } });
     reverb(b, { timeS: 0.13, mix: 0.4 });
+    return normalize(b, 0.94);
+  },
+
+  // Three klaxon hits on a tritone (A2/Eb3) before settling into a rising,
+  // unresolved tail — the opposite shape of final-sting's single settled
+  // landing. final-sting says "this is the scripted end"; sudden death is the
+  // race refusing to end on schedule, so it needed its own character rather
+  // than reusing that arrival.
+  'sudden-death-sting': () => {
+    const b = buffer(0.6);
+    tone(b, { freq: A2, dur: 0.09, gain: 0.5, wave: 'square', env: { a: 0.002, d: 0.05, r: 0.03 } });
+    tone(b, { freq: EB3, start: 0.11, dur: 0.09, gain: 0.5, wave: 'square', env: { a: 0.002, d: 0.05, r: 0.03 } });
+    tone(b, { freq: A2, start: 0.22, dur: 0.09, gain: 0.5, wave: 'square', env: { a: 0.002, d: 0.05, r: 0.03 } });
+    tone(b, { freq: EB3, start: 0.33, dur: 0.27, gain: 0.55, wave: 'saw', bend: 1.4, env: { a: 0.004, d: 0.2, s: 0.35, r: 0.14 } });
+    noise(b, { start: 0.11, dur: 0.49, gain: 0.26, cutoff: 3000, env: { a: 0.02, d: 0.3, s: 0.35, r: 0.14 } });
+    reverb(b, { timeS: 0.1, mix: 0.35 });
     return normalize(b, 0.94);
   },
 
