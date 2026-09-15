@@ -51,5 +51,10 @@ paints over the gear until the first tap. That tap unlocks audio (see
   these phones. `auto` stays as it is: ADR-0004 chose a safe default plus a
   manual override, and this confirms the override is worth having rather than
   that the default is wrong.
+- **This run also closed M3 P5b's phone check** against production
+  (`https://quiz-game-tau-pearl.vercel.app`). The profile resolves as described
+  above. There was no visible stutter anywhere, including the results board's
+  entrance, which drops a few frames on desktop. Tapping answers as a player
+  felt responsive.
 - `e2e/settings.spec.ts` covers that the override is reachable and applies on
   the stage.

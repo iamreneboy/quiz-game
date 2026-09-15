@@ -50,8 +50,8 @@ next milestone is v1.
   return 200. The deployed bundle points at it. Both the "paused project" and
   "never deployed" blockers previously recorded here were false.
 - **Next:** v1. No M3 phase is active; see the roadmap spec for what comes after.
-  The remaining launch work is the three P5b measurements below. **None of them
-  are infrastructure-blocked** — they need a human, a phone, and a stopwatch
+  The remaining launch work is the two P5b measurements below. **Neither is
+  infrastructure-blocked** — they need a human, a screen reader, and a stopwatch
   against `https://quiz-game-tau-pearl.vercel.app`.
 
 ## Active task
@@ -86,9 +86,8 @@ work must respect, in more precise form than this file used to.
 
 ## Tech debt / known issues
 
-- **Three M3 P5b measurements still need a human, and were deferred rather than faked.** Every PRD §11 criterion already has a recorded local/automated measurement (see [`M3-P5b-launch-readiness.md`](M3-P5b-launch-readiness.md)'s scorecard); these sharpen it further and were agreed with the user as follow-ups, not blockers. None are infrastructure-blocked — use the production domain **https://quiz-game-tau-pearl.vercel.app** (public, no login).
+- **Two M3 P5b measurements still need a human, and were deferred rather than faked.** Every PRD §11 criterion already has a recorded local/automated measurement (see [`M3-P5b-launch-readiness.md`](M3-P5b-launch-readiness.md)'s scorecard; the phone check, closed 2026-09-15, is recorded in [ADR-0059](../ADR/0059-the-stage-can-override-its-own-display-profile.md)); these sharpen it further and were agreed with the user as follow-ups, not blockers. None are infrastructure-blocked — use the production domain **https://quiz-game-tau-pearl.vercel.app** (public, no login).
   - **The screen-reader pass by hand** — Narrator or NVDA, walking the nine surfaces `docs/superpowers/plans/2026-08-30-m3-p5b-launch-readiness.md`'s Task 4 Step 3 lists, writing down what was actually heard.
-  - **The phone check — tap responsiveness only.** Resolved profile and visible stutter were checked on a real phone 2026-09-15 as a read-only `/stage/<code>` spectator: profile resolves to `reduced` → `VfxLevel: minimal` via `lib/presentation/profile.ts`'s `coarsePointer && narrowViewport` rule (ADR-0004), so no confetti/sparkle and no halo breathing or spotlight sweep is expected, not a bug; no stutter, including at the results board's entrance. Still open: a phone as a **player** tapping answers. Full motion on a phone-as-stage was checked too (2026-09-15, Poco F6 Pro and Realme 6 Pro): no stutter; see [ADR-0059](../ADR/0059-the-stage-can-override-its-own-display-profile.md).
   - **The human timing run** — someone who hasn't been in this codebase, stopwatch, no instructions, landing page to a second device joined. The machine floor is measured (7.8s); the human number and where they hesitated is not.
 
 - **`e2e/stage.spec.ts:44` ("follows a live game without a session") fails at `--workers=1` when run after other specs, and passes alone.** Reproduced 2026-09-15 on unchanged `main` (`stage.spec.ts` + `a11y.spec.ts` in sequence). It failed at two different steps across runs, once with `Protocol error … session closed`, which means the browser died rather than an assertion being wrong. It runs three contexts (host, joiner, stage), and this machine can't reliably sustain that many Pixi/WebGL contexts (see Notes). Re-run it alone before treating a failure as a regression.
